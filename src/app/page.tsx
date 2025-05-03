@@ -101,7 +101,7 @@ export default function Home() {
               Simplify Your Workflow with AI Automation
             </h2>
             <p className="text-lg text-[#d1e4f1] max-w-prose mb-6">
-              Got a task that's time-consuming, error-prone, or just plain annoying? 
+              Got a task that&apos;s time-consuming, error-prone, or just plain annoying? 
               Let the AI Efficiency Team help automate it!
             </p>
             
@@ -274,7 +274,7 @@ export default function Home() {
                   <span className="text-xl font-semibold text-blue-400">1</span>
                 </div>
                 <h3 className="font-medium text-white mb-2">Sign in with Azure AD</h3>
-                <p className="theme-text-muted text-sm">We'll use your existing corporate account to pre-fill your profile info.</p>
+                <p className="theme-text-muted text-sm">We&apos;ll use your existing corporate account to pre-fill your profile info.</p>
               </div>
               
               <div className="flex flex-col items-center text-center">
@@ -290,7 +290,7 @@ export default function Home() {
                   <span className="text-xl font-semibold text-blue-400">3</span>
                 </div>
                 <h3 className="font-medium text-white mb-2">Confirm and submit</h3>
-                <p className="theme-text-muted text-sm">Review the summary and we'll get back to you within one business day.</p>
+                <p className="theme-text-muted text-sm">Review the summary and we&apos;ll get back to you within one business day.</p>
               </div>
             </div>
           </div>
