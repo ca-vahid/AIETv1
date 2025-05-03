@@ -1,0 +1,12 @@
+<script>
+var _protocol = "ws:";
+if(window.location.protocol == "https:")
+{
+	_protocol = "wss:";
+}
+var rt = new WebSocket(_protocol + "//" + window.location.host + "/realtime-tracking/visitor/endpoint");
+setInterval(function()
+{
+    rt.send("heartbeat");
+}, 5000);
+</script>

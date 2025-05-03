@@ -1,0 +1,18 @@
+<body>
+	<header role="banner" class="ui-section-header">
+      <div class="ui-layout-container">
+        <div class="ui-section-header__layout ui-layout-flex">
+          <!-- LOGO -->
+          <a href="{{header->url}}/{{locale}}" role="link" aria-label="home_logo" rel="home" title="{{header->title}}" class="ui-section-header--logo"><img src="{{header->logo.url}}" title="{{header->logo.title}}" alt="{{header->logo.title}} logo" style="display:inline-block;width:100px;{{header->logo.style}}">{{header->title}}</a>
+         
+          <!-- HAMBURGER -->
+          <input type="checkbox" id="ui-section-header--menu-id">
+          <label for="ui-section-header--menu-id" class="ui-section-header--menu-icon"></label>
+          <!-- MENU -->
+          <nav role="navigation" class="ui-section-header--nav ui-layout-flex">
+            {{header->menu}}
+        </nav>
+        </div>
+      </div>
+    </header>
+

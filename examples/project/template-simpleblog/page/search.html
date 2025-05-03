@@ -1,0 +1,30 @@
+{{element->meta.html}}
+{{element->header.html}}
+<div class="entry-wrapper">
+  <header class="entry-header">
+    <h1 class="entry-title">{{lang->search.title}}</h1>
+  </header>
+  <div class="entry-content">
+        <!-- Search form -->
+<form method="get" action="" data-search-form="" class="simple-search">
+  <label for="q">Search So Simple Theme for:</label>
+  <input type="search" name="q" id="goog-wm-qt" placeholder="What are you looking for?" data-search-input="" autofocus="">
+  <input type="submit" value="Search" id="goog-wm-sb">
+</form>
+
+<!-- Search results placeholder -->
+<h6 data-search-found="" style="display: none;">
+  <span data-search-found-count=""></span> result(s) found for “<span data-search-found-term=""></span>”.
+</h6>
+<ul class="post-list" data-search-results=""></ul>
+
+<!-- Search result template -->
+<script type="text/x-template" id="search-result">
+  <li><article>
+    <a href="##Url##">##Title## <span class="excerpt">##Description##</span></a>
+  </article></li>
+</script>
+
+
+</div><!-- /.entry-content -->
+{{element->footer.html}}

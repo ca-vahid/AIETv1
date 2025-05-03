@@ -1,0 +1,24 @@
+	<body>
+		<div id="page-wrapper">
+
+			<!-- Header -->
+				<div id="header-wrapper">
+					<div class="container">
+						<div class="row">
+							<div class="col-12">
+
+								<header id="header">
+								<h1>   <a href="{{header->url}}/{{locale}}" role="link" aria-label="home_logo" rel="home" title="{{header->title}}" class="ui-section-header--logo"><img src="{{header->logo.url}}" title="{{header->logo.title}}" alt="{{header->logo.title}} logo" style="display:inline-block;width:70px;{{header->logo.style}}"></a></h1>
+									<nav id="nav">
+										{{instance->menu}}
+										<a href="twocolumn1">Two Column #1</a>
+										<a href="twocolumn2">Two Column #2</a>
+										<a href="onecolumn">One Column</a>
+										<a href="threecolumn">Three Column</a>
+									</nav>
+								</header>
+
+							</div>
+						</div>
+					</div>
+				</div>

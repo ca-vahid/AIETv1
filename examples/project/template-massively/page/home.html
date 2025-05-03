@@ -1,0 +1,49 @@
+{{element->meta.html}} {{element->header.html}}
+
+<!-- Nav -->
+<nav id="nav">
+  <ul class="links">
+    <li class="active"><a href="Home">{{instance->name}}</a></li>
+    <li><a href="generic">Generic Page</a></li>
+    <li><a href="elements">Elements Reference</a></li>
+  </ul>
+  <ul class="icons">
+    <li>{{instance->social}}</li>
+  </ul>
+</nav>
+
+<!-- Main -->
+<div id="main">
+  <!-- Featured Post -->
+  <article class="post featured">
+    <header class="major">
+      <span class="date">April 25, 2017</span>
+      <h2 id="post-title"></h2>
+      <p id="post-description"></p>
+      <p id="post-content"></p>
+    </header>
+    <a href="#" class="image main"
+      ><img src="images1/pic01.jpg" alt="" id="post-image"
+    /></a>
+    <!-- <ul class="actions special">
+      <li><a href="#" class="button large">Full Story</a></li>
+    </ul> -->
+  </article>
+
+  <!-- Footer -->
+  <footer>
+    <!-- Pagination -->
+    <div class="pagination">
+      Post: <span id="page" class="pages"></span>
+      <a class="button next" id="btn_prev" href="javascript:prevPage()"
+        >Previous post</a
+      >
+
+      <a class="button next" id="btn_next" href="javascript:nextPage()"
+        >Next post</a
+      >
+    </div>
+  </footer>
+</div>
+
+{{element->footer.html}}

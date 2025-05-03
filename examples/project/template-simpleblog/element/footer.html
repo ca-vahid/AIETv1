@@ -1,0 +1,28 @@
+
+    </div><!-- /.entry-wrapper -->
+  </article>
+</div><!-- /#main -->
+
+<div class="footer-wrapper">
+  <footer role="contentinfo" class="entry-wrapper">
+<span>{{instance->footer}}</span>
+
+<div class="social-icons">
+	{{instance->social}}
+</div><!-- /.social-icons -->
+
+  </footer>
+</div><!-- /.footer-wrapper -->
+{{hook->custom}}
+<script type="text/javascript">
+  var BASE_URL = "{{instance->url}}/";
+</script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="/blog/js/scripts.min.js"></script>
+{{hook->footer}}
+<div style="position:fixed;bottom:5px;right:20px;">
+	<a href="/">EN</a> / <a href="/es">ES</a> / <a href="/fr">FR</a>
+</div>
+</body>
+</html>

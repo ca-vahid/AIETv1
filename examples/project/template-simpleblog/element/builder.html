@@ -1,0 +1,36 @@
+<!doctype html>
+<!--[if lt IE 7]><html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if (IE 7)&!(IEMobile)]><html class="no-js lt-ie9 lt-ie8" lang="en"><![endif]-->
+<!--[if (IE 8)&!(IEMobile)]><html class="no-js lt-ie9" lang="en"><![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"><!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<title>{{meta->title}}</title>
+<!-- Twitter Cards -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{meta->twitter.title}}">
+<meta name="twitter:description" content="{{meta->twitter.description}}">
+<meta name="twitter:site" content="{{meta->twitter.site}}">
+<meta name="twitter:image" content="{{meta->twitter.image}}">
+{{hook->meta}}
+<!-- Open Graph -->
+<meta property="og:locale" content="{{meta->og.locale}}">
+<meta property="og:type" content="{{meta->og.type}}">
+<meta property="og:title" content="{{meta->og.title}}">
+<meta property="og:url" content="{{meta->og.url}}">
+<meta property="og:site_name" content="{{meta->og.name}}">
+<meta property="og:description" content="{{meta->og.description}}">
+<!-- Meta -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="cleartype" content="on">
+<meta name="description" content="{{meta->description}}">
+<!-- Icons -->
+<link rel="shortcut icon" href="{{meta->favicon}}">
+{{builder->style}}
+</head>
+<body>
+{{builder->content}}
+</body>
+</html>

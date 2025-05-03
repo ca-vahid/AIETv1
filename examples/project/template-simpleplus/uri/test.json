@@ -1,0 +1,1 @@
+{"id":"test","title":"Test category","description":"Category","uri":"/category/([a-z]+)","tpl":"category.html","type":"text/html","image":"","indexed":"no"}

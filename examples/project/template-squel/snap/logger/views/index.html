@@ -1,0 +1,75 @@
+<h2>Realtime log</h2>
+Max lines: <input id="max" type="number" onchange="updateNumber()" value="100">
+<div id="log"></div>
+<style>
+#log{
+	display:flex;
+	flex-direction:column-reverse;
+}
+p{
+	margin:0;
+}
+.log {
+	color: blue;
+}
+.error {
+	color: orange;
+}
+.exception {
+	color: red;
+}
+</style>
+<script>
+var logText = document.getElementById("log");
+var _protocol = "ws:";
+if(window.location.protocol == "https:")
+{
+	_protocol = "wss:";
+}
+var log = new WebSocket(_protocol + "//" + window.location.host + "/{{TOKEN}}");
+
+function updateNumber()
+{
+	var lines = document.getElementsByClassName("line");
+	var arrayOfLines = Array.from(lines);
+	arrayOfLines.splice(-parseInt(document.getElementById("max").value));
+	arrayOfLines.forEach(function(el)
+	{
+		el.remove();
+	});
+}
+
+log.onmessage = function (event)
+{
+    try
+    {
+        var _json = JSON.parse(event.data);
+		var _newLog = "<p class='line'>" + new Date().toString().split(" ").slice(0, 5).join(" ") + " - " + "<span class='" + _json.type + "'>";
+		for(var i = 0; i < _json.data.length; i++)
+		{
+			if(typeof _json.data[i] == "object")
+			{
+				_json.data[i] = JSON.stringify(_json.data[i]);
+			}
+			if(i > 0) _newLog += " ";
+			 _newLog += _json.data[i];
+		}
+		_newLog += "</span></p>";
+		logText.innerHTML += _newLog;
+		var lines = document.getElementsByClassName("line");
+		var arrayOfLines = Array.from(lines);
+		arrayOfLines.splice(-parseInt(document.getElementById("max").value));
+		arrayOfLines.forEach(function(el)
+		{
+			el.remove();
+		});
+	}
+	catch(e){console.log(e);}
+}
+
+log.onclose = function()
+{
+	document.getElementById("log").innerHTML += "<p>SOCKET CLOSED</p>";
+}
+
+</script>

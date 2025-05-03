@@ -1,0 +1,156 @@
+</br>
+<div id="message">
+	<p style="color:red;" id="error"></p>
+	<p style="color:green;" id="success"></p>
+</div>
+<div id="cloneDiv">
+<h3>Clone</h3>
+<form autocomplete="off" method="POST" enctype="multipart/form-data" id="cloneForm">
+	<select required name="type">
+		<option value="project">Project</option>
+		<option value="snap">Snap</option>
+	</select>
+	<input required name="mode" type="hidden" value="clone">
+	<input required name="name" placeholder="Name" type="text">
+
+	<input required name="url" placeholder="https://user:pass@github.com/..." type="url">
+
+	<button onclick="wait('cloneForm');">Clone</button>
+
+</form>
+</div>
+</br>
+<div id="pullDiv">
+<h3>Pull</h3>
+<form autocomplete="off" method="POST" enctype="multipart/form-data" id="submitForm">
+	<select onchange="getNames();" required name="type" id="type">
+		<option value="project">Project</option>
+		<option value="snap">Snap</option>
+	</select>
+	<input required name="mode" type="hidden" value="pull">
+	
+	<select required name="name" id="name">
+	</select>
+
+	<button onclick="wait('submitForm');" id="pull">Pull</button>
+
+</form>
+</div>
+<div id="loader" class="loading"></div>
+
+<style>
+	.loading
+	{
+		display:none;
+		margin:auto;
+		margin-top:50px;
+		width: 1.5em;
+		height: 1.5em;
+		border-radius: 50%;
+		box-shadow:
+		0 -3em rgba(100, 100, 100, 1),
+		2.25em -2.25em rgba(100, 100, 100, 0.875),
+		3em 0 rgba(100, 100, 100, 0.75),
+		2.25em 2.25em rgba(100, 100, 100, 0.625),
+		0 3em rgba(100, 100, 100, 0.5),
+		-2.25em 2.25em rgba(100, 100, 100, 0.375),
+		-3em 0 rgba(100, 100, 100, 0.25),
+		-2.25em -2.25em rgba(100, 100, 100, 0.125);
+		animation: spin 1.2s linear infinite;
+	}
+
+	@keyframes spin
+	{
+	  100% { transform: rotate(-360deg) }
+	}
+</style>
+
+
+<script>
+	function wait(_id)
+	{
+		document.getElementById("message").style.display = "none";
+		document.getElementById("cloneDiv").style.display = "none";
+		document.getElementById("pullDiv").style.display = "none";
+		document.getElementById("loader").style.display = "inherit";
+		document.getElementById(_id).submit();
+	}
+	function parseURL(url) 
+	{
+		const parser = document.createElement('a');
+		const searchObject = {};
+		parser.href = url;
+		const queries = parser.search.replace(/^\?/, '').split('&');
+		for (let i = 0; i < queries.length; i++) 
+		{
+			const split = queries[i].split('=');
+			searchObject[split[0]] = split[1];
+		}
+		return {
+			protocol: parser.protocol,
+			host: parser.host,
+			hostname: parser.hostname,
+			port: parser.port,
+			pathname: parser.pathname,
+			search: parser.search,
+			searchObject: searchObject,
+			hash: parser.hash
+		};
+	}
+	
+	var _url = parseURL(document.location.href);
+	if(_url.searchObject.error)
+	{
+		document.getElementById("error").innerText = decodeURI(_url.searchObject.error);
+	}
+	if(_url.searchObject.success)
+	{
+		document.getElementById("success").innerText = decodeURI(_url.searchObject.success);
+	}
+	
+	function getNames()
+	{
+		var _type = document.getElementById("type").value;
+		var _button = document.getElementById("pull");
+		
+		fetch("?target=" + _type)
+		.then(function(_response)
+		{
+			return _response.json();
+		})
+		.then(function(_result)
+		{
+			if(_result && _result.code == 0)
+			{
+				var nameList = document.getElementById("name");
+				
+				nameList.innerHTML = "";
+				nameList.disabled = false;
+				_button.disabled = false;
+				
+				if(_result.data.length < 1)
+				{
+				
+					var option = document.createElement("option");
+					option.value = "None";
+					option.text = "None";
+					nameList.appendChild(option);
+					nameList.disabled = true;
+					_button.disabled = true;
+				}
+				else
+				{
+					for(var k = 0; k < _result.data.length; k++)
+					{
+						var option = document.createElement("option");
+						option.value = _result.data[k];
+						option.text = _result.data[k];
+
+						nameList.appendChild(option);
+					}
+				}
+			}
+		});
+	}
+	getNames();
+</script>

@@ -1,0 +1,9 @@
+<footer class="entry-meta">
+  <img src="{{author->image}}" class="bio-photo" alt="Picture of {{author->name}}" title="{{author->name}}">
+  <span class="author vcard">By <span class="fn">{{author->name}}</span></span>
+  <span class="entry-date date published"><time datetime="{{author->date.timestamp}}"><i class="fa fa-calendar-o"></i> {{author->date.string}}</time></span>
+  {{author->link}}
+  <div>
+  {{hook->left.column}}
+  </div>
+</footer>

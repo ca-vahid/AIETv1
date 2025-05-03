@@ -1,0 +1,44 @@
+<body>
+		<div id="page-wrapper">
+
+			<!-- Header -->
+				<section id="header">
+					<div class="container">
+						<div class="row">
+							<div class="col-12">
+
+								<!-- Logo -->
+									<h1>   <a href="{{header->url}}/{{locale}}" role="link" aria-label="home_logo" rel="home" title="{{header->title}}" class="ui-section-header--logo"><img src="{{header->logo.url}}" title="{{header->logo.title}}" alt="{{header->logo.title}} logo" style="display:inline-block;width:70px;{{header->logo.style}}"></a></h1>
+
+								<!-- Nav -->
+									<nav id="nav">
+										{{instance->menu}}
+										<a href="threecolumn">Three Column</a>
+										<a href="twocolumn1">Two Column #1</a>
+										<a href="twocolumn2">Two Column #2</a>
+										<a href="onecolumn">One Column</a>
+									</nav>
+
+							</div>
+						</div>
+					</div>
+					<div id="banner">
+						<div class="container">
+							<div class="row">
+								<div class="col-6 col-12-medium">
+
+									<!-- Banner Copy -->
+										<p>{{header->subtitle}}</p>
+										<a href="#" class="button-large">Go on, click me!</a>
+
+								</div>
+								<div class="col-6 col-12-medium imp-medium">
+
+									<!-- Banner Image -->
+										<a href="#" class="bordered-feature-image"><img src="images118/banner.jpg" alt="" /></a>
+
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>

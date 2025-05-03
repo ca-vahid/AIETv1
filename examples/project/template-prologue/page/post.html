@@ -1,0 +1,34 @@
+{{element->meta.html}}
+{{element->header.html}}
+
+{{post->hero}}
+<!-- Main -->
+	<div class="bottom">
+
+					<!-- Social Icons -->
+						<ul class="icons">
+							{{instance->social}}
+						
+						</ul>
+
+				</div>
+
+			</div>
+			<div id="main">
+<section id="portfolio" class="two">
+						<div class="container">
+<section class="ui-section-testimonial">
+	<div class="ui-layout-container">
+		{{post->content}}
+		{{hook->footer.blog.top}}
+	</div>
+</section>
+</div>
+</section>
+</div>
+{{hook->footer.blog.bottom}}
+ 
+
+{{hook->post.end}}
+
+{{element->footer.html}}

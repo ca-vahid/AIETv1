@@ -1,0 +1,33 @@
+<body class="index is-preload">
+		<div id="page-wrapper">
+
+			<!-- Header -->
+				<header id="header" class="alt">
+					<h1 id="logo"><a href="{{header->url}}/{{locale}}" role="link" aria-label="home_logo" rel="home" title="{{header->title}}" class="ui-section-header--logo"><img src="{{header->logo.url}}" title="{{header->logo.title}}" alt="{{header->logo.title}} logo" style="display:inline-block;width:40px;{{header->logo.style}}">{{header->title}}</a></h1>
+					<nav id="nav">
+						<ul>
+							<li class="current"><a href="{{header->url}}">Welcome</a></li>
+							<li class="submenu">
+								<a href="#">Layouts</a>
+								<ul>
+								    <li>{{instance->menu}}</li>
+									<li><a href="left-sidebar">Left Sidebar</a></li>
+									<li><a href="right-sidebar">Right Sidebar</a></li>
+									<li><a href="no-sidebar">No Sidebar</a></li>
+									<li><a href="contact">Contact</a></li>
+									<li class="submenu">
+										<a href="#">Submenu</a>
+										<ul>
+											<li><a href="#">Dolore Sed</a></li>
+											<li><a href="#">Consequat</a></li>
+											<li><a href="#">Lorem Magna</a></li>
+											<li><a href="#">Sed Magna</a></li>
+											<li><a href="#">Ipsum Nisl</a></li>
+										</ul>
+									</li>
+								</ul>
+							</li>
+							<li><a href="#" class="button primary">Sign Up</a></li>
+						</ul>
+					</nav>
+				</header>

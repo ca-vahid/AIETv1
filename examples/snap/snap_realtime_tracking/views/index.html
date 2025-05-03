@@ -1,0 +1,36 @@
+<h2>Realtime Tracking</h2>
+
+<div >Connected: <span style="font-size:50px;" id="number"></span></div>
+
+<script>
+var numberDiv = document.getElementById("number");
+var _protocol = "ws:";
+if(window.location.protocol == "https:")
+{
+	_protocol = "wss:";
+}
+var rt = new WebSocket(_protocol + "//" + window.location.host + "/realtime-tracking/admin/endpoint/{{TOKEN}}");
+
+rt.onmessage = function (event)
+{
+    try
+    {
+        var _json = JSON.parse(event.data);
+		if(_json.type == "ping")
+		{
+			rt.send("pong");
+		}
+		else if(_json.type == "stats")
+		{
+			numberDiv.innerText = _json.number;
+		}
+	}
+	catch(e){console.log(e);}
+}
+
+rt.onclose = function()
+{
+	numberDiv.innerHTML = "<p>SOCKET CLOSED</p>";
+}
+
+</script>

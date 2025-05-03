@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="/fortpress_admin_assets/assets/css/dashboard.css"
+      rel="stylesheet"
+    />
+    <title>Server information</title>
+    <style>
+      .gridContainer {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        grid-column-gap: 40px;
+      }
+      .servInfo {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        /* grid-column-gap: 40px; */
+      }
+      .first {
+        grid-column: 1;
+      }
+      .second {
+        grid-column: 2;
+      }
+      .serverInfo {
+        grid-column: 1;
+      }
+      .diskSpace {
+        grid-column: 2;
+        /* justify-items: center */
+      }
+      .memoryRam {
+        grid-column: 3;
+      }
+      .CPU {
+        grid-column: 4;
+      }
+      .data {
+        color: rgb(38, 66, 224);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="page">
+      <div class="flex-fill">
+        <div class="my-3 my-md-5">
+          <div class="row">
+            <div class="col-lg-12">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Server information</h3>
+                </div>
+              </div>
+
+              <div class="gridContainer">
+                <div class="serverInfo card">
+                  <div class="card-header">
+                    <h4>Server information</h4>
+                  </div>
+                  <div class="card-body servInfo">__SERVER_INFO__</div>
+                </div>
+                <div class="diskSpace card">
+                  <div class="card-header">
+                    <h4>Disk space (GB)</h4>
+                  </div>
+                  <div class="card-body">
+                    <canvas id="diskSpace"></canvas>
+                  </div>
+                </div>
+                <div class="memoryRam card">
+                  <div class="card-header">
+                    <h4>Memory RAM (GB)</h4>
+                  </div>
+                  <div class="card-body">
+                    <canvas id="memoryRam" width="400" height="400"></canvas>
+                  </div>
+                </div>
+                <div class="CPU card">
+                  <div class="card-header">
+                    <h4>CPU (cores %)</h4>
+                  </div>
+                  <canvas id="CPU"></canvas>
+                  <div class="card-body"></div>
+                </div>
+              </div>
+              <button id="update" style="width: 100%" class="btn btn-primary">
+                Update
+              </button>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+       
+      document.querySelector('#update').addEventListener('click', ()=>{
+        
+        location.reload();
+        
+      })
+      const a = async () => {
+        
+        let percentFree = 0;
+        let used = 0;
+        let total = 0;
+        let diskData = [];
+        let diskLabels = ["% total free"];
+
+        //let cpusLabels = []
+        let result = await fetch("?mode=stat").then((result) =>
+          result.json()
+        );
+        console.log(result)
+        result.disk.forEach((disk) => {
+          used += disk._used;
+          total += disk._blocks;
+          percentFree = [parseInt(((used * 100) / total).toFixed(0))];
+          //diskData.push(parseInt(percentFree))
+          diskData.push(parseInt(disk._capacity));
+          diskLabels.push(`'% disk: '${disk._mounted}`);
+        });
+
+        let disks = {
+          type: "doughnut",
+          data: {
+            labels: diskLabels,
+            datasets: [
+              {
+                label: "CPU",
+                data: percentFree.concat(diskData),
+                backgroundColor: [
+                  "rgb(245,245,245)",
+                  "rgb(255, 99, 132)",
+                  "rgb(54, 162, 235)",
+                  "rgb(255, 205, 86)",
+                ],
+                hoverOffset: 4,
+              },
+            ],
+          },
+        };
+        let disk = document.getElementById("diskSpace");
+        
+        let diskChart = new Chart(disk, disks);
+        
+        let ramMem = [result.totalMem, result.usedMem];
+
+        let ctx = document.getElementById("memoryRam");
+        let ramChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: ["Total", "Used"],
+            datasets: [
+              {
+                label: "total RAM",
+                data: ramMem,
+                backgroundColor: [
+                  "rgba(255, 99, 132, 0.2)",
+                  "rgba(54, 162, 235, 0.2)",
+                ],
+                borderColor: ["rgba(255, 99, 132, 1)", "rgba(54, 162, 235, 1)"],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+
+        let cpusLabels = Object.keys(result.cores);
+        let cpusData = Object.values(result.cores);
+
+        let cpu = document.getElementById("CPU");
+        let cpuChart = new Chart(cpu, {
+          type: "polarArea",
+          data: {
+            labels: cpusLabels,
+            datasets: [
+              {
+                label: "My First Dataset",
+                data: cpusData,
+                backgroundColor: [
+                  "rgb(244, 41, 78)",
+                  "rgb(81, 84, 151)",
+                  "rgb(74, 233, 240)",
+                  "rgb(244, 7, 125)",
+                  "rgb(243, 159, 62)",
+                  "rgb(164, 79, 177)",
+                  "rgb(22, 211, 72)",
+                  "rgb(2, 117, 183)",
+                  "rgb(4, 32, 212",
+                  "rgb(34, 107, 86)",
+                  "rgb(189, 132, 124)",
+                  "rgb(209, 66, 24)",
+                  "rgb(136, 173, 63)",
+                  "rgb(102, 166, 156)",
+                  "rgb(217, 204, 214)",
+                ],
+              },
+            ],
+          },
+          options: {},
+        });
+        
+          
+        
+      };
+      a()
+    </script>
+  </body>
+</html>

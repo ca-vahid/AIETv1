@@ -1,0 +1,248 @@
+
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="Content-Language" content="en" />
+    <link rel="icon" href="/fortpress_admin_assets/favicon.ico" type="image/x-icon"/>
+    <link rel="shortcut icon" type="image/x-icon" href="/fortpress_admin_assets/favicon.ico" />
+	
+	
+	
+	<script src="/fortpress_admin_assets/js/base64.js"></script>
+	
+    <title>Dashboard - FORTPRESS</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,300i,400,400i,500,500i,600,600i,700,700i&amp;subset=latin-ext">
+    <script src="/fortpress_admin_assets/assets/js/require.min.js"></script>
+    <script>
+      requirejs.config({
+          baseUrl: '/'
+      });
+	  var DEFAULT_PATH = "/admin/";
+    </script>
+	
+	<!-- Dashboard Core -->
+    <link href="/fortpress_admin_assets/assets/css/dashboard.css" rel="stylesheet" />
+    <script src="/fortpress_admin_assets/assets/js/dashboard.js"></script>
+	
+	<script src="/fortpress_admin_assets/assets/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+	<script src="/fortpress_admin_assets/assets/ace/ext-language_tools.js" type="text/javascript" charset="utf-8"></script>
+	<script src="/fortpress_admin_assets/assets/ace/ext-modelist.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+  <body>
+ 
+ 
+	<div class="card">
+		<div class="card-header">
+			<span id="currentPath" style="padding-right:10px;"></span>
+			<form method="POST" enctype="multipart/form-data">
+				<input type="hidden" id="formPath" name="path" value="">
+				<input id="content" type="hidden" name="content" value="">
+				<button id="saveCode" type="submit" class="btn btn-primary"> <i class="fa fa-save" id="saveicone"></i></button>
+			</form>
+			<button id="delete" onclick="Delete();" class="btn btn-secondary"><i class="fa fa-trash"></i></button>
+			<input class="form-control" placeholder="path/ or file.txt" id="newFile" style="max-width: 250px; margin-left:20px; margin-right:5px;"><button onclick="addFile();" class="btn btn-success"><i class="fa fa-plus"></i></button>
+			<div class="card-options">
+				<button class="btn" onclick="reload()"> <i class="fa fa-repeat"></i></button>
+				<button class="btn" onclick="previous()"> <i class="fa fa-arrow-up"></i></button>
+			</div>
+		</div>
+		<div class="card-body" id="list">
+		
+		</div>
+	</div>
+	
+	<div id="editor"></div>
+	<script>
+		var current = "";
+		var file = "";
+		
+		document.addEventListener('submit', function(e)
+		{
+			document.getElementById("saveicone").setAttribute("class", "fa fa-spinner fa-pulse");
+			document.getElementById("content").value = Base64.encode(EDITOR.getSession().getValue());
+			document.getElementById("formPath").value = Base64.encode(current + file);
+			
+			const form = e.target;
+			fetch(form.action, 
+			{
+				method: form.method,
+				body: new FormData(form)
+			}).then(function() 
+			{ 
+				document.getElementById("saveicone").setAttribute("class", "fa fa-check"); 
+				setTimeout(function()
+				{
+					document.getElementById("saveicone").setAttribute("class", "fa fa-save");
+				}, 5000);
+			});
+
+			e.preventDefault();
+		});
+		window.require(["ace/ace"], function(a) 
+		{
+			window.EDITOR = ace.edit("editor");
+			EDITOR.setTheme("ace/theme/monokai");
+			EDITOR.session.setMode("ace/mode/html");
+			EDITOR.commands.addCommand({
+				name: 'save',
+				bindKey: {win: "Ctrl-S", "mac": "Cmd-S"},
+				exec: function(editor) 
+				{
+					$("#saveCode").click();
+				}
+			});
+			EDITOR.getSession().on('change', function()
+			{
+				document.getElementById("content").value = Base64.encode(EDITOR.getSession().getValue());
+			});
+		});
+		
+		var _buttonDir = "<button class='btn' onclick='getFolder(\"__NAME__\");'> <i style='margin-right:4px;color:orange;' class='fa fa-folder'></i>__NAME__</button>";
+		var _buttonFile = "<button class='btn' onclick='getFile(\"__NAME__\");'> <i style='margin-right:4px;' class='fa fa-file'></i>__NAME__</button>";
+		
+		function getFolder(_path)
+		{
+			document.getElementById("saveCode").disabled = true;
+			
+			try
+			{
+				EDITOR.setValue();
+			}catch(e){};
+			
+			if(_path)
+			{
+				current += _path
+			}
+			
+			if(current[current.length - 1] != "/")
+			{
+				current += "/";
+			}
+			
+			document.getElementById("currentPath").innerText = current;
+			
+			fetch("?dir=" + Base64.encode(current))
+			.then(function(content)
+			{
+				return content.json();
+			})
+			.then(function(list)
+			{
+				var _content = "";
+				for(var i in list)
+				{
+					if(list[i].isDir)
+					{
+						_content += _buttonDir.replace(/__NAME__/g, i);
+					}
+					else if(list[i].isFile)
+					{
+						_content += _buttonFile.replace(/__NAME__/g, i);
+					}
+				}
+				document.getElementById("list").innerHTML = _content;
+			});
+		}
+		
+		function popDir(_path)
+		{
+			var _arr = _path.split('/');
+			_arr.pop();
+			_arr.pop();
+			return( _arr.join('/') );
+		}
+
+		function addFile()
+		{
+			var _new = document.getElementById("newFile");
+			fetch("?create=" + Base64.encode(current + _new.value))
+			.then(function(content)
+			{
+				_new.value = "";
+				reload();
+			})
+		}
+		
+		function previous()
+		{
+			if(current != "./")
+			{
+				current = popDir(current);
+			}
+			getFolder();
+		}
+		
+		function reload()
+		{
+			getFolder();
+		}
+		
+		function Delete()
+		{
+			if (confirm("Do you want to delete: " + document.getElementById("currentPath").innerText + " ?"))
+			{
+			  EDITOR.setValue("");
+				var _path = document.getElementById("currentPath").innerText;
+				if(_path != "./")
+				{
+					fetch("?delete=" + Base64.encode(_path))
+					.then(function(content)
+					{
+						if(_path[_path.length - 1] == "/")
+						{
+							previous();
+						}
+						else
+						{
+							getFolder();
+							document.getElementById("currentPath").innerText = current;
+						}
+					});
+				}
+			}
+			else
+			{
+
+			}
+		}
+		
+		function getFile(_file)
+		{
+			file = _file;
+			document.getElementById("currentPath").innerText = current + _file;
+			document.getElementById("saveCode").disabled = false;
+			fetch("?file=" + Base64.encode(current + _file))
+			.then(function(content)
+			{
+				return content.text();
+			})
+			.then(function(content)
+			{
+				EDITOR.setValue(content);
+				var modelist = require("ace/ext/modelist");
+				var _filetype = modelist.getModeForPath(_file);
+				EDITOR.session.setMode(_filetype.mode);
+				EDITOR.setOptions(
+				{
+					enableBasicAutocompletion: true,
+					enableSnippets: true,
+					enableLiveAutocompletion: true
+				});
+			});
+		}
+		
+		getFolder(".");
+	</script>
+	
+	<style>
+		#editor
+		{ 
+			height:600px;
+			width:99%;
+		}
+	</style>
+  </body>
+</html>

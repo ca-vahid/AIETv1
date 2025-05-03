@@ -1,0 +1,28 @@
+
+<body id="page">
+
+<div class="navigation-wrapper">
+	<nav role="navigation" id="site-nav" class="animated drop">
+	    <ul>
+				{{header->menu}}
+	    </ul>
+	</nav>
+</div><!-- /.navigation-wrapper -->
+
+<!--[if lt IE 9]><div class="upgrade"><strong><a href="http://whatbrowser.org/">Your browser is quite old!</strong> Why not upgrade to a different browser to better enjoy this site?</a></div><![endif]-->
+
+<header class="masthead">
+	<div class="wrap">
+
+  		<a href="{{header->url}}/{{locale}}" class="site-logo" rel="home" title="{{header->title}}"><img src="{{header->logo.url}}" width="200" height="200" title="{{header->logo.title}}" alt="{{header->logo.title}} logo" class="animated fadeInDown" style="{{header->logo.style}}"></a>
+
+      <h1 class="site-title animated fadeIn"><a href="{{header->url}}">{{instance->main_title}}</a></h1>
+		<h2 class="site-description animated fadeIn" itemprop="description">{{header->subtitle}}</h2>
+	</div>
+</header><!-- /.masthead -->
+
+<div class="js-menu-screen menu-screen"></div>
+
+
+<div id="main" role="main">
+  <article class="entry">
