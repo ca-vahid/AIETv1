@@ -7,12 +7,21 @@ import { useState } from 'react';
 import { useTheme } from "@/lib/contexts/ThemeContext";
 
 // Current version of the application
-const APP_VERSION = 'v1.2.0';
+const APP_VERSION = 'v1.2.1';
 // Release date
 const RELEASE_DATE = 'May 3, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.2.1',
+    date: 'May 3, 2025',
+    changes: [
+      'Fixed chat history bug causing unintended deletion of valid drafts',
+      'Fixed text rendering issues with unescaped apostrophes',
+      'Improved theme consistency across various UI elements'
+    ]
+  },
   {
     version: 'v1.2.0',
     date: 'May 3, 2025',
