@@ -6,12 +6,24 @@ import { signOut } from '@/lib/firebase/firebaseUtils';
 import { useState } from 'react';
 
 // Current version of the application
-const APP_VERSION = 'v1.0';
+const APP_VERSION = 'v1.1.0';
 // Release date
-const RELEASE_DATE = 'May 3, 2025';
+const RELEASE_DATE = 'May 10, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.1.0',
+    date: 'May 10, 2025',
+    changes: [
+      'Improved UI for better user experience',
+      'Moved "My Requests" from header to home page',
+      'Added request statistics and status breakdown on home page',
+      'Enhanced chat history filtering to hide empty conversations',
+      'Fixed index creation error handling',
+      'Improved error handling for undefined values'
+    ]
+  },
   {
     version: 'v1.0',
     date: 'May 3, 2025',
@@ -35,11 +47,11 @@ function ChangelogModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-        <div className="p-4 border-b flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Changelog</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+      <div className="theme-panel rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+        <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-white">Changelog</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -50,10 +62,10 @@ function ChangelogModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           {CHANGELOG.map((release, index) => (
             <div key={index} className={index > 0 ? "mt-6" : ""}>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-blue-700">{release.version}</h3>
-                <span className="text-sm text-gray-500">({release.date})</span>
+                <h3 className="text-lg font-semibold text-blue-400">{release.version}</h3>
+                <span className="text-sm text-slate-400">({release.date})</span>
               </div>
-              <ul className="mt-2 space-y-1 list-disc list-inside text-gray-700">
+              <ul className="mt-2 space-y-1 list-disc list-inside text-slate-300">
                 {release.changes.map((change, idx) => (
                   <li key={idx} className="text-sm">{change}</li>
                 ))}
@@ -62,7 +74,7 @@ function ChangelogModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           ))}
         </div>
         
-        <div className="p-4 border-t">
+        <div className="p-4 border-t border-slate-700">
           <button 
             onClick={onClose}
             className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
@@ -89,52 +101,41 @@ export default function AppHeader() {
     }
   };
 
-  const handleRefreshProfileData = () => {
-    window.location.href = '/?refresh=true';
-  };
-
   return (
     <>
-      <header className="bg-white shadow-sm sticky top-0 z-10">
+      <header className="theme-panel-light shadow-md sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center">
-            <Link href="/" className="text-2xl font-bold text-blue-700 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-2 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+            <Link href="/" className="text-2xl font-bold text-blue-400 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-2 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
               </svg>
               AIET Intake Portal
             </Link>
             <button 
               onClick={() => setChangelogOpen(true)}
-              className="ml-3 text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition"
+              className="ml-3 text-xs px-2 py-1 bg-blue-900 text-blue-300 rounded hover:bg-blue-800 transition"
             >
               {APP_VERSION}
             </button>
           </div>
           
           <div className="flex items-center gap-4">
-            <button
-              onClick={handleRefreshProfileData}
-              className="text-sm text-blue-600 underline hover:text-blue-800 transition"
-            >
-              Refresh Profile Data
-            </button>
-            
             {isLoggedIn ? (
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600 hidden sm:inline">
+                <span className="text-sm text-slate-300 hidden sm:inline">
                   Hello, {profile.name.split(' ')[0]}
                 </span>
                 {profile.photoUrl && (
                   <img 
                     src={profile.photoUrl} 
                     alt={profile.name}
-                    className="w-8 h-8 rounded-full border border-gray-200 shadow-sm object-cover hidden sm:block"
+                    className="w-8 h-8 rounded-full border border-slate-600 shadow-sm object-cover hidden sm:block"
                   />
                 )}
                 <button
                   onClick={handleSignOut}
-                  className="text-sm text-red-600 hover:text-red-800 transition flex items-center gap-1"
+                  className="text-sm text-red-400 hover:text-red-300 transition flex items-center gap-1"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
