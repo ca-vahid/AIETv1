@@ -1,0 +1,8 @@
+The background image needs to be saved to this directory as bg.jpg or bg.png. 
+
+Since I can't directly download the attached image, please:
+1. Save the image you shared with us to this directory as bg.jpg
+2. Make sure it's named exactly as "bg.jpg" or "bg.png"
+3. If it's already in a different format, you may need to convert it first
+
+After saving the image, you can delete this text file. 

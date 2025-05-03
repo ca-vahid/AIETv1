@@ -62,16 +62,18 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     }
   }, []);
 
-  // Start a new chat session if needed
+  // Load existing conversation if ID is provided, otherwise start a new one
   useEffect(() => {
-    if (!chatId && profile) {
+    if (conversationId) {
+      loadExistingConversation(conversationId);
+    } else if (!chatId && profile) {
       startNewChat();
     }
-  }, [chatId, profile]);
+  }, [conversationId, chatId, profile]);
 
-  // Initialize with welcome message if no messages
+  // Initialize with welcome message if no messages and no ID provided
   useEffect(() => {
-    if (messages.length === 0) {
+    if (messages.length === 0 && !conversationId) {
       setMessages([
         {
           id: "welcome",
@@ -81,7 +83,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         },
       ]);
     }
-  }, [profile]);
+  }, [profile, conversationId, messages.length]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -111,6 +113,77 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       setChatId(data.conversationId);
     } catch (error) {
       console.error("Error starting chat:", error);
+    }
+  };
+
+  /**
+   * Loads an existing conversation by ID
+   */
+  const loadExistingConversation = async (id: string) => {
+    try {
+      setIsLoading(true);
+      
+      if (!firebaseUser) {
+        throw new Error("Not authenticated");
+      }
+      
+      // Set the chat ID
+      setChatId(id);
+      
+      // Get the ID token
+      const idToken = await getIdToken(firebaseUser);
+      
+      // Load existing conversation
+      const response = await fetch(`/api/chat/load?id=${id}`, {
+        headers: {
+          "Authorization": `Bearer ${idToken}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load conversation");
+      }
+
+      const data = await response.json();
+      
+      // Convert Firebase messages to our format
+      const loadedMessages = data.conversation.messages.map((message: any) => ({
+        id: `${message.role}-${message.timestamp}`,
+        role: message.role,
+        content: message.content,
+        timestamp: message.timestamp
+      }));
+      
+      // Set the messages in state
+      setMessages(loadedMessages);
+      
+      // Set model if a thinking model was used
+      if (data.conversation.state.useThinkingModel) {
+        setUseThinkingModel(true);
+        setCurrentModel("thinking");
+      }
+      
+      console.log("Loaded conversation with", loadedMessages.length, "messages");
+      
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+      // If loading fails, initialize with welcome message
+      setMessages([
+        {
+          id: "error",
+          role: "system",
+          content: "There was an error loading the previous conversation. Let's start a new one.",
+          timestamp: Date.now(),
+        },
+        {
+          id: "welcome",
+          role: "assistant",
+          content: `Hello${profile ? ` ${profile.name}` : ""}! I'm the AIET Intake Assistant. I can help you submit tasks for automation. What task would you like help with today?`,
+          timestamp: Date.now(),
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -239,31 +312,34 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   };
 
   return (
-    <div className="flex flex-col bg-white h-full rounded-lg shadow-lg border border-gray-100 overflow-hidden">
+    <div className="flex flex-col bg-slate-800/40 backdrop-blur-sm h-full rounded-xl shadow-xl overflow-hidden">
       {/* Chat header */}
-      <div className="p-3 bg-blue-600 flex items-center justify-between text-white">
+      <div className="py-2 px-4 bg-blue-700/90 flex items-center justify-between text-white flex-shrink-0">
         <div className="flex items-center">
-          <div className="bg-white rounded-full w-9 h-9 flex items-center justify-center mr-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+          <div className="bg-blue-900 rounded-full w-8 h-8 flex items-center justify-center mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-300" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
             </svg>
           </div>
-          <div className="flex-1">
-            <p className="text-xs text-white/80">
+          <div className="flex-1 group relative">
+            <span className="text-xs text-white/80 hidden group-hover:inline-block">
               {chatId ? `Conversation #${chatId.substring(0, 8)}` : "Starting new conversation..."}
-            </p>
+            </span>
+            <span className="text-xs text-white/80 group-hover:hidden">
+              AIET Intake Chat
+            </span>
           </div>
         </div>
         
         <div className="flex items-center">
-          <div className="flex items-center mr-3">
-            <span className="text-xs mr-2 whitespace-nowrap">
-              {currentModel ? `Using: ${currentModel.includes("thinking") ? "Advanced" : "Standard"}` : "Model: Standard"}
+          <div className="flex items-center">
+            <span className="text-xs mr-2 whitespace-nowrap text-white/80">
+              {currentModel ? `${currentModel.includes("thinking") ? "Advanced" : "Standard"}` : "Standard"}
             </span>
             <button 
               onClick={toggleModel}
               className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 ${
-                useThinkingModel ? 'bg-blue-400' : 'bg-gray-400'
+                useThinkingModel ? 'bg-blue-400' : 'bg-slate-600'
               }`}
             >
               <span className="sr-only">Toggle thinking model</span>
@@ -278,13 +354,13 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       </div>
 
       {/* Messages container */}
-      <div className="flex-1 overflow-y-auto py-4 px-4 space-y-4 bg-gray-50/50">
+      <div className="flex-1 overflow-y-auto py-6 px-6 space-y-6 bg-slate-800/30">
         {messages.map((message) => (
           <div key={message.id} className="flex items-end">
             <div className={`flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}>
               {message.role !== "user" && (
                 <div className="flex-shrink-0 mr-2 mb-1">
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
                       <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
@@ -298,10 +374,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 <div 
                   className={`px-4 py-3 rounded-2xl ${
                     message.role === "user" 
-                      ? "bg-blue-600 text-white" 
+                      ? "bg-blue-600/80 text-white shadow-md" 
                       : message.role === "system"
-                      ? "bg-yellow-50 border border-yellow-200 text-yellow-800"
-                      : "bg-white shadow-sm border border-gray-100 text-gray-800"
+                      ? "bg-yellow-900/70 border border-yellow-700 text-yellow-100 shadow-md"
+                      : "bg-slate-800/60 shadow-md border border-slate-600 text-white"
                   }`}
                 >
                   <div 
@@ -317,7 +393,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                 {/* Time stamp - appears on hover */}
                 <div 
                   className={`absolute bottom-0 ${message.role === "user" ? "right-0 translate-y-5" : "left-0 translate-y-5"} 
-                    opacity-0 group-hover:opacity-100 text-xs text-gray-400 transition-opacity duration-200 pointer-events-none`}
+                    opacity-0 group-hover:opacity-100 text-xs text-slate-400 transition-opacity duration-200 pointer-events-none`}
                 >
                   {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
@@ -329,11 +405,11 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                     <img 
                       src={profile.photoUrl} 
                       alt={profile.name || "User"}
-                      className="w-8 h-8 rounded-full border border-gray-200 shadow-sm object-cover"
+                      className="w-8 h-8 rounded-full border border-slate-600 shadow-md object-cover"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shadow-sm">
-                      <span className="text-sm font-semibold text-blue-700">
+                    <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center shadow-md">
+                      <span className="text-sm font-semibold text-blue-300">
                         {profile?.name?.charAt(0).toUpperCase() || "U"}
                       </span>
                     </div>
@@ -349,14 +425,14 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           <div className="flex w-full justify-start">
             <div className="flex items-end">
               <div className="flex-shrink-0 mr-2 mb-1">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
                     <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
                   </svg>
                 </div>
               </div>
-              <div className="max-w-[80%] px-5 py-3 rounded-2xl bg-white shadow-sm border border-gray-100">
+              <div className="max-w-[80%] px-5 py-3 rounded-2xl bg-slate-800/60 shadow-md border border-slate-600">
                 <div className="flex items-center space-x-1">
                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: "300ms" }}></div>
@@ -372,12 +448,12 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       </div>
 
       {/* Input area */}
-      <div className="border-t p-3 bg-white">
+      <div className="border-t border-slate-600 p-4 bg-slate-800/50 flex-shrink-0">
         <div className="flex items-center space-x-2">
-          <div className="flex-1 border rounded-full border-gray-200 bg-white overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+          <div className="flex-1 border rounded-full border-slate-600 bg-slate-800/80 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
             <textarea
               ref={inputRef}
-              className="w-full px-4 py-2.5 focus:outline-none bg-transparent resize-none text-sm"
+              className="w-full px-4 py-2.5 focus:outline-none bg-transparent resize-none text-sm text-white"
               placeholder="Type your message..."
               value={input}
               onChange={(e) => {
@@ -390,7 +466,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             />
           </div>
           <button
-            className={`bg-blue-600 text-white rounded-full p-2.5 h-11 w-11 flex items-center justify-center flex-shrink-0 shadow-sm hover:shadow-md hover:bg-blue-700 transition-all ${
+            className={`bg-blue-600 text-white rounded-full p-2.5 h-11 w-11 flex items-center justify-center flex-shrink-0 shadow-md hover:shadow-lg hover:bg-blue-700 transition-all ${
               !input.trim() || !chatId
                 ? "opacity-50 cursor-not-allowed"
                 : ""

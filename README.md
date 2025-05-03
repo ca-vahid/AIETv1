@@ -1,4 +1,4 @@
-# AIET Intake Portal (v1.0)
+# AIET Intake Portal (v1.2.0)
 
 A modern, AI-powered intake portal for BGC Engineering employees to submit automation requests. This application enables seamless communication between staff and the AI Efficiency Team (AIET) to identify and prioritize automation opportunities.
 
@@ -8,6 +8,7 @@ A modern, AI-powered intake portal for BGC Engineering employees to submit autom
 
 - **Azure AD Authentication**: Seamless single sign-on with corporate Microsoft accounts
 - **Profile Integration**: Auto-populates user information from Microsoft Graph API
+- **Dark/Light Mode**: Theme switcher with system preference detection 
 - **Modern Chat Interface**: Intuitive, streaming chat experience with the AI assistant
 - **Rich Text Formatting**: Support for markdown-style formatting in chat messages
 - **AI Model Selection**: Choose between standard (fast) and advanced (thinking) Gemini AI models
@@ -113,6 +114,22 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is proprietary software owned by BGC Engineering Inc.
 
 ## Changelog
+
+### v1.2.0 (May 3, 2025)
+- Added Dark/Light mode toggle with system preference detection
+- Improved color schemes and contrast in both light and dark modes
+- Enhanced UI styling for better readability and visual consistency
+- Updated button colors and styling for better accessibility
+- Improved text contrast in chat interface
+- Various UI refinements and performance improvements
+
+### v1.1.0 (May 3, 2025)
+- Improved UI for better user experience
+- Moved "My Requests" from header to home page
+- Added request statistics and status breakdown on home page
+- Enhanced chat history filtering to hide empty conversations
+- Fixed index creation error handling
+- Improved error handling for undefined values
 
 ### v1.0 (May 3, 2025)
 - Initial release of the AIET Intake Portal

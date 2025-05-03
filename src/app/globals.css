@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap');
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
@@ -16,18 +18,254 @@
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+html, body {
+  height: 100%;
+  min-height: 100vh;
+  font-family: 'Inter Tight', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
 }
 
+/* ---------- Background & Overlay ---------- */
+body {
+  color: rgb(var(--foreground-rgb));
+  background-image: url('/background/bg-light.png'); /* Default light background */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  position: relative;
+  transition: background-image 0.3s ease;
+}
+
+/* Light overlay (subtle) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.35);
+  z-index: -1;
+  transition: background 0.3s ease;
+}
+
+/* Dark mode background & overlay */
+html.dark body {
+  background-image: url('/background/bg.png');
+}
+
+html.dark body::before {
+  background: rgba(20, 30, 50, 0.6);
+}
+
+/* ---------- Utility Layer ---------- */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* Custom theme colors for components */
+.theme-panel {
+  @apply bg-slate-800/70 backdrop-blur-md border border-slate-700 ring-1 ring-white/5 text-white;
+}
+
+.theme-panel-light {
+  @apply bg-slate-700/60 backdrop-blur-md border border-slate-600 ring-1 ring-white/5 text-white;
+}
+
+/* Light mode variants */
+html.light .theme-panel,
+.theme-panel-light { /* light variant uses same as panel-light maybe adjust later */
+  @apply bg-white/60 backdrop-blur-md border border-slate-200 ring-1 ring-black/5 text-slate-900;
+}
+
+html.light .theme-panel-light {
+  @apply bg-white/40 backdrop-blur-md border border-slate-200 ring-1 ring-black/5 text-slate-900;
+}
+
+html.dark .theme-panel,
+html.dark .theme-panel-light {
+  /* Use original dark styles (already applied above) */
+}
+
+/* Fix for darker theme-panel-light in dark mode */
+html.dark .theme-panel-light {
+  @apply bg-slate-800/80 backdrop-blur-md border border-slate-700 ring-1 ring-white/5 text-white;
+}
+
+.theme-input {
+  @apply bg-slate-700/80 border-slate-600 text-white placeholder:text-slate-400;
+}
+
+html.light .theme-input {
+  @apply bg-white/80 border-slate-300 text-slate-900 placeholder:text-slate-500;
+}
+
+.theme-button-primary {
+  @apply bg-blue-600 hover:bg-blue-700 text-white transition-shadow hover:shadow-lg hover:shadow-cyan-300/30;
+}
+
+html.light .theme-button-primary {
+  @apply bg-blue-600 hover:bg-blue-700 text-white;
+}
+
+.theme-text-light {
+  @apply text-slate-200;
+}
+
+html.light .theme-text-light {
+  @apply text-slate-700;
+}
+
+.theme-text-muted {
+  @apply text-slate-400;
+}
+
+html.light .theme-text-muted {
+  @apply text-slate-500;
+}
+
+/* ---------------------------------------------------------- */
+/* Light mode overrides for legacy dark-theme utility classes */
+/* ---------------------------------------------------------- */
+/*
+   Many existing components hard-code the Tailwind class `text-white` (and
+   opacity variants like `text-white/80`) because the original theme was
+   designed solely for a dark UI.  Rather than refactoring every component,
+   we override those utilities **only when the <html> element has the `light`
+   class**.  This ensures good contrast on the light background while keeping
+   backwards-compatibility with the current markup.
+*/
+html.light [class~="text-white"] { color: #0f172a !important; }
+
+html.light [class*="text-white\\/80"] { color: rgba(15, 23, 42, 0.80) !important; }
+html.light [class*="text-white\\/70"] { color: rgba(15, 23, 42, 0.70) !important; }
+html.light [class*="text-white\\/60"] { color: rgba(15, 23, 42, 0.60) !important; }
+html.light [class*="text-white\\/50"] { color: rgba(15, 23, 42, 0.50) !important; }
+html.light [class*="text-white\\/30"] { color: rgba(15, 23, 42, 0.30) !important; }
+html.light [class*="text-white\\/20"] { color: rgba(15, 23, 42, 0.20) !important; }
+
+/* Same logic for `fill-white` used by inline SVG icons */
+html.light [class~="fill-white"],
+html.light svg.fill-white { fill: #0f172a !important; }
+
+/* Light mode text overrides for hero section and status displays */
+html.light h2[class*="text-white"],
+html.light h3[class*="text-white"] { color: #1e293b !important; }
+
+html.light p[class*="text-[#d1e4f1]"] { color: #334155 !important; }
+
+html.light [class*="text-slate-300"],
+html.light [class*="text-slate-400"] { color: #475569 !important; }
+
+/* Additional light mode overrides for specific UI elements */
+html.light .bg-slate-800\/60 { background-color: rgba(241, 245, 249, 0.8) !important; }
+html.light .bg-blue-900\/50 { background-color: rgba(219, 234, 254, 0.8) !important; }
+
+/* Status indicators in light mode */
+html.light [class*="text-blue-400"] { color: #3b82f6 !important; } /* Brighter blue in light mode */
+html.light [class*="text-blue-300"] { color: #2563eb !important; } /* Darker hover blue in light mode */
+
+/* Light mode overrides for "How It Works" section and cards */
+html.light [class*="border-slate-700"] { border-color: #e2e8f0 !important; }
+html.light [class*="border-slate-600"] { border-color: #e2e8f0 !important; }
+
+/* Light mode styles for the chat interface */
+html.light [class*="bg-slate-800/40"] { background-color: rgba(248, 250, 252, 0.7) !important; }
+html.light [class*="bg-slate-800/30"] { background-color: rgba(248, 250, 252, 0.6) !important; }
+html.light [class*="bg-slate-800/50"] { background-color: rgba(248, 250, 252, 0.8) !important; }
+html.light [class*="bg-slate-800/60"] { background-color: rgba(248, 250, 252, 0.8) !important; }
+html.light [class*="bg-blue-700/90"] { background-color: rgba(59, 130, 246, 0.9) !important; }
+
+/* Chat messages styling */
+html.light [class*="bg-slate-800/60"][class*="border-slate-600"] { 
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Input area styling */
+html.light [class*="border-slate-600"][class*="bg-slate-800/80"] {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Main container background */
+html.light [class="flex-1 bg-gradient-to-b from-slate-900 to-transparent p-4 md:p-6"] {
+  background: linear-gradient(to bottom, rgba(241, 245, 249, 0.7), transparent) !important;
+}
+
+/* Additional chat UI elements in light mode */
+html.light [class*="from-slate-900"] { 
+  background: linear-gradient(to bottom, rgba(241, 245, 249, 0.7), transparent) !important;
+}
+
+/* Back to home link and "back to home" text in top bar */
+html.light [class*="text-blue-400"] { color: #2563eb !important; } /* Darker blue for links in light mode */
+
+/* Chat bubbles */
+html.light [class*="bg-blue-600/80"][class*="text-white"] { /* User message bubbles */
+  background-color: rgba(37, 99, 235, 0.9) !important;
+  color: white !important; /* Keep text white for good contrast */
+}
+
+/* Chat input placeholder */
+html.light textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Fix for highlighted specific UI elements in light mode */
+html.light [class*="bg-blue-900"][class*="text-blue-300"] {
+  background-color: rgba(224, 231, 255, 0.8) !important; /* light indigo bg */
+  color: #1e3a8a !important; /* navy blue text */
+  border: 1px solid #818cf8 !important; /* indigo border */
+}
+
+/* Start Chat with AI Assistant button in light mode */
+html.light .theme-button-primary {
+  background-color: #1e3a8a !important; /* Navy blue */
+  color: white !important; /* Keep text white for readability */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* New Request button in light mode */
+html.light [class*="bg-slate-700"][class*="hover:bg-slate-600"] {
+  background-color: #1e40af !important; /* Darker blue instead of medium blue */
+  color: white !important;
+}
+html.light [class*="bg-slate-700"][class*="hover:bg-slate-600"]:hover {
+  background-color: #1e3a8a !important; /* Navy blue on hover */
+}
+
+/* Make the AIET Intake Portal title navy blue in both modes */
+/* Light mode version (existing) */
+html.light [class*="text-blue-400"] {
+  color: #0f2563 !important; /* Very dark navy blue */
+}
+
+/* Dark mode version (new) */
+html.dark [class*="text-blue-400"] {
+  color:  #afb3b9 !important; /* A more vibrant navy shade for dark mode title that still has contrast */
+}
+
+/* But keep svg icons blue in light mode (existing) */
+html.light svg[class*="text-blue-400"] {
+  color: #3b82f6 !important; /* Restore regular blue for svg icons */
+}
+
+/* Dark mode styling for version badge and Start Chat button */
+/* Version badge in dark mode */
+[class*="bg-blue-900"][class*="text-blue-300"] {
+  background-color: rgba(15, 23, 42, 0.8) !important; /* Darker navy background */
+  color: #93c5fd !important; /* Light blue text for readability in dark mode */
+  border: 1px solid #1e40af !important; /* Medium blue border */
+}
+
+/* Start Chat button in dark mode - make it navy */
+.theme-button-primary {
+  background-color: #1e40af !important; /* Navy blue rather than standard blue */
+  color: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  border-color: #2563eb !important; /* Add a subtle border */
+}
+
+.theme-button-primary:hover {
+  background-color: #1e3a8a !important; /* Darker navy on hover */
 }

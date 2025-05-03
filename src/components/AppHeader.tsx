@@ -4,17 +4,30 @@ import Link from 'next/link';
 import { useSessionProfile } from '@/lib/contexts/SessionProfileContext';
 import { signOut } from '@/lib/firebase/firebaseUtils';
 import { useState } from 'react';
+import { useTheme } from "@/lib/contexts/ThemeContext";
 
 // Current version of the application
-const APP_VERSION = 'v1.1.0';
+const APP_VERSION = 'v1.2.0';
 // Release date
-const RELEASE_DATE = 'May 10, 2025';
+const RELEASE_DATE = 'May 3, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
   {
+    version: 'v1.2.0',
+    date: 'May 3, 2025',
+    changes: [
+      'Added Dark/Light mode toggle with system preference detection',
+      'Improved color schemes and contrast in both light and dark modes',
+      'Enhanced UI styling for better readability and visual consistency',
+      'Updated button colors and styling for better accessibility',
+      'Improved text contrast in chat interface',
+      'Various UI refinements and performance improvements'
+    ]
+  },
+  {
     version: 'v1.1.0',
-    date: 'May 10, 2025',
+    date: 'May 3, 2025',
     changes: [
       'Improved UI for better user experience',
       'Moved "My Requests" from header to home page',
@@ -91,6 +104,7 @@ export default function AppHeader() {
   const { profile, isLoading } = useSessionProfile();
   const isLoggedIn = !!profile;
   const [changelogOpen, setChangelogOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleSignOut = async () => {
     try {
@@ -103,7 +117,7 @@ export default function AppHeader() {
 
   return (
     <>
-      <header className="theme-panel-light shadow-md sticky top-0 z-10">
+      <header className={`${theme === "dark" ? "theme-panel" : "theme-panel-light"} shadow-md sticky top-0 z-10`}>
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center">
             <Link href="/" className="text-2xl font-bold text-blue-400 flex items-center">
@@ -121,6 +135,23 @@ export default function AppHeader() {
           </div>
           
           <div className="flex items-center gap-4">
+            {/* Theme Toggle */}
+            <button
+              aria-label="Toggle dark mode"
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-slate-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {theme === "dark" ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3.75A.75.75 0 0 1 12.75 3h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5A.75.75 0 0 1 12 4.25v-.5zM6.22 5.03a.75.75 0 0 1 1.06 0l.35.35a.75.75 0 0 1-1.06 1.06l-.35-.35a.75.75 0 0 1 0-1.06zM3 11.25A.75.75 0 0 1 3.75 10.5h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5A.75.75 0 0 1 3 12.25v-.5zM6.22 18.97a.75.75 0 0 1 1.06 0l.35-.35a.75.75 0 0 1 1.06 1.06l-.35.35a.75.75 0 0 1-1.06-1.06zM11.25 21a.75.75 0 0 1-.75-.75v-.5a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5zM17.43 18.62a.75.75 0 0 1 0-1.06l.35-.35a.75.75 0 0 1 1.06 1.06l-.35.35a.75.75 0 0 1-1.06 0zM20.25 11.25A.75.75 0 0 1 21 10.5h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1-.75-.75v-.5zM17.43 5.38a.75.75 0 0 1 1.06 0l.35.35a.75.75 0 0 1-1.06 1.06l-.35-.35a.75.75 0 0 1 0-1.06z" />
+                  <path d="M12 6.75a5.25 5.25 0 1 0 5.25 5.25A5.26 5.26 0 0 0 12 6.75Z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-200" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21.752 15.002a9 9 0 0 1-11.807-11.8a.75.75 0 0 0-1.071-.858A10.501 10.501 0 1 0 22.61 16.073a.75.75 0 0 0-.858-1.071Z" />
+                </svg>
+              )}
+            </button>
             {isLoggedIn ? (
               <div className="flex items-center gap-4">
                 <span className="text-sm text-slate-300 hidden sm:inline">
