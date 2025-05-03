@@ -66,22 +66,28 @@ export async function GET(req: NextRequest) {
         // 2. Are still in the init state and have fewer than 2 total messages (just welcome)
         const hasUserMessages = data.messages.some(m => m.role === 'user');
         const isEmptyInitialState = data.state.currentStep === 'init' && data.messages.length < 3;
-        const hasNoMeaningfulContent = !hasUserMessages || (isEmptyInitialState && data.messages.length < 3);
+        const hasNoMeaningfulContent = !hasUserMessages && isEmptyInitialState;
         
         if (hasNoMeaningfulContent) {
           if (shouldCleanup) {
             // Track for cleanup if it's older than 2 hours
             const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000);
             if (data.createdAt < twoHoursAgo) {
-              emptyDraftIds.push(doc.id);
+              // Double-check for any user content before adding to cleanup list
+              const userContent = data.messages.filter(m => m.role === 'user').map(m => m.content.trim()).join('');
+              if (!userContent) {
+                emptyDraftIds.push(doc.id);
+                console.log(`Marking draft ${doc.id} for cleanup - No user messages, init state, ${data.messages.length} msgs`);
+              }
             }
           }
           return; // Skip this conversation
         }
         
-        // Get first user message as preview
-        const firstUserMessage = data.messages.find(m => m.role === 'user');
-        const previewText = firstUserMessage?.content || "No message content";
+        // Get the task description if available, otherwise use first user message
+        const previewText = data.state?.collectedData?.processDescription || 
+                          data.messages.find(m => m.role === 'user')?.content || 
+                          "No message content";
         const truncatedPreview = previewText.length > 100 
           ? `${previewText.substring(0, 100)}...` 
           : previewText;
