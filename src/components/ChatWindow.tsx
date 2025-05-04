@@ -425,6 +425,17 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     }
   };
 
+  // Auto-submit quick commands: when decisionMode is on and user types 'submit' or 'deeper', send automatically
+  useEffect(() => {
+    if (!decisionMode) return;
+    const trimmed = input.trim().toLowerCase();
+    if (/\b(submit|done|finish|send)\b/i.test(trimmed)) {
+      sendQuickCommand('submit');
+    } else if (/\b(deep(er)?|more|details)\b/i.test(trimmed)) {
+      sendQuickCommand('go deeper');
+    }
+  }, [input, decisionMode]);
+
   // Remove filtering: display all messages by default
   const visibleMessages = messages;
 
