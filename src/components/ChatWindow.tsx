@@ -49,6 +49,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [currentModel, setCurrentModel] = useState<string>("");
   const [useThinkingModel, setUseThinkingModel] = useState<boolean>(false);
+  const [decisionMode, setDecisionMode] = useState(false);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -284,6 +285,11 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           )
         );
       }
+
+      // After full assistant message received, check if it contains the decision prompt
+      if (/submit now/i.test(assistantMessage) && /go deeper/i.test(assistantMessage)) {
+        setDecisionMode(true);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       setMessages((prev) => [
@@ -309,6 +315,13 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     const textarea = e.target;
     textarea.style.height = "auto";
     textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
+  };
+
+  // Helper to send quick commands for decision buttons
+  const sendQuickCommand = async (command: string) => {
+    setInput(command);
+    await handleSendMessage();
+    setDecisionMode(false);
   };
 
   return (
@@ -446,6 +459,24 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         {/* Scroll anchor */}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Decision Buttons (Submit vs Go Deeper) */}
+      {decisionMode && (
+        <div className="border-t border-slate-600 bg-slate-700/50 px-6 py-4 flex justify-center gap-4">
+          <button
+            onClick={() => sendQuickCommand("submit")}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow-md transition"
+          >
+            Submit Now
+          </button>
+          <button
+            onClick={() => sendQuickCommand("go deeper")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow-md transition"
+          >
+            Go Deeper
+          </button>
+        </div>
+      )}
 
       {/* Input area */}
       <div className="border-t border-slate-600 p-4 bg-slate-800/50 flex-shrink-0">
