@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
           type: 'draft',
           status: getStateLabel(data.state.currentStep),
           statusCode: data.state.currentStep,
-          preview: truncatedPreview,
+          preview: data.title || truncatedPreview,
           timestamp: data.updatedAt,
           progress: calculateProgress(data.state.currentStep),
         });
@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
           type: 'request',
           status: getRequestStatusLabel(data.status),
           statusCode: data.status,
-          preview: data.request.processDescription || "No description available",
+          preview: data.title || data.request.processDescription || "No description available",
           timestamp: data.updatedAt,
           impactScore: data.request.impactScore,
           assignedTo: data.assignedTo,

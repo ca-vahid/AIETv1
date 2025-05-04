@@ -50,6 +50,9 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [currentModel, setCurrentModel] = useState<string>("");
   const [useThinkingModel, setUseThinkingModel] = useState<boolean>(false);
   const [decisionMode, setDecisionMode] = useState(false);
+  const [titleGenerated, setTitleGenerated] = useState(false);
+  const [firstUserMessageSent, setFirstUserMessageSent] = useState(false);
+  const [lastDescription, setLastDescription] = useState("");
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -100,8 +103,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
       const data = await response.json();
       setChatId(data.conversationId);
-      // Immediately load the initial prompt from server
-      await loadExistingConversation(data.conversationId);
+      // initial load will be triggered by useEffect on chatId change
     } catch (error) {
       console.error("Error starting chat:", error);
     }
@@ -204,6 +206,12 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     setInput("");
     setIsLoading(true);
 
+    // If this is the first user message, store it as the description for title generation
+    if (!firstUserMessageSent) {
+      setFirstUserMessageSent(true);
+      setLastDescription(userMessage.content);
+    }
+
     try {
       if (!firebaseUser) {
         throw new Error("Not authenticated");
@@ -280,6 +288,11 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       if (/submit now/i.test(assistantMessage) && /go deeper/i.test(assistantMessage)) {
         setDecisionMode(true);
       }
+
+      // After receiving assistant response, generate title if it's the first message
+      if (!titleGenerated && firstUserMessageSent && lastDescription) {
+        await generateTitle(lastDescription);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       setMessages((prev) => [
@@ -307,21 +320,113 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
   };
 
-  // Helper to send quick commands for decision buttons
-  const sendQuickCommand = async (command: string) => {
-    setInput(command);
-    await handleSendMessage();
-    setDecisionMode(false);
+  // Handle completion of chat draft into final request
+  const handleCompleteChat = useCallback(async () => {
+    if (!firebaseUser || !chatId) return;
+    try {
+      setIsLoading(true);
+      const idToken = await getIdToken(firebaseUser);
+      const response = await fetch('/api/chat/complete', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ conversationId: chatId })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to submit request');
+      }
+      const data = await response.json();
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `complete-${Date.now()}`,
+          role: 'system',
+          content: `Your request has been submitted! Request ID: ${data.requestId}`,
+          timestamp: Date.now(),
+        }
+      ]);
+    } catch (error) {
+      console.error('Error completing chat:', error);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `error-complete-${Date.now()}`,
+          role: 'system',
+          content: 'There was an error submitting your request. Please try again.',
+          timestamp: Date.now(),
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [firebaseUser, chatId]);
+
+  // Generate title based on the user's first message (process description)
+  const generateTitle = async (description: string) => {
+    if (!firebaseUser || !chatId) return;
+    
+    try {
+      const idToken = await getIdToken(firebaseUser);
+      const response = await fetch('/api/chat/generate-title', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          conversationId: chatId,
+          description 
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate title');
+      }
+      
+      const data = await response.json();
+      
+      // Add the title announcement to the chat
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `title-${Date.now()}`,
+          role: 'assistant',
+          content: `**Title created:** ${data.title}`,
+          timestamp: Date.now(),
+        }
+      ]);
+      
+      setTitleGenerated(true);
+      
+    } catch (error) {
+      console.error('Error generating title:', error);
+      // Silently fail - we'll just not have a title
+      setTitleGenerated(true); // Mark as done anyway to avoid retrying
+    }
   };
 
-  // Hide the initial assistant system message (index 0) to remove basePrompt
-  const visibleMessages = messages.filter((msg, idx) => {
-    // Keep all user messages
-    if (msg.role === 'user') return true;
-    // Hide the very first assistant message (system prompt)
-    if (msg.role === 'assistant' && idx === 0) return false;
-    return true;
-  });
+  // Helper to send quick commands for decision buttons
+  const sendQuickCommand = async (command: string) => {
+    if (command === 'submit') {
+      await handleCompleteChat();
+      setDecisionMode(false);
+    } else if (command === 'go deeper') {
+      // When going deeper, we might want to regenerate the title later
+      setTitleGenerated(false); 
+      setInput(command);
+      await handleSendMessage();
+      setDecisionMode(false);
+    } else {
+      setInput(command);
+      await handleSendMessage();
+      setDecisionMode(false);
+    }
+  };
+
+  // Remove filtering: display all messages by default
+  const visibleMessages = messages;
 
   return (
     <div className="flex flex-col bg-slate-800/40 backdrop-blur-sm h-full rounded-xl shadow-xl overflow-hidden">

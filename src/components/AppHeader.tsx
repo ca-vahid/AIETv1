@@ -7,12 +7,22 @@ import { useState } from 'react';
 import { useTheme } from "@/lib/contexts/ThemeContext";
 
 // Current version of the application
-const APP_VERSION = 'v1.2.5';
+const APP_VERSION = 'v1.2.6';
 // Release date
 const RELEASE_DATE = 'May 3, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.2.6',
+    date: 'May 3, 2025',
+    changes: [
+      'Added automatic title generation for automation requests',
+      'Updated request list view to display generated titles instead of conversation snippets',
+      'Generated titles appear after first description message and in the requests list',
+      'Improved request browsing experience with more descriptive titles'
+    ]
+  },
   {
     version: 'v1.2.5',
     date: 'May 3, 2025',

@@ -57,6 +57,7 @@ export interface DraftConversation {
   status: 'draft' | 'complete' | 'error';
   messages: Message[];
   state: ConversationState;
+  title?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -67,6 +68,7 @@ export interface FinalRequest {
   profileSnapshot: Record<string, any>;
   status: 'new' | 'in_review' | 'pilot' | 'completed' | 'rejected';
   assignedTo?: string;
+  title: string;
   request: {
     processDescription: string;
     painType: string[];
