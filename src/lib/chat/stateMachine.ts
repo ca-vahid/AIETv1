@@ -119,8 +119,12 @@ export function analyzeConversation(
       !!mergedData.frequency,
       !!mergedData.impactNarrative
     ].filter(Boolean).length;
-    
-    if (gotCount >= 2) {
+
+    // Only move on if we have enough info AND the assistant has actually asked about attachments
+    const assistantAsksAttachments = /attach|file|screenshot|upload/i.test(lastAssistantMsg.content);
+    const userHasFiles = lastUserMsg && /attach|file|screenshot|upload/i.test(lastUserMsg.content);
+
+    if (gotCount >= 2 && (assistantAsksAttachments || userHasFiles)) {
       return {
         type: 'NEXT_STEP',
         payload: { step: 'attachments', data: extractedData }
@@ -217,19 +221,9 @@ ${g.ask}
 Once the user confirms the language, politely ask them to briefly describe the work/task they think could benefit from AI optimisation or automation.`;
     }
     
-    case 'full_details': {
-      // Friendly loop: ask for any two of these three details
-      const d = state.collectedData;
-      const have: string[] = [];
-      if (Array.isArray(d.tools) && d.tools.length > 0) have.push('tools/systems');
-      if (d.frequency) have.push('frequency/duration');
-      if (d.impactNarrative) have.push('impact');
-      const options = ['tools/systems', 'frequency/duration', 'impact'];
-      const need = options.filter(opt => !have.includes(opt));
-      return `${basePrompt}You've shared: ${have.length ? have.join(', ') : 'none yet'}. ` +
-        `I'm still waiting on: ${need.join(', ')}. ` +
-        `Pick any two of those and tell me a bit about them—be brief and have fun!`;
-    }
+    case 'full_details':
+      return `${basePrompt}You've shared: ${state.collectedData.tools ? state.collectedData.tools.join(', ') : 'none yet'}. ` +
+        `I'm still waiting on: ${state.collectedData.frequency ? 'frequency/duration' : ''} ${state.collectedData.impactNarrative ? 'impact' : ''}`;
     
     case 'attachments':
       return `${basePrompt}Ask if they would like to attach any relevant files (screenshots, examples, etc.).`;
