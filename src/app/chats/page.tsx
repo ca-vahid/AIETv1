@@ -6,6 +6,7 @@ import { useSessionProfile } from '@/lib/contexts/SessionProfileContext';
 import AppHeader from '@/components/AppHeader';
 import Link from 'next/link';
 import { getIdToken } from 'firebase/auth';
+import { formatDistanceToNow } from 'date-fns';
 
 // Types for chat history items
 interface HistoryItem {
@@ -175,9 +176,15 @@ export default function ChatsPage() {
     }
   };
   
-  // Format date 
+  // Format date using date-fns for relative time
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
+    const now = new Date();
+    // Use relative time for updates within the last day
+    if (now.getTime() - date.getTime() < 24 * 60 * 60 * 1000) {
+      return formatDistanceToNow(date, { addSuffix: true });
+    }
+    // Use absolute date for older updates
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
@@ -340,7 +347,7 @@ export default function ChatsPage() {
           ) : history.length === 0 ? (
             <div className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-8 text-center">
               <div className="rounded-full bg-blue-900/50 p-6 mb-4 mx-auto w-fit">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -354,12 +361,15 @@ export default function ChatsPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-6">
               {history.map((item) => (
                 <div 
                   key={item.id}
                   onClick={() => handleChatClick(item)}
-                  className="bg-slate-800/40 backdrop-blur-sm rounded-xl p-4 cursor-pointer hover:bg-slate-800/60 transition-colors border border-slate-700 hover:border-slate-600 relative group"
+                  className={
+                    `rounded-xl p-4 cursor-pointer transition-all border hover:shadow-lg relative group
+                    ${item.type === 'draft' ? 'bg-slate-800/40 border-slate-700 hover:border-slate-600 hover:bg-slate-800/60' : 'bg-slate-700/40 border-slate-600 hover:border-slate-500 hover:bg-slate-700/60'}`
+                  }
                 >
                   {/* Delete button - only shown on hover and for eligible items */}
                   {canDelete(item) && (
@@ -381,11 +391,12 @@ export default function ChatsPage() {
                         {item.status}
                       </span>
                       {item.type === 'draft' && item.progress !== undefined && (
-                        <div className="ml-2 w-24 bg-slate-700 rounded-full h-2">
+                        <div className="ml-2 w-24 bg-slate-700 rounded-full h-1.5">
                           <div 
-                            className="bg-blue-500 h-2 rounded-full" 
+                            className="bg-blue-500 h-1.5 rounded-full" 
                             style={{ width: `${item.progress}%` }}
                           ></div>
+                          <span className="text-xs text-slate-400 ml-2">{item.progress}%</span>
                         </div>
                       )}
                       {item.type === 'request' && renderImpactScore(item.impactScore)}
@@ -397,22 +408,27 @@ export default function ChatsPage() {
                   
                   <p className="text-white text-sm font-medium mb-1 line-clamp-2">{item.preview}</p>
                   
-                  {item.type === 'request' && item.complexity && (
-                    <div className="flex items-center mt-2">
-                      <span className="text-xs text-slate-400 mr-2">Complexity:</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                        item.complexity === 'low' ? 'bg-green-900/60 text-green-300' :
-                        item.complexity === 'medium' ? 'bg-yellow-900/60 text-yellow-300' :
-                        item.complexity === 'high' ? 'bg-red-900/60 text-red-300' :
-                        'bg-slate-900/60 text-slate-300'
-                      }`}>
-                        {item.complexity.charAt(0).toUpperCase() + item.complexity.slice(1)}
-                      </span>
+                  {item.type === 'request' && (
+                    <div className="flex items-center mt-2 flex-wrap gap-x-4 gap-y-1">
+                      {item.complexity && (
+                        <div className="flex items-center">
+                          <span className="text-xs text-slate-400 mr-1">Complexity:</span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                            item.complexity === 'low' ? 'bg-green-900/60 text-green-300' :
+                            item.complexity === 'medium' ? 'bg-yellow-900/60 text-yellow-300' :
+                            item.complexity === 'high' ? 'bg-red-900/60 text-red-300' :
+                            'bg-slate-900/60 text-slate-300'
+                          }`}>
+                            {item.complexity.charAt(0).toUpperCase() + item.complexity.slice(1)}
+                          </span>
+                        </div>
+                      )}
                       
                       {item.assignedTo && (
-                        <span className="ml-4 text-xs text-slate-400">
-                          Assigned to: <span className="text-blue-400">{item.assignedTo}</span>
-                        </span>
+                        <div className="flex items-center">
+                          <span className="text-xs text-slate-400 mr-1">Assigned to:</span> 
+                          <span className="text-xs text-blue-400 font-medium">{item.assignedTo}</span>
+                        </div>
                       )}
                     </div>
                   )}

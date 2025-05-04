@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { 
+import {
   getAuth, 
   signInWithRedirect, 
   signInWithPopup,
@@ -68,8 +68,8 @@ const signInWithMicrosoft = async () => {
     const provider = getMicrosoftProvider();
 
     // Prefer popup to avoid cross-domain redirect issues in local dev
-    try {
-      const result = await signInWithPopup(auth, provider);
+  try {
+    const result = await signInWithPopup(auth, provider);
       // Extract access token from credential
       const credential = OAuthProvider.credentialFromResult(result);
       const accessToken = credential?.accessToken;

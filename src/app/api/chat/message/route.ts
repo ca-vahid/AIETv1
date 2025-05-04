@@ -212,9 +212,38 @@ export async function POST(req: NextRequest) {
               console.log("\x1b[35m%s\x1b[0m", `- gotCount: ${gotCount} (needs 2+ to advance)`);
             }
             
-            // If we just moved into 'submit' state, finalize the draft immediately
+            // Handle completion only once - prevent race conditions
+            let shouldComplete = false;
+            
+            // Check if we need to complete the chat (but don't do it yet)
+            // Case 1: Just moved to submit state
             if (conversationData.state.currentStep !== 'submit' && newState.currentStep === 'submit') {
+              shouldComplete = true;
+            }
+            
+            // Case 2: User confirmed in summary state
+            const lastUserMsg = updatedMessages.filter(m => m.role === 'user').pop();
+            if (lastUserMsg && 
+                conversationData.state.currentStep === 'summary' &&
+                /\b(yes|confirm|looks good|submit|done|finish|send)\b/i.test(lastUserMsg.content) &&
+                !shouldComplete) {
+              shouldComplete = true;
+            }
+            
+            // Save to Firestore first if we're not going to finalize
+            if (!shouldComplete) {
+              await updateDoc(doc(conversationsRef, conversationId), {
+                messages: updatedMessages,
+                state: newState,
+                updatedAt: Date.now()
+              });
+              console.log("\x1b[32m%s\x1b[0m", "[API] Conversation updated in Firestore");
+            }
+            
+            // Now handle the completion if needed (after we've saved non-finalizing updates)
+            if (shouldComplete) {
               try {
+                console.log("\x1b[33m%s\x1b[0m", `[API] Finalizing draft into request: ${conversationId}`);
                 const completeRes = await fetch(`${origin}/api/chat/complete`, {
                   method: 'POST',
                   headers: {
@@ -228,40 +257,30 @@ export async function POST(req: NextRequest) {
                   draftDeleted = true; // don't try to update deleted doc
                 } else {
                   console.error("\x1b[31m%s\x1b[0m", `[API] Failed to finalize draft: ${await completeRes.text()}`);
+                  
+                  // If we failed to finalize, still try to save the state update
+                  if (!draftDeleted) {
+                    await updateDoc(doc(conversationsRef, conversationId), {
+                      messages: updatedMessages,
+                      state: newState,
+                      updatedAt: Date.now()
+                    });
+                  }
                 }
               } catch (completeErr) {
                 console.error("\x1b[31m%s\x1b[0m", `[API] Error calling complete endpoint: ${completeErr}`);
+                
+                // If completion failed, still try to save the state update
+                if (!draftDeleted) {
+                  await updateDoc(doc(conversationsRef, conversationId), {
+                    messages: updatedMessages,
+                    state: newState,
+                    updatedAt: Date.now()
+                  });
+                }
               }
             }
             
-            // Save to Firestore
-            if (!draftDeleted) {
-              await updateDoc(doc(conversationsRef, conversationId), {
-                messages: updatedMessages,
-                state: newState,
-                updatedAt: Date.now()
-              });
-            }
-            
-            console.log("\x1b[32m%s\x1b[0m", "[API] Conversation updated in Firestore");
-            // If we just transitioned state, send the next prompt immediately
-            if (stateTransition && newState.currentStep !== 'submit') {
-              const nextPrompt = generatePromptForState(newState);
-              // Create assistant message and append
-              const nextAssistantMessage: Message = {
-                role: 'assistant',
-                content: nextPrompt,
-                timestamp: Date.now()
-              };
-              // Update Firestore with the new assistant prompt
-              await updateDoc(doc(conversationsRef, conversationId), {
-                messages: [...updatedMessages, nextAssistantMessage],
-                state: newState,
-                updatedAt: Date.now()
-              });
-              // Stream the next prompt to the client
-              controller.enqueue(new TextEncoder().encode(nextPrompt));
-            }
             controller.close();
           } catch (streamError) {
             console.error("\x1b[31m%s\x1b[0m", `[API] Error processing stream: ${streamError}`);

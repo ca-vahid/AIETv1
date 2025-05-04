@@ -69,7 +69,11 @@ export async function POST(req: Request) {
     const conversationsRef = collection(db, 'conversations');
     await setDoc(doc(conversationsRef, newConversation.id), newConversation);
 
-    return NextResponse.json({ conversationId: newConversation.id });
+    // Return both ID and UI prompt for immediate client display
+    return NextResponse.json({
+      conversationId: newConversation.id,
+      uiPrompt
+    });
   } catch (error) {
     console.error('Error starting conversation:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

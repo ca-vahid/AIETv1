@@ -50,14 +50,14 @@ export function analyzeConversation(
   if (currentState.currentStep === 'summary_lite') {
     const lastUserMsg = messages.filter(m => m.role === 'user').pop();
     if (lastUserMsg && /\b(submit|done|finish|send)\b/i.test(lastUserMsg.content)) {
-      return {
-        type: 'NEXT_STEP',
+    return {
+      type: 'NEXT_STEP',
         payload: { step: 'submit', data: { fastTrack: true } }
-      };
-    }
+    };
+  }
     if (lastUserMsg && /\b(deep(er)?|more|details)\b/i.test(lastUserMsg.content)) {
-      return {
-        type: 'NEXT_STEP',
+    return {
+      type: 'NEXT_STEP',
         payload: { step: 'full_details' }
       };
     }
@@ -69,65 +69,76 @@ export function analyzeConversation(
     
     // Extract data from the conversation to update collectedData
     const lastUserMsg = messages.filter(m => m.role === 'user').pop();
-    const lastAssistantMsg = lastMessage; // assistant message
     
-    // Try to parse and extract data from the latest messages
-    const extractedData: Record<string, any> = {};
-    
-    // Check for tools/systems mentions in user's message only to avoid false positives
-    if (!Array.isArray(d.tools) || d.tools.length === 0) {
-      if (lastUserMsg && /tool|system|software|app|application|platform|PowerApp|email/i.test(lastUserMsg.content)) {
-        const toolsMatch = lastUserMsg.content.match(/(tools?|systems?|software|apps?)\s*[:\-]?\s*([\w\s,]+)/i);
-        if (toolsMatch && toolsMatch[3]) {
-          extractedData.tools = toolsMatch[3].split(/[,.]/).map(t => t.trim()).filter(t => t.length > 0);
-        } else {
-          // Fallback: just extract any sentences with tool-related words
-          const toolSentences = lastUserMsg?.content.match(/[^.!?]*?(tool|system|software|app|application|platform|PowerApp|email)[^.!?]*[.!?]/gi);
-          if (toolSentences && toolSentences.length > 0) {
-            extractedData.tools = ['Tools mentioned in conversation'];
+    // Only analyze user messages for data extraction to avoid false positives
+    if (lastUserMsg && lastUserMsg.role === 'user') {
+      const userContent = lastUserMsg.content;
+      const extractedData: Record<string, any> = {};
+      
+      // Check for tools/systems mentions in user's message
+      if (!Array.isArray(d.tools) || d.tools.length === 0) {
+        if (/tool|system|software|app|application|platform|PowerApp|email|spreadsheet|excel/i.test(userContent)) {
+          extractedData.tools = ['Tools mentioned in conversation'];
+          // Try to identify specific tools
+          const toolMatches = userContent.match(/\b(Excel|PowerApp|Teams|Outlook|SharePoint|Word|PowerPoint|Access|OneDrive|Forms|Power BI|Power Automate|SQL|Database|API|Jira|ServiceNow|SAP|Oracle)\b/gi);
+          if (toolMatches && toolMatches.length > 0) {
+            extractedData.tools = Array.from(new Set(toolMatches)); // Remove duplicates using Array.from()
           }
         }
       }
-    }
-    
-    // Check for frequency/duration mentions
-    if (!d.frequency) {
-      if (lastUserMsg && /daily|weekly|monthly|times|frequency|often|per day|minutes|hours/i.test(lastUserMsg.content)) {
-        const frequencyMatch = lastUserMsg.content.match(/(daily|weekly|monthly|(\d+)\s+times)/i);
-        if (frequencyMatch) {
+      
+      // Check for frequency/duration mentions
+      if (!d.frequency) {
+        if (/daily|weekly|monthly|times|frequency|often|per day|minutes|hours|everyday|each day|week|month|quarter|year/i.test(userContent)) {
           extractedData.frequency = "Mentioned in conversation";
+          // Try to extract specific frequency
+          const frequencyMatch = userContent.match(/\b(daily|weekly|monthly|quarterly|yearly|(\d+)\s+times\s+(per|a|each)\s+(day|week|month|year))\b/i);
+          if (frequencyMatch) {
+            extractedData.frequency = frequencyMatch[0];
+          }
         }
       }
-    }
-    
-    // Check for impact mentions
-    if (!d.impactNarrative) {
-      if (lastUserMsg && /impact|benefit|save|improve|better|easier|faster|time|automation/i.test(lastUserMsg.content)) {
-        const impactMatch = lastUserMsg.content.match(/impact.*?:.*?([\w\s,\.]+)/i) || 
-                           lastUserMsg.content.match(/benefit.*?:.*?([\w\s,\.]+)/i);
-        if (impactMatch) {
+      
+      // Check for impact mentions
+      if (!d.impactNarrative) {
+        if (/impact|benefit|save|improve|better|easier|faster|time|automation|efficient|productivity|reduce|error|quality|satisfaction/i.test(userContent)) {
           extractedData.impactNarrative = "Impact mentioned in conversation";
         }
       }
-    }
-    
-    // Now check conditions with potential updated data
-    const mergedData = {...d, ...extractedData};
-    const gotCount = [
-      Array.isArray(mergedData.tools) && mergedData.tools.length > 0,
-      !!mergedData.frequency,
-      !!mergedData.impactNarrative
-    ].filter(Boolean).length;
+      
+      // Update collected data if we found new information
+      if (Object.keys(extractedData).length > 0) {
+        // Merge the extracted data
+        const mergedData = {...d, ...extractedData};
+        
+        // Count how many of the required fields we have
+        const gotCount = [
+          Array.isArray(mergedData.tools) && mergedData.tools.length > 0,
+          !!mergedData.frequency,
+          !!mergedData.impactNarrative
+        ].filter(Boolean).length;
+        
+        // Only transition if we have at least 2 out of 3 required fields AND
+        // the bot has asked about attachments or the user mentions attachments
+        const botAsksAttachments = /attach|file|screenshot|upload/i.test(lastMessage.content);
+        const userMentionsFiles = /attach|file|screenshot|upload|picture|image/i.test(userContent);
+        
+        if (gotCount >= 2 && (botAsksAttachments || userMentionsFiles)) {
+    return {
+      type: 'NEXT_STEP',
+            payload: { step: 'attachments', data: extractedData }
+    };
+  }
 
-    // Only move on if we have enough info AND the assistant has actually asked about attachments
-    const assistantAsksAttachments = gotCount >= 2 && /attach|file|screenshot|upload/i.test(lastAssistantMsg.content);
-    const userHasFiles = lastUserMsg && /attach|file|screenshot|upload/i.test(lastUserMsg.content);
-
-    if (gotCount >= 2 && (assistantAsksAttachments || userHasFiles)) {
-      return {
-        type: 'NEXT_STEP',
-        payload: { step: 'attachments', data: extractedData }
-      };
+        // Always update the state with new data regardless of transition
+    return {
+      type: 'NEXT_STEP',
+          payload: { 
+            step: 'full_details', // Stay on the same step
+            data: extractedData 
+          }
+        };
+      }
     }
   }
 
@@ -141,10 +152,10 @@ export function analyzeConversation(
     const uploaded = Array.isArray(currentState.collectedData.attachments) && currentState.collectedData.attachments.length > 0;
 
     if (hasAssistantCue || userSaysNo || uploaded) {
-      return {
-        type: 'NEXT_STEP',
-        payload: { step: 'summary' }
-      };
+    return {
+      type: 'NEXT_STEP',
+      payload: { step: 'summary' }
+    };
     }
   }
 
@@ -231,15 +242,54 @@ ${g.ask}
 Once the user confirms the language, politely ask them to briefly describe the work/task they think could benefit from AI optimisation or automation.`;
     }
     
-    case 'full_details':
-      return `${basePrompt}You've shared: ${state.collectedData.tools ? state.collectedData.tools.join(', ') : 'none yet'}. ` +
-        `I'm still waiting on: ${state.collectedData.frequency ? 'frequency/duration' : ''} ${state.collectedData.impactNarrative ? 'impact' : ''}`;
+    case 'full_details': {
+      // Create a more conversational prompt based on the data we've collected so far
+      const d = state.collectedData;
+      let missingDataPrompt = '';
+      
+      // Check what data we're still missing
+      const missingFields = [];
+      if (!Array.isArray(d.tools) || d.tools.length === 0) missingFields.push('tools or systems');
+      if (!d.frequency) missingFields.push('frequency or how often this task is done');
+      if (!d.impactNarrative) missingFields.push('expected impact or benefit');
+      
+      // Create a friendly prompt asking for missing information
+      if (missingFields.length > 0) {
+        if (missingFields.length === 3) {
+          missingDataPrompt = `I'd like to understand more about this task. Could you tell me about the tools or systems you use, how often you do this task, and what impact automating it would have?`;
+        } else if (missingFields.length === 2) {
+          missingDataPrompt = `Thanks for sharing that information. Could you also tell me about the ${missingFields.join(' and the ')}?`;
+        } else if (missingFields.length === 1) {
+          missingDataPrompt = `I just need one more piece of information: what about the ${missingFields[0]}?`;
+        }
+      } else {
+        // If we have all the data, guide toward attachments
+        missingDataPrompt = `Thanks for all that information! Would you like to attach any screenshots or files to help illustrate the process?`;
+      }
+      
+      return `${basePrompt}${missingDataPrompt} Remember, once I have enough information (at least 2 of: tools, frequency, and impact), I'll ask if you want to attach any files before reviewing.`;
+    }
     
     case 'attachments':
-      return `${basePrompt}Ask if they would like to attach any relevant files (screenshots, examples, etc.).`;
+      return `${basePrompt}Would you like to attach any relevant files (screenshots, examples, etc.) that could help the automation team better understand your request?`;
     
-    case 'summary':
-      return `${basePrompt}Present a summary of all collected information and ask for confirmation: ${JSON.stringify(state.collectedData)}`;
+    case 'summary': {
+      // Create a more user-friendly summary format
+      const d = state.collectedData;
+      const toolsStr = Array.isArray(d.tools) && d.tools.length > 0 ? d.tools.join(', ') : 'Not specified';
+      const frequencyStr = d.frequency || 'Not specified';
+      const impactStr = d.impactNarrative || 'Not specified';
+      
+      return `${basePrompt}Here's a summary of your automation request:
+
+Process: ${d.processDescription || 'Not specified'}
+Tools/Systems: ${toolsStr}
+Frequency: ${frequencyStr}
+Expected Impact: ${impactStr}
+${Array.isArray(d.attachments) && d.attachments.length > 0 ? `Attachments: ${d.attachments.length} file(s)` : 'No attachments'}
+
+Does this look correct? If yes, please confirm and I'll submit your request. If not, let me know what needs to be changed.`;
+    }
     
     case 'lite_description':
       return `${basePrompt}Ask the user—politely and concisely—to give a brief description (1–2 sentences) of the task/process they believe could benefit from AI optimisation or automation.`;

@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useSessionProfile } from '@/lib/contexts/SessionProfileContext';
 import { signOut } from '@/lib/firebase/firebaseUtils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from "@/lib/contexts/ThemeContext";
+import { usePathname } from 'next/navigation';
 
 // Current version of the application
 const APP_VERSION = 'v1.2.6';
@@ -136,6 +137,28 @@ export default function AppHeader() {
   const isLoggedIn = !!profile;
   const [changelogOpen, setChangelogOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const pathname = usePathname();
+  const [useThinkingModel, setUseThinkingModel] = useState(false);
+  
+  // Determine if we're in a chat page by checking URL
+  const isChatPage = pathname && pathname.includes('/chat/');
+  const chatId = isChatPage ? pathname.split('/').pop() : '';
+  
+  // Toggle model function that will be used when in a chat
+  const toggleModel = () => {
+    setUseThinkingModel(prev => !prev);
+    // Export function to window for ChatWindow to access
+    if (typeof window !== 'undefined') {
+      (window as any).chatWindowToggleModel = () => {
+        setUseThinkingModel(prev => !prev);
+      };
+    }
+  };
+
+  // Call toggleModel on mount to initialize window function
+  useEffect(() => {
+    toggleModel();
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -149,23 +172,72 @@ export default function AppHeader() {
   return (
     <>
       <header className={`${theme === "dark" ? "theme-panel" : "theme-panel-light"} shadow-md sticky top-0 z-10`}>
-        <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex justify-between items-center">
-          <div className="flex items-center">
-            <Link href="/" className="text-2xl font-bold text-blue-400 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-2 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+        <div className="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center">
+          {/* Left side: Logo and optional back button */}
+          <div className="flex items-center gap-3">
+            <Link href="/" className="text-xl font-bold text-blue-400 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1.5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
               </svg>
               AIET Intake Portal
             </Link>
+            
+            {/* Version tag moved near logo */}
             <button 
               onClick={() => setChangelogOpen(true)}
-              className="ml-3 text-xs px-2 py-1 bg-blue-900 text-blue-300 rounded hover:bg-blue-800 transition"
+              className="text-xs px-2 py-0.5 bg-blue-900 text-blue-300 rounded hover:bg-blue-800 transition"
             >
               {APP_VERSION}
             </button>
           </div>
           
-          <div className="flex items-center gap-4">
+          {/* Center: Chat controls when in chat page */}
+          <div className="flex-1 flex justify-center items-center">
+            {isChatPage && (
+              <div className="flex items-center gap-6">
+                <Link 
+                  href="/chats"
+                  className="text-slate-200 hover:text-white text-sm flex items-center px-3 py-1 bg-slate-700/40 rounded-lg transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                  </svg>
+                  Back to Home
+                </Link>
+                
+                <div className="text-white/90 text-sm flex items-center">
+                  <div className="w-5 h-5 rounded-full bg-blue-700 flex items-center justify-center mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-blue-300" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+                      <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+                    </svg>
+                  </div>
+                  <span className="text-white">AIET Intake Chat</span>
+                </div>
+                
+                <div className="flex items-center bg-slate-700/50 py-0.5 px-2 rounded-full">
+                  <span className="text-sm mr-2 whitespace-nowrap text-white/90">
+                    Standard
+                  </span>
+                  <button 
+                    onClick={toggleModel}
+                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${
+                      useThinkingModel ? 'bg-blue-400' : 'bg-slate-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                        useThinkingModel ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Right side: Theme toggle and user controls */}
+          <div className="flex items-center gap-3">
             {/* Theme Toggle */}
             <button
               aria-label="Toggle dark mode"
@@ -183,8 +255,10 @@ export default function AppHeader() {
                 </svg>
               )}
             </button>
+            
+            {/* User info and sign out */}
             {isLoggedIn ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <span className="text-sm text-slate-300 hidden sm:inline">
                   Hello, {profile.name.split(' ')[0]}
                 </span>
@@ -192,7 +266,7 @@ export default function AppHeader() {
                   <img 
                     src={profile.photoUrl} 
                     alt={profile.name}
-                    className="w-8 h-8 rounded-full border border-slate-600 shadow-sm object-cover hidden sm:block"
+                    className="w-7 h-7 rounded-full border border-slate-600 shadow-sm object-cover hidden sm:block"
                   />
                 )}
                 <button

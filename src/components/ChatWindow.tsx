@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useSessionProfile } from "@/lib/contexts/SessionProfileContext";
 import { getIdToken } from "firebase/auth";
+import VoiceInput from './VoiceInput';
 
 // Types
 interface Message {
@@ -14,6 +15,7 @@ interface Message {
 
 interface ChatWindowProps {
   conversationId?: string;
+  hideHeader?: boolean;
 }
 
 // Add a helper function to convert markdown-like formatting to HTML
@@ -39,7 +41,7 @@ function formatMessageText(text: string): string {
 /**
  * ChatWindow component - Handles the display and interaction with the chat interface
  */
-export default function ChatWindow({ conversationId }: ChatWindowProps) {
+export default function ChatWindow({ conversationId, hideHeader = false }: ChatWindowProps & { hideHeader?: boolean }) {
   const { profile, firebaseUser } = useSessionProfile();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -53,8 +55,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [titleGenerated, setTitleGenerated] = useState(false);
   const [firstUserMessageSent, setFirstUserMessageSent] = useState(false);
   const [lastDescription, setLastDescription] = useState("");
-  const [summaryMode, setSummaryMode] = useState(false);
-  const [chatLocked, setChatLocked] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -291,11 +292,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         setDecisionMode(true);
       }
 
-      // Detect summary confirmation prompt
-      if (/summary of the automation request/i.test(assistantMessage) && /confirm/i.test(assistantMessage)) {
-        setSummaryMode(true);
-      }
-
       // After receiving assistant response, generate title if it's the first message
       if (!titleGenerated && firstUserMessageSent && lastDescription) {
         await generateTitle(lastDescription);
@@ -316,8 +312,51 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     }
   };
 
+  // Auto-submit quick commands: when decisionMode is on and user types 'submit' or 'deeper', send automatically
+  useEffect(() => {
+    if (!decisionMode) return;
+    
+    // Only consider this when user has entered something
+    if (!input.trim()) return;
+    
+    const trimmed = input.trim().toLowerCase();
+    if (/\b(submit|done|finish|send)\b/i.test(trimmed)) {
+      sendQuickCommand('submit');
+    } else if (/\b(deep(er)?|more|details)\b/i.test(trimmed)) {
+      sendQuickCommand('go deeper');
+    }
+  }, [input, decisionMode]);
+
+  // Also auto-detect submission commands in summary state
+  useEffect(() => {
+    // Skip if already submitting or loading
+    if (isSubmitting || isLoading) return;
+    
+    // If we're in summary state and not already in decision mode
+    if (messages.length > 0 && 
+        !decisionMode && 
+        input.trim() && 
+        /\b(yes|confirm|looks good|correct|submit|done|finish|send)\b/i.test(input.trim().toLowerCase())) {
+      
+      // Check if the last assistant message was asking for confirmation
+      const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
+      if (lastAssistantMsg && 
+          /\b(look.*correct|confirm|review|summary)\b/i.test(lastAssistantMsg.content.toLowerCase())) {
+        // Auto-submit
+        sendQuickCommand('submit');
+      }
+    }
+  }, [input, messages, decisionMode, isSubmitting, isLoading]);
+
+  // Remove filtering: display all messages by default
+  const visibleMessages = messages;
+
   const toggleModel = useCallback(() => {
     setUseThinkingModel((prev) => !prev);
+    // Use window global function if available
+    if (typeof window !== 'undefined' && (window as any).chatWindowToggleModel) {
+      (window as any).chatWindowToggleModel();
+    }
   }, []);
 
   // Adjust textarea height based on content
@@ -332,6 +371,19 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     if (!firebaseUser || !chatId) return;
     try {
       setIsLoading(true);
+      setIsSubmitting(true);
+      
+      // Add a system message indicating we're submitting
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `submitting-${Date.now()}`,
+          role: 'system',
+          content: `Submitting your request...`,
+          timestamp: Date.now(),
+        }
+      ]);
+      
       const idToken = await getIdToken(firebaseUser);
       const response = await fetch('/api/chat/complete', {
         method: 'POST',
@@ -341,20 +393,26 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         },
         body: JSON.stringify({ conversationId: chatId })
       });
+      
       if (!response.ok) {
         throw new Error('Failed to submit request');
       }
+      
       const data = await response.json();
-      setMessages(prev => [
-        ...prev,
-        {
-          id: `complete-${Date.now()}`,
-          role: 'system',
-          content: `Your request has been submitted! Request ID: ${data.requestId}`,
-          timestamp: Date.now(),
-        }
-      ]);
-      setChatLocked(true);
+      
+      // Update the system message instead of adding a new one
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.role === 'system' && msg.id.startsWith('submitting-') 
+            ? {
+                ...msg,
+                content: `Your request has been submitted! Request ID: ${data.requestId}`,
+                timestamp: Date.now()
+              }
+            : msg
+        )
+      );
+      
     } catch (error) {
       console.error('Error completing chat:', error);
       setMessages(prev => [
@@ -366,6 +424,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           timestamp: Date.now(),
         }
       ]);
+      setIsSubmitting(false); // Reset submitting state on error so they can try again
     } finally {
       setIsLoading(false);
     }
@@ -417,7 +476,12 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
   // Helper to send quick commands for decision buttons
   const sendQuickCommand = async (command: string) => {
+    // Prevent multiple submissions or operations while loading
+    if (isLoading || isSubmitting) return;
+    
     if (command === 'submit') {
+      setInput(''); // Clear input first to prevent double submission
+      setIsSubmitting(true);
       await handleCompleteChat();
       setDecisionMode(false);
     } else if (command === 'go deeper') {
@@ -433,66 +497,9 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     }
   };
 
-  // Auto-submit quick commands: when decisionMode is on and user types 'submit' or 'deeper', send automatically
-  useEffect(() => {
-    if (!decisionMode) return;
-    const trimmed = input.trim().toLowerCase();
-    if (/\b(submit|done|finish|send)\b/i.test(trimmed)) {
-      sendQuickCommand('submit');
-    } else if (/\b(deep(er)?|more|details)\b/i.test(trimmed)) {
-      sendQuickCommand('go deeper');
-    }
-  }, [input, decisionMode]);
-
-  const handleSummarySubmit = async () => {
-    await handleCompleteChat();
-    setSummaryMode(false);
-  };
-
-  // Remove filtering: display all messages by default
-  const visibleMessages = messages;
-
   return (
     <div className="flex flex-col bg-slate-800/40 backdrop-blur-sm h-full rounded-xl shadow-xl overflow-hidden">
-      {/* Chat header */}
-      <div className="py-2 px-4 bg-blue-700/90 flex items-center justify-between text-white flex-shrink-0">
-        <div className="flex items-center">
-          <div className="bg-blue-900 rounded-full w-8 h-8 flex items-center justify-center mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-300" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="flex-1 group relative">
-            <span className="text-xs text-white/80 hidden group-hover:inline-block">
-              {chatId ? `Conversation #${chatId.substring(0, 8)}` : "Starting new conversation..."}
-            </span>
-            <span className="text-xs text-white/80 group-hover:hidden">
-              AIET Intake Chat
-            </span>
-          </div>
-        </div>
-        
-        <div className="flex items-center">
-          <div className="flex items-center">
-            <span className="text-xs mr-2 whitespace-nowrap text-white/80">
-              {currentModel ? `${currentModel.includes("thinking") ? "Advanced" : "Standard"}` : "Standard"}
-            </span>
-            <button 
-              onClick={toggleModel}
-              className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 ${
-                useThinkingModel ? 'bg-blue-400' : 'bg-slate-600'
-              }`}
-            >
-              <span className="sr-only">Toggle thinking model</span>
-              <span
-                className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-                  useThinkingModel ? 'translate-x-5' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Chat header removed to save vertical space - controls moved to AppHeader */}
 
       {/* Messages container */}
       <div className="flex-1 overflow-y-auto py-6 px-6 space-y-6 bg-slate-800/30">
@@ -589,44 +596,37 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       </div>
 
       {/* Decision Buttons (Submit vs Go Deeper) */}
-      {decisionMode && !chatLocked && (
+      {decisionMode && (
         <div className="border-t border-slate-600 bg-slate-700/50 px-6 py-4 flex justify-center gap-4">
           <button
             onClick={() => sendQuickCommand("submit")}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow-md transition"
+            className={`bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow-md transition ${
+              isSubmitting || isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={isSubmitting || isLoading}
           >
-            Submit Now
+            {isSubmitting ? 'Submitting...' : 'Submit Now'}
           </button>
           <button
             onClick={() => sendQuickCommand("go deeper")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow-md transition"
+            className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow-md transition ${
+              isSubmitting || isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={isSubmitting || isLoading}
           >
             Go Deeper
           </button>
         </div>
       )}
 
-      {/* Summary confirm button */}
-      {summaryMode && !chatLocked && (
-        <div className="border-t border-slate-600 bg-slate-700/50 px-6 py-4 flex justify-center">
-          <button
-            onClick={handleSummarySubmit}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md shadow-md transition"
-          >
-            Submit Request
-          </button>
-        </div>
-      )}
-
       {/* Input area */}
-      {!chatLocked && (
       <div className="border-t border-slate-600 p-4 bg-slate-800/50 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <div className="flex-1 border rounded-full border-slate-600 bg-slate-800/80 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
             <textarea
               ref={inputRef}
               className="w-full px-4 py-2.5 focus:outline-none bg-transparent resize-none text-sm text-white"
-              placeholder="Type your message..."
+              placeholder={isSubmitting ? "Request is being submitted..." : "Type your message..."}
               value={input}
               onChange={(e) => {
                 handleInputChange(e);
@@ -635,15 +635,23 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
               onKeyDown={handleKeyDown}
               rows={1}
               style={{ minHeight: "42px", maxHeight: "150px" }}
+              disabled={isSubmitting}
             />
           </div>
+          
+          {/* Voice Input Button */}
+          <VoiceInput 
+            onTextReceived={(text) => setInput(prev => prev + text)}
+            className="flex-shrink-0"
+          />
+          
           <button
             className={`bg-blue-600 text-white rounded-full p-2.5 h-11 w-11 flex items-center justify-center flex-shrink-0 shadow-md hover:shadow-lg hover:bg-blue-700 transition-all ${
-              !input.trim() || !chatId
+              !input.trim() || !chatId || isSubmitting || isLoading
                 ? "opacity-50 cursor-not-allowed"
                 : ""
             }`}
-            disabled={!input.trim() || !chatId}
+            disabled={!input.trim() || !chatId || isSubmitting || isLoading}
             onClick={handleSendMessage}
           >
             <svg
@@ -663,7 +671,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           </button>
         </div>
       </div>
-      )}
     </div>
   );
 } 

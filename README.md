@@ -1,4 +1,4 @@
-# AIET Intake Portal (v1.2.5)
+# AIET Intake Portal (v1.2.6)
 
 A modern, AI-powered intake portal for BGC Engineering employees to submit automation requests. This application enables seamless communication between staff and the AI Efficiency Team (AIET) to identify and prioritize automation opportunities.
 
@@ -115,6 +115,12 @@ This project is proprietary software owned by BGC Engineering Inc.
 
 ## Changelog
 
+### v1.2.6 (May 4, 2025)
+- Improved speech recognition with toggle mode (click once to start, once to stop)
+- Fixed issue with transcript memory - text now clears after being sent
+- Enhanced voice recording UI with better visual feedback
+- Simplified voice input interaction for better user experience
+
 ### v1.2.5 (May 3, 2025)
 - Added fast-track intake flow with first two questions only
 - Introduced multilingual greeting and automatic language detection
@@ -160,4 +166,28 @@ This project is proprietary software owned by BGC Engineering Inc.
 
 AI Efficiency Team - aiet@bgcengineering.ca
 
-Project Link: [https://github.com/ca-vahid/AIETv1](https://github.com/ca-vahid/AIETv1) 
+Project Link: [https://github.com/ca-vahid/AIETv1](https://github.com/ca-vahid/AIETv1)
+
+## Speech Recognition Feature
+
+The AIET Intake Portal now includes enhanced speech recognition capabilities using Microsoft Azure Cognitive Services. This provides superior accuracy and cross-browser support compared to the native Web Speech API.
+
+### Setup
+
+1. Create a Speech resource in the [Azure Portal](https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices)
+2. Get your Speech key and region from the Azure Portal
+3. Add the following variables to your `.env.local` file:
+   ```
+   NEXT_PUBLIC_AZURE_SPEECH_KEY=your_azure_speech_key
+   NEXT_PUBLIC_AZURE_SPEECH_REGION=your_azure_region
+   ```
+
+### Features
+
+- **Superior Accuracy**: Microsoft's speech recognition offers better transcription quality than native browser implementations
+- **Cross-browser Support**: Works in all modern browsers, not just Chrome
+- **Dual Input Modes**: 
+  - Push-to-talk: Hold the microphone button to speak
+  - Toggle mode: Click once to start, click again to stop
+- **Real-time Feedback**: See your speech being transcribed as you speak
+- **Graceful Fallback**: Falls back to native Web Speech API if Azure credentials are not provided 
