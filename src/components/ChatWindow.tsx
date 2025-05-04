@@ -63,28 +63,16 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     }
   }, []);
 
-  // Load existing conversation if ID is provided, otherwise start a new one
+  // Bootstrap conversation: start new chat or load existing
   useEffect(() => {
     if (conversationId) {
       loadExistingConversation(conversationId);
-    } else if (!chatId && profile) {
+    } else if (chatId) {
+      loadExistingConversation(chatId);
+    } else if (profile) {
       startNewChat();
     }
   }, [conversationId, chatId, profile]);
-
-  // Initialize with welcome message if no messages and no ID provided
-  useEffect(() => {
-    if (messages.length === 0 && !conversationId) {
-      setMessages([
-        {
-          id: "welcome",
-          role: "assistant",
-          content: `Hello${profile ? ` ${profile.name}` : ""}! I'm the AIET Intake Assistant. I can help you submit tasks for automation. What task would you like help with today?`,
-          timestamp: Date.now(),
-        },
-      ]);
-    }
-  }, [profile, conversationId, messages.length]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -112,6 +100,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
       const data = await response.json();
       setChatId(data.conversationId);
+      // Immediately load the initial prompt from server
+      await loadExistingConversation(data.conversationId);
     } catch (error) {
       console.error("Error starting chat:", error);
     }

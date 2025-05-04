@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase/firebase';
 import { DraftConversation } from '@/lib/types/conversation';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, doc as adminDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
+import { generatePromptForState } from '@/lib/chat/stateMachine';
 
 /**
  * POST /api/chat/start - Creates a new conversation draft in Firestore
@@ -28,14 +29,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Fetch user profile for personalized greeting
+    const userProfileDoc = await getDoc(adminDoc(db, 'users', userId));
+    const userProfile = userProfileDoc.exists() ? userProfileDoc.data() : null;
+    const initialPrompt = generatePromptForState(
+      { currentStep: 'init', missingProfileFields: [], collectedData: {}, validations: {} },
+      userProfile
+    );
+    
     // Create new draft conversation
     const newConversation: DraftConversation = {
       id: crypto.randomUUID(),
       userId: userId,
       status: 'draft',
-      messages: [],
+      messages: [
+        {
+          role: 'assistant',
+          content: initialPrompt,
+          timestamp: Date.now()
+        }
+      ],
       state: {
-        currentStep: 'lite_description',
+        currentStep: 'init',
         missingProfileFields: [],
         collectedData: {},
         validations: {},
