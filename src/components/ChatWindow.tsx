@@ -53,6 +53,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [titleGenerated, setTitleGenerated] = useState(false);
   const [firstUserMessageSent, setFirstUserMessageSent] = useState(false);
   const [lastDescription, setLastDescription] = useState("");
+  const [summaryMode, setSummaryMode] = useState(false);
+  const [chatLocked, setChatLocked] = useState(false);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -289,6 +291,11 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         setDecisionMode(true);
       }
 
+      // Detect summary confirmation prompt
+      if (/summary of the automation request/i.test(assistantMessage) && /confirm/i.test(assistantMessage)) {
+        setSummaryMode(true);
+      }
+
       // After receiving assistant response, generate title if it's the first message
       if (!titleGenerated && firstUserMessageSent && lastDescription) {
         await generateTitle(lastDescription);
@@ -347,6 +354,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           timestamp: Date.now(),
         }
       ]);
+      setChatLocked(true);
     } catch (error) {
       console.error('Error completing chat:', error);
       setMessages(prev => [
@@ -435,6 +443,11 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       sendQuickCommand('go deeper');
     }
   }, [input, decisionMode]);
+
+  const handleSummarySubmit = async () => {
+    await handleCompleteChat();
+    setSummaryMode(false);
+  };
 
   // Remove filtering: display all messages by default
   const visibleMessages = messages;
@@ -576,7 +589,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       </div>
 
       {/* Decision Buttons (Submit vs Go Deeper) */}
-      {decisionMode && (
+      {decisionMode && !chatLocked && (
         <div className="border-t border-slate-600 bg-slate-700/50 px-6 py-4 flex justify-center gap-4">
           <button
             onClick={() => sendQuickCommand("submit")}
@@ -593,7 +606,20 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         </div>
       )}
 
+      {/* Summary confirm button */}
+      {summaryMode && !chatLocked && (
+        <div className="border-t border-slate-600 bg-slate-700/50 px-6 py-4 flex justify-center">
+          <button
+            onClick={handleSummarySubmit}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md shadow-md transition"
+          >
+            Submit Request
+          </button>
+        </div>
+      )}
+
       {/* Input area */}
+      {!chatLocked && (
       <div className="border-t border-slate-600 p-4 bg-slate-800/50 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <div className="flex-1 border rounded-full border-slate-600 bg-slate-800/80 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
@@ -637,6 +663,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 } 
