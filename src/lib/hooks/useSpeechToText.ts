@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import SpeechRecognition, { useSpeechRecognition as useSpeechRecognitionLib } from 'react-speech-recognition';
-import createSpeechServicesPonyfill from 'web-speech-cognitive-services';
+import * as speechServices from 'web-speech-cognitive-services';
 
 interface UseSpeechToTextProps {
   onTranscriptChange?: (transcript: string) => void;
@@ -16,7 +16,7 @@ const AZURE_KEY = process.env.NEXT_PUBLIC_AZURE_SPEECH_KEY;
 let isPolyfillInitialized = false;
 try {
   if (AZURE_KEY) {
-    const { SpeechRecognition: AzureSpeechRecognition } = createSpeechServicesPonyfill({
+    const { SpeechRecognition: AzureSpeechRecognition } = speechServices.createSpeechServicesPonyfill({
       credentials: {
         region: AZURE_REGION,
         subscriptionKey: AZURE_KEY,

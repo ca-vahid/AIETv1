@@ -16,7 +16,5 @@ declare module 'web-speech-cognitive-services' {
     SpeechRecognition: SpeechRecognition;
   }
 
-  function createSpeechServicesPonyfill(options: SpeechServiceOptions): SpeechServicePonyfill;
-
-  export default createSpeechServicesPonyfill;
+  export function createSpeechServicesPonyfill(options: SpeechServiceOptions): SpeechServicePonyfill;
 } 
