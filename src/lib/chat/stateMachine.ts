@@ -49,17 +49,27 @@ export function analyzeConversation(
   // Decide based on the *user's* reply when we are in summary_lite
   if (currentState.currentStep === 'summary_lite') {
     const lastUserMsg = messages.filter(m => m.role === 'user').pop();
-    if (lastUserMsg && /\b(submit|done|finish|send)\b/i.test(lastUserMsg.content)) {
-    return {
-      type: 'NEXT_STEP',
-        payload: { step: 'submit', data: { fastTrack: true } }
-    };
-  }
-    if (lastUserMsg && /\b(deep(er)?|more|details)\b/i.test(lastUserMsg.content)) {
-    return {
-      type: 'NEXT_STEP',
+    
+    // Special handling for the explicit "GO DEEPER" marker
+    if (lastUserMsg && /^\*GO DEEPER\*/i.test(lastUserMsg.content)) {
+      return {
+        type: 'NEXT_STEP',
         payload: { step: 'full_details' }
-    };
+      };
+    }
+    
+    if (lastUserMsg && /\b(submit|done|finish|send)\b/i.test(lastUserMsg.content)) {
+      return {
+        type: 'NEXT_STEP',
+        payload: { step: 'submit', data: { fastTrack: true } }
+      };
+    }
+    
+    if (lastUserMsg && /\b(deep(er)?|more|details)\b/i.test(lastUserMsg.content)) {
+      return {
+        type: 'NEXT_STEP',
+        payload: { step: 'full_details' }
+      };
     }
   }
 

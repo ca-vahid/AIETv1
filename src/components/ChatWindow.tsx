@@ -529,10 +529,14 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
       setIsSubmitting(true);
       await handleCompleteChat();
       setDecisionMode(false);
-    } else if (command === 'go deeper') {
+    } else if (command === 'go deeper' || command.toLowerCase().includes('deep')) {
       // When going deeper, we might want to regenerate the title later
       setTitleGenerated(false); 
-      setInput(command);
+      
+      // Explicitly communicate to server this is a "go deeper" command
+      // to prevent auto-completion behavior
+      const deeperMessage = "*GO DEEPER* " + command;
+      setInput(deeperMessage);
       await handleSendMessage();
       setDecisionMode(false);
     } else {

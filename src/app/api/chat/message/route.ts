@@ -215,15 +215,20 @@ export async function POST(req: NextRequest) {
             // Handle completion only once - prevent race conditions
             let shouldComplete = false;
             
+            // Get the last user message once
+            const lastUserMsg = updatedMessages.filter(m => m.role === 'user').pop();
+            
+            // Check if this is an explicit "go deeper" request to prevent auto-completion
+            const isExplicitGoDeeper = lastUserMsg && /^\*GO DEEPER\*/i.test(lastUserMsg.content);
+            
             // Check if we need to complete the chat (but don't do it yet)
             // Case 1: Just moved to submit state
-            if (conversationData.state.currentStep !== 'submit' && newState.currentStep === 'submit') {
+            if (!isExplicitGoDeeper && conversationData.state.currentStep !== 'submit' && newState.currentStep === 'submit') {
               shouldComplete = true;
             }
             
             // Case 2: User confirmed in summary state
-            const lastUserMsg = updatedMessages.filter(m => m.role === 'user').pop();
-            if (lastUserMsg && 
+            if (!isExplicitGoDeeper && lastUserMsg && 
                 conversationData.state.currentStep === 'summary' &&
                 /\b(yes|confirm|looks good|submit|done|finish|send)\b/i.test(lastUserMsg.content) &&
                 !shouldComplete) {
