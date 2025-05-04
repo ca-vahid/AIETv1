@@ -164,6 +164,7 @@ export async function POST(req: NextRequest) {
           try {
             // Collect the full message
             let assistantMessage = '';
+            let draftDeleted = false;
             
             // Stream each chunk directly to the client
             for await (const chunk of responseStream.stream) {
@@ -224,6 +225,7 @@ export async function POST(req: NextRequest) {
                 });
                 if (completeRes.ok) {
                   console.log("\x1b[32m%s\x1b[0m", `[API] Draft ${conversationId} finalized into request`);
+                  draftDeleted = true; // don't try to update deleted doc
                 } else {
                   console.error("\x1b[31m%s\x1b[0m", `[API] Failed to finalize draft: ${await completeRes.text()}`);
                 }
@@ -233,11 +235,13 @@ export async function POST(req: NextRequest) {
             }
             
             // Save to Firestore
-            await updateDoc(doc(conversationsRef, conversationId), {
-              messages: updatedMessages,
-              state: newState,
-              updatedAt: Date.now()
-            });
+            if (!draftDeleted) {
+              await updateDoc(doc(conversationsRef, conversationId), {
+                messages: updatedMessages,
+                state: newState,
+                updatedAt: Date.now()
+              });
+            }
             
             console.log("\x1b[32m%s\x1b[0m", "[API] Conversation updated in Firestore");
             controller.close();
