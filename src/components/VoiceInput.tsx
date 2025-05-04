@@ -4,22 +4,20 @@ import React, { useState, useEffect } from 'react';
 import useSpeechToText from '@/lib/hooks/useSpeechToText';
 
 interface VoiceInputProps {
-  onTextReceived: (text: string) => void;
+  onTranscriptUpdate: (text: string) => void;
   language?: string;
   className?: string;
 }
 
 const VoiceInput: React.FC<VoiceInputProps> = ({
-  onTextReceived,
+  onTranscriptUpdate,
   language = 'en-US',
   className = '',
 }) => {
   const [showError, setShowError] = useState(false);
-  const [showTranscriptPopup, setShowTranscriptPopup] = useState(false);
 
   const {
     isListening,
-    transcript,
     startListening,
     stopListening,
     clearTranscript,
@@ -28,21 +26,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
     isMicrophoneAvailable,
     isPolyfillLoaded
   } = useSpeechToText({
-    onTranscriptChange: (text) => {
-      // Keep transcript popup open while receiving text
-      setShowTranscriptPopup(true);
-    },
-    onFinalTranscript: (finalTranscript) => {
-      if (finalTranscript.trim()) {
-        onTextReceived(finalTranscript);
-        
-        // Hide the transcript popup after a short delay
-        setTimeout(() => {
-          setShowTranscriptPopup(false);
-          clearTranscript(); // Clear the transcript after sending
-        }, 1000);
-      }
-    },
+    onTranscriptChange: onTranscriptUpdate,
     language: language,
     continuous: true
   });
@@ -51,15 +35,9 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   const toggleListening = () => {
     if (isListening) {
       stopListening();
-      // Keep popup visible for a moment to let the user see final text
-      setTimeout(() => {
-        setShowTranscriptPopup(false);
-        clearTranscript(); // Clear the transcript after stopping
-      }, 2000);
     } else {
       clearTranscript(); // Ensure we start with a clean transcript
       startListening();
-      setShowTranscriptPopup(true);
     }
   };
 
@@ -73,16 +51,6 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
       return () => clearTimeout(timer);
     }
   }, [error]);
-
-  // Auto-hide transcript popup after inactivity
-  useEffect(() => {
-    if (showTranscriptPopup && !isListening && !transcript) {
-      const timer = setTimeout(() => {
-        setShowTranscriptPopup(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [showTranscriptPopup, isListening, transcript]);
 
   // If speech recognition is not supported, render nothing
   if (browserSupportsSpeechRecognition === false) {
@@ -148,33 +116,9 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
         )}
       </div>
 
-      {/* Transcript Popup - Absolute positioned for better visibility */}
-      {(showTranscriptPopup && transcript) && (
-        <div className="absolute top-[-100px] left-1/2 transform -translate-x-1/2 z-20 min-w-[200px] max-w-[300px]">
-          <div className="bg-slate-800 shadow-lg border border-slate-700 rounded-lg p-3 text-white text-sm">
-            <div className="flex items-center mb-1.5">
-              <div className="flex space-x-1 mr-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: "300ms" }}></div>
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: "600ms" }}></div>
-              </div>
-              <span className="text-xs text-slate-300 font-medium">
-                {isListening ? "Listening..." : "Processed speech:"}
-              </span>
-            </div>
-            <p className="text-xs text-slate-300 max-h-[100px] overflow-y-auto break-words">
-              {transcript}
-            </p>
-          </div>
-          <div className="h-3 w-6 overflow-hidden inline-block absolute left-1/2 transform -translate-x-1/2 bottom-[-12px]">
-            <div className="h-4 w-4 bg-slate-800 border-r border-b border-slate-700 rotate-45 transform origin-bottom-left"></div>
-          </div>
-        </div>
-      )}
-
       {/* Error Message */}
       {showError && (
-        <div className="absolute -bottom-6 right-0 text-xs text-red-400 bg-slate-800 px-2 py-1 rounded shadow-md">
+        <div className="absolute -bottom-8 right-0 text-xs text-red-400 bg-slate-800 px-2 py-1 rounded shadow-md z-10">
           {error}
         </div>
       )}

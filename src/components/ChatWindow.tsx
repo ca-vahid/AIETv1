@@ -189,8 +189,21 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
     }
   };
 
+  // Callback to update input from voice
+  const handleVoiceInputUpdate = useCallback((text: string) => {
+    setInput(text);
+    // Trigger resize check for textarea
+    if (inputRef.current) {
+      const event = new Event('input', { bubbles: true });
+      inputRef.current.value = text; // Ensure value is set before dispatching
+      inputRef.current.dispatchEvent(event);
+      autoResizeTextarea({ target: inputRef.current } as React.ChangeEvent<HTMLTextAreaElement>);
+    }
+  }, []); // Empty dependency array as setInput is stable
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
+    // autoResizeTextarea is called in the textarea's onChange directly now
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -368,8 +381,9 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
   // Adjust textarea height based on content
   const autoResizeTextarea = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = e.target;
-    textarea.style.height = "auto";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
+    textarea.style.height = "auto"; // Reset height
+    // Set height based on scroll height, capped at 150px
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`; 
   };
 
   // Handle completion of chat draft into final request
@@ -632,22 +646,22 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
             <textarea
               ref={inputRef}
               className="w-full px-4 py-2.5 focus:outline-none bg-transparent resize-none text-sm text-white"
-              placeholder={isSubmitting ? "Request is being submitted..." : "Type your message..."}
+              placeholder={isSubmitting ? "Request is being submitted..." : "Type your message or use the mic..."}
               value={input}
               onChange={(e) => {
-                handleInputChange(e);
-                autoResizeTextarea(e);
+                handleInputChange(e); 
+                autoResizeTextarea(e); // Call resize here as well
               }}
               onKeyDown={handleKeyDown}
               rows={1}
-              style={{ minHeight: "42px", maxHeight: "150px" }}
+              style={{ minHeight: "42px", maxHeight: "150px" }} 
               disabled={isSubmitting}
             />
           </div>
           
           {/* Voice Input Button */}
           <VoiceInput 
-            onTextReceived={(text) => setInput(prev => prev + text)}
+            onTranscriptUpdate={handleVoiceInputUpdate}
             className="flex-shrink-0"
           />
           
