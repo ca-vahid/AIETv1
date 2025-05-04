@@ -149,6 +149,17 @@ export function analyzeConversation(
     }
   }
 
+  // User confirmation in summary step → submit
+  if (currentState.currentStep === 'summary') {
+    const lastUserMsg = messages.filter(m => m.role === 'user').pop();
+    if (lastUserMsg && /\b(yes|confirm|looks good|submit|done|finish|send)\b/i.test(lastUserMsg.content)) {
+      return {
+        type: 'NEXT_STEP',
+        payload: { step: 'submit' }
+      };
+    }
+  }
+
   return null;
 }
 
