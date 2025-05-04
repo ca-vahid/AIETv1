@@ -59,7 +59,7 @@ export function analyzeConversation(
     return {
       type: 'NEXT_STEP',
         payload: { step: 'full_details' }
-      };
+    };
     }
   }
 
@@ -97,8 +97,8 @@ export function analyzeConversation(
             extractedData.frequency = frequencyMatch[0];
           }
         }
-      }
-      
+  }
+
       // Check for impact mentions
       if (!d.impactNarrative) {
         if (/impact|benefit|save|improve|better|easier|faster|time|automation|efficient|productivity|reduce|error|quality|satisfaction/i.test(userContent)) {
@@ -137,7 +137,7 @@ export function analyzeConversation(
             step: 'full_details', // Stay on the same step
             data: extractedData 
           }
-        };
+    };
       }
     }
   }

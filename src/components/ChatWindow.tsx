@@ -55,6 +55,7 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
   const [chatId, setChatId] = useState<string | undefined>(conversationId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const baseTextRef = useRef<string>(""); // Ref to store text before listening starts
   const [currentModel, setCurrentModel] = useState<string>("");
   const [useThinkingModel, setUseThinkingModel] = useState<boolean>(false);
   const [decisionMode, setDecisionMode] = useState(false);
@@ -189,17 +190,41 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
     }
   };
 
+  // Callback when listening starts
+  const handleListenStart = useCallback(() => {
+    baseTextRef.current = input.trim(); // Store current input, trimmed
+  }, [input]);
+
+  // Callback when listening stops (optional cleanup)
+  const handleListenStop = useCallback(() => {
+    baseTextRef.current = ""; // Clear the base text ref
+  }, []);
+
   // Callback to update input from voice
-  const handleVoiceInputUpdate = useCallback((text: string) => {
-    setInput(text);
+  const handleVoiceInputUpdate = useCallback((newTranscript: string) => {
+    // Trim the incoming transcript to avoid leading/trailing spaces causing issues
+    const trimmedTranscript = newTranscript.trim();
+    
+    // If the new transcript part is empty, don't update (prevents clearing on start)
+    if (!trimmedTranscript) {
+       return; 
+    }
+
+    // Construct the full text: base + space (if base exists) + new transcript
+    const base = baseTextRef.current;
+    const separator = base ? ' ' : ''; // Add space only if there was base text
+    const fullText = base + separator + trimmedTranscript;
+    
+    setInput(fullText);
+    
     // Trigger resize check for textarea
     if (inputRef.current) {
       const event = new Event('input', { bubbles: true });
-      inputRef.current.value = text; // Ensure value is set before dispatching
+      inputRef.current.value = fullText; 
       inputRef.current.dispatchEvent(event);
       autoResizeTextarea({ target: inputRef.current } as React.ChangeEvent<HTMLTextAreaElement>);
     }
-  }, []); // Empty dependency array as setInput is stable
+  }, []); // Dependencies: setInput, autoResizeTextarea (if not stable), baseTextRef doesn't need to be dependency
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -662,6 +687,8 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
           {/* Voice Input Button */}
           <VoiceInput 
             onTranscriptUpdate={handleVoiceInputUpdate}
+            onListenStart={handleListenStart}
+            onListenStop={handleListenStop}
             className="flex-shrink-0"
           />
           

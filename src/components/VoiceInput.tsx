@@ -5,12 +5,16 @@ import useSpeechToText from '@/lib/hooks/useSpeechToText';
 
 interface VoiceInputProps {
   onTranscriptUpdate: (text: string) => void;
+  onListenStart?: () => void;
+  onListenStop?: () => void;
   language?: string;
   className?: string;
 }
 
 const VoiceInput: React.FC<VoiceInputProps> = ({
   onTranscriptUpdate,
+  onListenStart,
+  onListenStop,
   language = 'en-US',
   className = '',
 }) => {
@@ -34,9 +38,11 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   // Handle toggle mode
   const toggleListening = () => {
     if (isListening) {
+      onListenStop?.();
       stopListening();
     } else {
-      clearTranscript(); // Ensure we start with a clean transcript
+      onListenStart?.();
+      clearTranscript();
       startListening();
     }
   };
