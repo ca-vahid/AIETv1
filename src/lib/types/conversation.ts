@@ -13,18 +13,20 @@ export interface Message {
 export interface ConversationState {
   currentStep:
     | 'init'
-    | 'profile'
     | 'lite_description'   // Fast-track Q1 – brief task description
     | 'lite_impact'        // Fast-track Q2 – quick benefit / impact statement
     | 'summary_lite'       // AI summary & decision node (submit vs. deep dive)
+    | 'full_details'       // Condensed deep info collection
+    | 'attachments'
+    | 'summary'
+    | 'submit'
+    // Legacy deep flow (no longer auto-driven, but retained for compatibility)
+    | 'profile'
     | 'task_description'
     | 'pain'
     | 'frequency'
     | 'tools'
-    | 'impact'
-    | 'attachments'
-    | 'summary'
-    | 'submit';
+    | 'impact';
   missingProfileFields: string[];
   collectedData: {
     processDescription?: string;

@@ -57,65 +57,25 @@ export function analyzeConversation(
     if (/\b(deep|more|details)\b/i.test(lastMessage.content)) {
       return {
         type: 'NEXT_STEP',
-        payload: { step: 'task_description' }
+        payload: { step: 'full_details' }
       };
     }
   }
 
-  // --------------------------------------------------------------
-
-  // Existing deeper flow transitions
-  // Profile completion check (retain for older drafts)
-  if (currentState.currentStep === 'profile') {
-    return {
-      type: 'NEXT_STEP',
-      payload: { step: 'task_description' }
-    };
-  }
-
-  // Task description completion
-  if (currentState.currentStep === 'task_description' && 
-      content.includes('great') && content.includes('tell me more about')) {
-    return {
-      type: 'NEXT_STEP',
-      payload: { step: 'pain' }
-    };
-  }
-
-  // Pain point completion
-  if (currentState.currentStep === 'pain' && 
-      content.includes('understand') && content.includes('how often')) {
-    return {
-      type: 'NEXT_STEP',
-      payload: { step: 'frequency' }
-    };
-  }
-
-  // Frequency completion
-  if (currentState.currentStep === 'frequency' && 
-      content.includes('what tools') || content.includes('which systems')) {
-    return {
-      type: 'NEXT_STEP',
-      payload: { step: 'tools' }
-    };
-  }
-
-  // Tools completion
-  if (currentState.currentStep === 'tools' && 
-      content.includes('impact') || content.includes('rate')) {
-    return {
-      type: 'NEXT_STEP',
-      payload: { step: 'impact' }
-    };
-  }
-
-  // Impact completion
-  if (currentState.currentStep === 'impact' && 
-      content.includes('attach') || content.includes('upload')) {
-    return {
-      type: 'NEXT_STEP',
-      payload: { step: 'attachments' }
-    };
+  // Condensed deep details: once 2 of {tools, frequency, impactNarrative} are provided, move to attachments
+  if (currentState.currentStep === 'full_details') {
+    const d = currentState.collectedData;
+    const gotCount = [
+      Array.isArray(d.tools) && d.tools.length > 0,
+      !!d.frequency,
+      !!d.impactNarrative
+    ].filter(Boolean).length;
+    if (gotCount >= 2) {
+      return {
+        type: 'NEXT_STEP',
+        payload: { step: 'attachments' }
+      };
+    }
   }
 
   // Attachments completion
@@ -199,23 +159,19 @@ ${g.ask}
 Once the user confirms the language, politely ask them to briefly describe the work/task they think could benefit from AI automation.`;
     }
     
-    case 'profile':
-      return `${basePrompt}We need to collect some missing profile information: ${state.missingProfileFields.join(', ')}. Ask for these details politely.`;
-    
-    case 'task_description':
-      return `${basePrompt}Ask the user to describe the task they would like to automate. Be specific about what details you need.`;
-    
-    case 'pain':
-      return `${basePrompt}Ask about the pain points of this task - what makes it difficult, time-consuming, or error-prone?`;
-    
-    case 'frequency':
-      return `${basePrompt}Ask how often this task is performed and approximately how long it takes each time.`;
-    
-    case 'tools':
-      return `${basePrompt}Ask about the tools, systems, and people involved in this task.`;
-    
-    case 'impact':
-      return `${basePrompt}Ask the user to rate the potential impact of automating this task on a scale of 1-5, and estimate hours saved per week.`;
+    case 'full_details': {
+      // Friendly loop: ask for any two of these three details
+      const d = state.collectedData;
+      const have: string[] = [];
+      if (Array.isArray(d.tools) && d.tools.length > 0) have.push('tools/systems');
+      if (d.frequency) have.push('frequency/duration');
+      if (d.impactNarrative) have.push('impact');
+      const options = ['tools/systems', 'frequency/duration', 'impact'];
+      const need = options.filter(opt => !have.includes(opt));
+      return `${basePrompt}You've shared: ${have.length ? have.join(', ') : 'none yet'}. ` +
+        `I'm still waiting on: ${need.join(', ')}. ` +
+        `Pick any two of those and tell me a bit about them—be brief and have fun!`;
+    }
     
     case 'attachments':
       return `${basePrompt}Ask if they would like to attach any relevant files (screenshots, examples, etc.).`;
