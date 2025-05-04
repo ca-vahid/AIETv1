@@ -244,6 +244,24 @@ export async function POST(req: NextRequest) {
             }
             
             console.log("\x1b[32m%s\x1b[0m", "[API] Conversation updated in Firestore");
+            // If we just transitioned state, send the next prompt immediately
+            if (stateTransition && newState.currentStep !== 'submit') {
+              const nextPrompt = generatePromptForState(newState);
+              // Create assistant message and append
+              const nextAssistantMessage: Message = {
+                role: 'assistant',
+                content: nextPrompt,
+                timestamp: Date.now()
+              };
+              // Update Firestore with the new assistant prompt
+              await updateDoc(doc(conversationsRef, conversationId), {
+                messages: [...updatedMessages, nextAssistantMessage],
+                state: newState,
+                updatedAt: Date.now()
+              });
+              // Stream the next prompt to the client
+              controller.enqueue(new TextEncoder().encode(nextPrompt));
+            }
             controller.close();
           } catch (streamError) {
             console.error("\x1b[31m%s\x1b[0m", `[API] Error processing stream: ${streamError}`);
