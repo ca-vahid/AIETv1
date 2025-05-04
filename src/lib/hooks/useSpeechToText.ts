@@ -12,29 +12,8 @@ interface UseSpeechToTextProps {
 const AZURE_REGION = process.env.NEXT_PUBLIC_AZURE_SPEECH_REGION || 'eastus';
 const AZURE_KEY = process.env.NEXT_PUBLIC_AZURE_SPEECH_KEY;
 
-// Set up the polyfill once when the module loads
-let isPolyfillInitialized = false;
-try {
-  if (AZURE_KEY) {
-    const { SpeechRecognition: AzureSpeechRecognition } = speechServices.createSpeechServicesPonyfill({
-      credentials: {
-        region: AZURE_REGION,
-        subscriptionKey: AZURE_KEY,
-      }
-    });
-    
-    SpeechRecognition.applyPolyfill(AzureSpeechRecognition);
-    isPolyfillInitialized = true;
-    console.log("Azure Speech polyfill initialized successfully");
-  } else {
-    console.warn("Azure Speech key is not defined. Falling back to native Web Speech API.");
-    isPolyfillInitialized = true;
-  }
-} catch (err) {
-  console.error("Failed to initialize Azure Speech Services polyfill:", err);
-  // Still mark as initialized so we can use native API as fallback
-  isPolyfillInitialized = true;
-}
+// Flag to track if polyfill is initialized
+let isPolyfillApplied = false;
 
 const useSpeechToText = ({
   onTranscriptChange,
@@ -44,10 +23,42 @@ const useSpeechToText = ({
 }: UseSpeechToTextProps = {}) => {
   const [error, setError] = useState<string | null>(null);
   const [localIsListening, setLocalIsListening] = useState(false);
-  // Track whether we've handled the final transcript
   const [finalTranscriptHandled, setFinalTranscriptHandled] = useState(false);
-  // Local copy of transcript for better control
   const [localTranscript, setLocalTranscript] = useState('');
+  const [isPolyfillInitialized, setIsPolyfillInitialized] = useState(isPolyfillApplied);
+
+  // Initialize polyfill on client-side mount
+  useEffect(() => {
+    if (!isPolyfillApplied && typeof window !== 'undefined') {
+      try {
+        if (AZURE_KEY) {
+          console.log("Attempting to initialize Azure Speech polyfill...");
+          const { SpeechRecognition: AzureSpeechRecognition } = speechServices.createSpeechServicesPonyfill({
+            credentials: {
+              region: AZURE_REGION,
+              subscriptionKey: AZURE_KEY,
+            }
+          });
+          
+          SpeechRecognition.applyPolyfill(AzureSpeechRecognition);
+          isPolyfillApplied = true;
+          setIsPolyfillInitialized(true);
+          console.log("Azure Speech polyfill initialized successfully");
+        } else {
+          console.warn("Azure Speech key not defined. Will use native Web Speech API if available.");
+          isPolyfillApplied = true; // Mark as applied even if using native
+          setIsPolyfillInitialized(true);
+        }
+      } catch (err) {
+        console.error("Failed to initialize Azure Speech Services polyfill:", err);
+        // Still mark as initialized so we can potentially use native API as fallback
+        isPolyfillApplied = true;
+        setIsPolyfillInitialized(true);
+        setError("Failed to initialize speech services.");
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   // Use the library's hook with interimResults for smoother transcription
   const {
@@ -122,10 +133,11 @@ const useSpeechToText = ({
       console.error("Failed to start listening:", err);
       setError("Failed to start speech recognition");
     }
-  }, [browserSupportsSpeechRecognition, isMicrophoneAvailable, continuous, language, resetTranscript]);
+  }, [isPolyfillInitialized, browserSupportsSpeechRecognition, isMicrophoneAvailable, continuous, language, resetTranscript]);
 
   // Stop listening
   const stopListening = useCallback(() => {
+    if (!isPolyfillInitialized) return; // Don't try to stop if not initialized
     try {
       SpeechRecognition.stopListening();
       setLocalIsListening(false);
@@ -140,14 +152,15 @@ const useSpeechToText = ({
       console.error("Failed to stop listening:", err);
       setError("Failed to stop speech recognition");
     }
-  }, [transcript, finalTranscript, onFinalTranscript, finalTranscriptHandled]);
+  }, [isPolyfillInitialized, transcript, finalTranscript, onFinalTranscript, finalTranscriptHandled]);
 
   // Clear the transcript
   const clearTranscript = useCallback(() => {
+    if (!isPolyfillInitialized) return;
     resetTranscript();
     setLocalTranscript('');
     setFinalTranscriptHandled(false);
-  }, [resetTranscript]);
+  }, [isPolyfillInitialized, resetTranscript]);
 
   // Sync listening state
   useEffect(() => {
@@ -164,7 +177,7 @@ const useSpeechToText = ({
     error,
     browserSupportsSpeechRecognition,
     isMicrophoneAvailable,
-    isPolyfillLoaded: isPolyfillInitialized
+    isPolyfillLoaded: isPolyfillInitialized // Expose the initialization state
   };
 };
 
