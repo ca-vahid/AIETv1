@@ -17,19 +17,60 @@ export function analyzeConversation(
 
   const content = lastMessage.content.toLowerCase();
 
-  // Profile completion check
+  // Fast-track lite flow ----------------------------------------
   if (currentState.currentStep === 'init') {
-    if (currentState.missingProfileFields.length > 0) {
+    // jump straight to lite description (skip profile collection in fast track)
+    return {
+      type: 'NEXT_STEP',
+      payload: { step: 'lite_description' }
+    };
+  }
+
+  // Lite description answered → lite impact
+  if (currentState.currentStep === 'lite_description') {
+    if (lastMessage.content.trim().length > 10) {
       return {
         type: 'NEXT_STEP',
-        payload: { step: 'profile' }
+        payload: { step: 'lite_impact', data: { processDescription: lastMessage.content } }
       };
-    } else {
+    }
+  }
+
+  // Lite impact answered → summary_lite
+  if (currentState.currentStep === 'lite_impact') {
+    if (lastMessage.content.trim().length > 5) {
+      return {
+        type: 'NEXT_STEP',
+        payload: { step: 'summary_lite', data: { impactNarrative: lastMessage.content } }
+      };
+    }
+  }
+
+  // If user types something like "submit" or "done" in summary_lite we fast submit
+  if (currentState.currentStep === 'summary_lite') {
+    if (/\b(submit|done|finish|send)\b/i.test(lastMessage.content)) {
+      return {
+        type: 'NEXT_STEP',
+        payload: { step: 'submit', data: { fastTrack: true } }
+      };
+    }
+    if (/\b(deep|more|details)\b/i.test(lastMessage.content)) {
       return {
         type: 'NEXT_STEP',
         payload: { step: 'task_description' }
       };
     }
+  }
+
+  // --------------------------------------------------------------
+
+  // Existing deeper flow transitions
+  // Profile completion check (retain for older drafts)
+  if (currentState.currentStep === 'profile') {
+    return {
+      type: 'NEXT_STEP',
+      payload: { step: 'task_description' }
+    };
   }
 
   // Task description completion
@@ -126,8 +167,37 @@ export function generatePromptForState(
   const basePrompt = 'You are AIET-IntakeBot, a friendly assistant helping BGC employees submit automation requests. ';
   
   switch (state.currentStep) {
-    case 'init':
-      return `${basePrompt}Introduce yourself and ask if the profile information we have is correct: ${JSON.stringify(userProfile)}`;
+    case 'init': {
+      // Personalised multilingual greeting & language confirmation
+      const firstName = userProfile?.name?.split(' ')[0] || 'there';
+      const lang = (userProfile?.preferredLanguage || 'en').toLowerCase();
+
+      const greetings: Record<string, { hello: string; ask: string }> = {
+        fr: {
+          hello: `Bonjour ${firstName}!`,
+          ask: `Je peux continuer en français. Est-ce que cela vous convient ou préférez-vous l'anglais ?`
+        },
+        es: {
+          hello: `¡Hola ${firstName}!`,
+          ask: `Puedo continuar en español. ¿Está bien o prefiere inglés?`
+        },
+        en: {
+          hello: `Hi ${firstName}!`,
+          ask: `I can continue in English. Would you prefer another language?`
+        }
+      };
+
+      const key = lang.startsWith('fr') ? 'fr' : lang.startsWith('es') ? 'es' : 'en';
+      const g = greetings[key];
+
+      return `${basePrompt}
+
+${g.hello}
+
+${g.ask}
+
+Once the user confirms the language, politely ask them to briefly describe the work/task they think could benefit from AI automation.`;
+    }
     
     case 'profile':
       return `${basePrompt}We need to collect some missing profile information: ${state.missingProfileFields.join(', ')}. Ask for these details politely.`;
@@ -152,6 +222,25 @@ export function generatePromptForState(
     
     case 'summary':
       return `${basePrompt}Present a summary of all collected information and ask for confirmation: ${JSON.stringify(state.collectedData)}`;
+    
+    case 'lite_description':
+      return `${basePrompt}Ask the user—politely and concisely—to give a brief description (1–2 sentences) of the task/process they believe could benefit from AI optimisation or automation.`;
+    
+    case 'lite_impact':
+      return `${basePrompt}Thank the user for the description and ask them—in the same language—to briefly explain how automating this task would help (time saved, reduced errors, happier staff, etc.).`;
+    
+    case 'summary_lite': {
+      const d = state.collectedData;
+      return `${basePrompt}Provide a short bullet-point summary of what the user has shared so far:
++- Task: ${d.processDescription || '[Pending]'}
++- Anticipated benefit: ${(d as any).impactNarrative || '[Pending]'}
+
+Ask the user:
+1. *Submit now* – you will say that the AIET team will review.
+2. *Go deeper* – you will ask more detailed follow-up questions.
+
+Wait for the user to answer with their choice.`;
+    }
     
     default:
       return basePrompt;

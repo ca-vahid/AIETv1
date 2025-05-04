@@ -11,7 +11,20 @@ export interface Message {
 }
 
 export interface ConversationState {
-  currentStep: 'init' | 'profile' | 'task_description' | 'pain' | 'frequency' | 'tools' | 'impact' | 'attachments' | 'summary' | 'submit';
+  currentStep:
+    | 'init'
+    | 'profile'
+    | 'lite_description'   // Fast-track Q1 – brief task description
+    | 'lite_impact'        // Fast-track Q2 – quick benefit / impact statement
+    | 'summary_lite'       // AI summary & decision node (submit vs. deep dive)
+    | 'task_description'
+    | 'pain'
+    | 'frequency'
+    | 'tools'
+    | 'impact'
+    | 'attachments'
+    | 'summary'
+    | 'submit';
   missingProfileFields: string[];
   collectedData: {
     processDescription?: string;
@@ -22,6 +35,7 @@ export interface ConversationState {
     peopleInvolved?: number;
     tools?: string[];
     roles?: string[];
+    impactNarrative?: string;
     impactScore?: number;
     hoursSavedPerWeek?: number;
     attachments?: {
@@ -30,6 +44,11 @@ export interface ConversationState {
     }[];
   };
   validations: Record<string, boolean>;
+
+  /**
+   * Indicates whether the user chose the fast-track path (submitted after the lite steps)
+   */
+  fastTrack?: boolean;
 }
 
 export interface DraftConversation {

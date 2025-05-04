@@ -33,18 +33,13 @@ export async function POST(req: Request) {
       id: crypto.randomUUID(),
       userId: userId,
       status: 'draft',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are AIET-IntakeBot, a friendly assistant helping BGC employees submit automation requests. Communicate in the user\'s preferred language (English, French, or Spanish). Guide them through the process step by step, gathering all necessary information about their task automation needs.',
-          timestamp: Date.now()
-        }
-      ],
+      messages: [],
       state: {
-        currentStep: 'init',
+        currentStep: 'lite_description',
         missingProfileFields: [],
         collectedData: {},
-        validations: {}
+        validations: {},
+        fastTrack: false
       },
       createdAt: Date.now(),
       updatedAt: Date.now()
