@@ -139,7 +139,8 @@ const useSpeechToText = ({
   const stopListening = useCallback(() => {
     if (!isPolyfillInitialized) return; // Don't try to stop if not initialized
     try {
-      SpeechRecognition.stopListening();
+      // Use abortListening for immediate stop and potential better resource release
+      SpeechRecognition.abortListening();
       setLocalIsListening(false);
       
       // Call the onFinalTranscript callback with the final transcript
