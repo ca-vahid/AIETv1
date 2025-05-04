@@ -178,6 +178,9 @@ function getStateLabel(state: string): string {
     'init': 'Getting Started',
     'profile': 'Profile Information',
     'task_description': 'Task Description',
+    'lite_description': 'Brief Overview',
+    'lite_impact': 'Benefit Overview',
+    'summary_lite': 'Ready to Submit',
     'pain': 'Pain Points',
     'frequency': 'Frequency & Duration',
     'tools': 'Tools & Roles',
@@ -211,18 +214,21 @@ function getRequestStatusLabel(status: string): string {
 function calculateProgress(state: string): number {
   const stateProgressMap: Record<string, number> = {
     'init': 5,
-    'profile': 10,
-    'task_description': 20,
-    'pain': 30,
-    'frequency': 40,
-    'tools': 55,
-    'impact': 70,
-    'attachments': 80,
-    'summary': 90,
-    'submit': 95
+    'lite_description': 10,
+    'lite_impact': 20,
+    'summary_lite': 30,
+    'profile': 40,
+    'task_description': 50,
+    'pain': 60,
+    'frequency': 70,
+    'tools': 80,
+    'impact': 90,
+    'attachments': 95,
+    'summary': 98,
+    'submit': 100
   };
   
-  return stateProgressMap[state] || 0;
+  return stateProgressMap[state] ?? 0;
 }
 
 /**
