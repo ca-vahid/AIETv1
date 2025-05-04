@@ -66,15 +66,64 @@ export function analyzeConversation(
   // Condensed deep details: once 2 of {tools, frequency, impactNarrative} are provided, move to attachments
   if (currentState.currentStep === 'full_details') {
     const d = currentState.collectedData;
+    
+    // Extract data from the conversation to update collectedData
+    const lastUserMsg = messages.filter(m => m.role === 'user').pop();
+    const lastAssistantMsg = lastMessage; // This is already the lastMessage from above
+    
+    // Try to parse and extract data from the latest messages
+    const extractedData: Record<string, any> = {};
+    
+    // Check for tools/systems mentions in assistant's message
+    if (!Array.isArray(d.tools) || d.tools.length === 0) {
+      if (/tool|system|software|app|application|platform|PowerApp|email/i.test(lastAssistantMsg.content)) {
+        const toolsMatch = lastAssistantMsg.content.match(/tools\/systems(.*?)(involved|used|needed).*?:.*?([\w\s,\.]+)/i);
+        if (toolsMatch && toolsMatch[3]) {
+          extractedData.tools = toolsMatch[3].split(/[,.]/).map(t => t.trim()).filter(t => t.length > 0);
+        } else {
+          // Fallback: just extract any sentences with tool-related words
+          const toolSentences = lastAssistantMsg.content.match(/[^.!?]*?(tool|system|software|app|application|platform|PowerApp|email)[^.!?]*[.!?]/gi);
+          if (toolSentences && toolSentences.length > 0) {
+            extractedData.tools = ['Tools mentioned in conversation'];
+          }
+        }
+      }
+    }
+    
+    // Check for frequency/duration mentions
+    if (!d.frequency) {
+      if (/daily|weekly|monthly|times|frequency|often|per day|minutes|hours/i.test(lastAssistantMsg.content)) {
+        const frequencyMatch = lastAssistantMsg.content.match(/frequency.*?:.*?([\w\s,\.]+)/i) || 
+                              lastAssistantMsg.content.match(/(daily|weekly|monthly|(\d+)\s+times)/i);
+        if (frequencyMatch) {
+          extractedData.frequency = "Mentioned in conversation";
+        }
+      }
+    }
+    
+    // Check for impact mentions
+    if (!d.impactNarrative) {
+      if (/impact|benefit|save|improve|better|easier|faster|time|automation/i.test(lastAssistantMsg.content)) {
+        const impactMatch = lastAssistantMsg.content.match(/impact.*?:.*?([\w\s,\.]+)/i) || 
+                           lastAssistantMsg.content.match(/benefit.*?:.*?([\w\s,\.]+)/i);
+        if (impactMatch) {
+          extractedData.impactNarrative = "Impact mentioned in conversation";
+        }
+      }
+    }
+    
+    // Now check conditions with potential updated data
+    const mergedData = {...d, ...extractedData};
     const gotCount = [
-      Array.isArray(d.tools) && d.tools.length > 0,
-      !!d.frequency,
-      !!d.impactNarrative
+      Array.isArray(mergedData.tools) && mergedData.tools.length > 0,
+      !!mergedData.frequency,
+      !!mergedData.impactNarrative
     ].filter(Boolean).length;
+    
     if (gotCount >= 2) {
       return {
         type: 'NEXT_STEP',
-        payload: { step: 'attachments' }
+        payload: { step: 'attachments', data: extractedData }
       };
     }
   }
@@ -157,7 +206,7 @@ ${g.hello}
 
 ${g.ask}
 
-Once the user confirms the language, politely ask them to briefly describe the work/task they think could benefit from AI automation.`;
+Once the user confirms the language, politely ask them to briefly describe the work/task they think could benefit from AI optimisation or automation.`;
     }
     
     case 'full_details': {

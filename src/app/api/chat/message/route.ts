@@ -195,6 +195,21 @@ export async function POST(req: NextRequest) {
               console.log("\x1b[33m%s\x1b[0m", `[API] State transition detected: ${conversationData.state.currentStep} -> ${newState.currentStep}`);
             }
             
+            // Debug logging for full_details transition conditions
+            if (conversationData.state.currentStep === 'full_details' && !stateTransition) {
+              const d = conversationData.state.collectedData;
+              console.log("\x1b[35m%s\x1b[0m", `[API DEBUG] full_details data check:`);
+              console.log("\x1b[35m%s\x1b[0m", `- tools: ${JSON.stringify(d.tools)}, isArray: ${Array.isArray(d.tools)}, length: ${Array.isArray(d.tools) ? d.tools.length : 0}`);
+              console.log("\x1b[35m%s\x1b[0m", `- frequency: ${d.frequency}`);
+              console.log("\x1b[35m%s\x1b[0m", `- impactNarrative: ${d.impactNarrative}`);
+              const gotCount = [
+                Array.isArray(d.tools) && d.tools.length > 0,
+                !!d.frequency,
+                !!d.impactNarrative
+              ].filter(Boolean).length;
+              console.log("\x1b[35m%s\x1b[0m", `- gotCount: ${gotCount} (needs 2+ to advance)`);
+            }
+            
             // Save to Firestore
             await updateDoc(doc(conversationsRef, conversationId), {
               messages: updatedMessages,
