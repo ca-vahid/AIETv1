@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     const decodedToken = await auth.verifyIdToken(idToken);
     const userId = decodedToken.uid;
     const userEmail = decodedToken.email;
+    const origin = req.nextUrl.origin;
     
     console.log("\x1b[32m%s\x1b[0m", `[API] Authenticated user: ${userEmail}`);
     
@@ -213,7 +214,7 @@ export async function POST(req: NextRequest) {
             // If we just moved into 'submit' state, finalize the draft immediately
             if (conversationData.state.currentStep !== 'submit' && newState.currentStep === 'submit') {
               try {
-                const completeRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/chat/complete`, {
+                const completeRes = await fetch(`${origin}/api/chat/complete`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
