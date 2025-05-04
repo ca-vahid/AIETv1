@@ -32,11 +32,16 @@ export async function POST(req: Request) {
     // Fetch user profile for personalized greeting
     const userProfileDoc = await getDoc(adminDoc(db, 'users', userId));
     const userProfile = userProfileDoc.exists() ? userProfileDoc.data() : null;
-    const initialPrompt = generatePromptForState(
+    
+    // Generate full system prompt (used by AI engine later)
+    const systemPrompt = generatePromptForState(
       { currentStep: 'init', missingProfileFields: [], collectedData: {}, validations: {} },
       userProfile
     );
-    
+    // Derive UI greeting by stripping the first line (basePrompt)
+    const uiLines = systemPrompt.split('\n');
+    const uiPrompt = uiLines.slice(1).join('\n').trim();
+
     // Create new draft conversation
     const newConversation: DraftConversation = {
       id: crypto.randomUUID(),
@@ -45,7 +50,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: 'assistant',
-          content: initialPrompt,
+          content: uiPrompt,
           timestamp: Date.now()
         }
       ],

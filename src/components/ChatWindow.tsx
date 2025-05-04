@@ -314,6 +314,11 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     setDecisionMode(false);
   };
 
+  // Exclude any assistant message containing the AIET-IntakeBot system prompt
+  const visibleMessages = messages.filter(
+    (m) => !(m.role === 'assistant' && m.content.includes('You are AIET-IntakeBot'))
+  );
+
   return (
     <div className="flex flex-col bg-slate-800/40 backdrop-blur-sm h-full rounded-xl shadow-xl overflow-hidden">
       {/* Chat header */}
@@ -358,7 +363,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
       {/* Messages container */}
       <div className="flex-1 overflow-y-auto py-6 px-6 space-y-6 bg-slate-800/30">
-        {messages.map((message) => (
+        {visibleMessages.map((message) => (
           <div key={message.id} className="flex items-end">
             <div className={`flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}>
               {message.role !== "user" && (
