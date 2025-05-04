@@ -7,12 +7,24 @@ import { useState } from 'react';
 import { useTheme } from "@/lib/contexts/ThemeContext";
 
 // Current version of the application
-const APP_VERSION = 'v1.2.1';
+const APP_VERSION = 'v1.2.5';
 // Release date
 const RELEASE_DATE = 'May 3, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.2.5',
+    date: 'May 3, 2025',
+    changes: [
+      'Added fast-track intake flow with first two questions only',
+      'Introduced multilingual greeting and automatic language detection',
+      'Hid the initial system prompt from UI for cleaner chat view',
+      'Restored bootstrapping logic to load initial prompt via API',
+      'Added UI decision buttons (Submit Now / Go Deeper)',
+      'UX refinements and stability improvements'
+    ]
+  },
   {
     version: 'v1.2.1',
     date: 'May 3, 2025',
