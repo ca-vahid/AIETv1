@@ -128,13 +128,21 @@ export function analyzeConversation(
     }
   }
 
-  // Attachments completion
-  if (currentState.currentStep === 'attachments' && 
-      (content.includes('review') || content.includes('summary'))) {
-    return {
-      type: 'NEXT_STEP',
-      payload: { step: 'summary' }
-    };
+  // Attachments completion – advance if assistant prompts for review/summary
+  // OR user explicitly says they have no attachments OR attachments are already stored.
+  if (currentState.currentStep === 'attachments') {
+    const lastUserMsg = messages.filter(m => m.role === 'user').pop();
+
+    const hasAssistantCue = content.includes('review') || content.includes('summary');
+    const userSaysNo = lastUserMsg && /\b(no|none|skip|dont|don't).*attach/i.test(lastUserMsg.content);
+    const uploaded = Array.isArray(currentState.collectedData.attachments) && currentState.collectedData.attachments.length > 0;
+
+    if (hasAssistantCue || userSaysNo || uploaded) {
+      return {
+        type: 'NEXT_STEP',
+        payload: { step: 'summary' }
+      };
+    }
   }
 
   return null;
