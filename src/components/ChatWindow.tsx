@@ -314,10 +314,14 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     setDecisionMode(false);
   };
 
-  // Exclude any assistant message containing the AIET-IntakeBot system prompt
-  const visibleMessages = messages.filter(
-    (m) => !(m.role === 'assistant' && m.content.includes('You are AIET-IntakeBot'))
-  );
+  // Hide the initial assistant system message (index 0) to remove basePrompt
+  const visibleMessages = messages.filter((msg, idx) => {
+    // Keep all user messages
+    if (msg.role === 'user') return true;
+    // Hide the very first assistant message (system prompt)
+    if (msg.role === 'assistant' && idx === 0) return false;
+    return true;
+  });
 
   return (
     <div className="flex flex-col bg-slate-800/40 backdrop-blur-sm h-full rounded-xl shadow-xl overflow-hidden">
