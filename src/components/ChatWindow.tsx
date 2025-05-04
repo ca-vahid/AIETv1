@@ -3,7 +3,13 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useSessionProfile } from "@/lib/contexts/SessionProfileContext";
 import { getIdToken } from "firebase/auth";
-import VoiceInput from './VoiceInput';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for VoiceInput
+const VoiceInput = dynamic(() => import('./VoiceInput'), {
+  ssr: false,
+  loading: () => <div className="p-2.5 rounded-full bg-slate-600 opacity-50 h-[40px] w-[40px]" title="Loading voice input..."></div>
+});
 
 // Types
 interface Message {
