@@ -210,6 +210,27 @@ export async function POST(req: NextRequest) {
               console.log("\x1b[35m%s\x1b[0m", `- gotCount: ${gotCount} (needs 2+ to advance)`);
             }
             
+            // If we just moved into 'submit' state, finalize the draft immediately
+            if (conversationData.state.currentStep !== 'submit' && newState.currentStep === 'submit') {
+              try {
+                const completeRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/chat/complete`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                  },
+                  body: JSON.stringify({ conversationId })
+                });
+                if (completeRes.ok) {
+                  console.log("\x1b[32m%s\x1b[0m", `[API] Draft ${conversationId} finalized into request`);
+                } else {
+                  console.error("\x1b[31m%s\x1b[0m", `[API] Failed to finalize draft: ${await completeRes.text()}`);
+                }
+              } catch (completeErr) {
+                console.error("\x1b[31m%s\x1b[0m", `[API] Error calling complete endpoint: ${completeErr}`);
+              }
+            }
+            
             // Save to Firestore
             await updateDoc(doc(conversationsRef, conversationId), {
               messages: updatedMessages,
