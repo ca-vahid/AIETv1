@@ -8,12 +8,23 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.2.6';
+const APP_VERSION = 'v1.3.0';
 // Release date
-const RELEASE_DATE = 'May 3, 2025';
+const RELEASE_DATE = 'May 4, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.3.0',
+    date: 'May 4, 2025',
+    changes: [
+      'Added voice input functionality for chat messages',
+      'Integrated Microsoft Azure Speech Services for superior speech recognition',
+      'Improved voice input UI with direct text input to chat box',
+      'Enhanced microphone button with visual recording indicators',
+      'Added support for appending voice input to existing text'
+    ]
+  },
   {
     version: 'v1.2.6',
     date: 'May 3, 2025',

@@ -116,12 +116,11 @@ This project is proprietary software owned by BGC Engineering Inc.
 ## Changelog
 
 ### v1.3.0 (May 4, 2025)
-- Added Voice Input functionality using Azure Cognitive Services
-- Implemented click-to-toggle recording mode
-- Integrated live transcript directly into the main text input area
-- Enabled appending to existing text when restarting voice input
-- Fixed microphone release bug after stopping recording
-- Resolved Vercel deployment errors related to dynamic imports and server-side rendering
+- Added voice input functionality for chat messages
+- Integrated Microsoft Azure Speech Services for superior speech recognition
+- Improved voice input UI with direct text input to chat box
+- Enhanced microphone button with visual recording indicators
+- Added support for appending voice input to existing text
 
 ### v1.2.6 (May 4, 2025)
 - Improved speech recognition with toggle mode (click once to start, once to stop)
