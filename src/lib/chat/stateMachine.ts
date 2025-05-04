@@ -46,15 +46,16 @@ export function analyzeConversation(
     }
   }
 
-  // If user types something like "submit" or "done" in summary_lite we fast submit
+  // Decide based on the *user's* reply when we are in summary_lite
   if (currentState.currentStep === 'summary_lite') {
-    if (/\b(submit|done|finish|send)\b/i.test(lastMessage.content)) {
+    const lastUserMsg = messages.filter(m => m.role === 'user').pop();
+    if (lastUserMsg && /\b(submit|done|finish|send)\b/i.test(lastUserMsg.content)) {
       return {
         type: 'NEXT_STEP',
         payload: { step: 'submit', data: { fastTrack: true } }
       };
     }
-    if (/\b(deep|more|details)\b/i.test(lastMessage.content)) {
+    if (lastUserMsg && /\b(deep(er)?|more|details)\b/i.test(lastUserMsg.content)) {
       return {
         type: 'NEXT_STEP',
         payload: { step: 'full_details' }
@@ -80,7 +81,7 @@ export function analyzeConversation(
 
   // Attachments completion
   if (currentState.currentStep === 'attachments' && 
-      content.includes('review') || content.includes('summary')) {
+      (content.includes('review') || content.includes('summary'))) {
     return {
       type: 'NEXT_STEP',
       payload: { step: 'summary' }
