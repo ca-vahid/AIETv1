@@ -20,11 +20,6 @@ interface VoiceInputProps {
   className?: string;
 }
 
-// Equalizer bar heights - simulated audio levels
-const generateBarHeights = () => {
-  return Array.from({ length: 5 }, () => Math.random() * 0.6 + 0.2); // Values between 0.2 and 0.8
-};
-
 const VoiceInput: React.FC<VoiceInputProps> = ({
   onTranscriptUpdate,
   onListenStart,
@@ -34,9 +29,18 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   className = '',
 }) => {
   const [showError, setShowError] = useState(false);
-  const [equalizerBars, setEqualizerBars] = useState(generateBarHeights());
+  const [equalizerBars, setEqualizerBars] = useState(Array(5).fill(0.2));
+  const [waveAmplitude, setWaveAmplitude] = useState(10);
+  const [waveHeight, setWaveHeight] = useState(15);
+  const [waveSpeed, setWaveSpeed] = useState(0.1);
   const animationRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
   const [ref, bounds] = useMeasure();
+  const [particles, setParticles] = useState<{ id: string; angle: number; speed: number }[]>([]);
+  const frameRef = useRef(0);
 
   const {
     isListening,
@@ -53,27 +57,163 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
     continuous: true
   });
 
-  // Animate equalizer bars
+  // Set up audio analysis when listening starts/stops
   useEffect(() => {
-    const updateBars = () => {
-      if (isListening) {
-        setEqualizerBars(generateBarHeights());
-        animationRef.current = requestAnimationFrame(updateBars);
-      }
-    };
-
     if (isListening) {
-      animationRef.current = requestAnimationFrame(updateBars);
-    } else if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+      setupAudioAnalysis();
+    } else {
+      cleanupAudioAnalysis();
     }
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      cleanupAudioAnalysis();
     };
   }, [isListening]);
+
+  // Setup audio context and analyzer
+  const setupAudioAnalysis = async () => {
+    try {
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        console.error("getUserMedia not supported");
+        return;
+      }
+
+      // Get microphone stream
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
+      // Create audio context and analyzer
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioContextRef.current = audioContext;
+      
+      const analyser = audioContext.createAnalyser();
+      analyserRef.current = analyser;
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.5;
+      
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      
+      // Create data array for frequency data
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      dataArrayRef.current = dataArray;
+      
+      // Start animation loop
+      animationRef.current = requestAnimationFrame(updateVisualization);
+      console.log("Audio analysis setup complete");
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+    }
+  };
+
+  // Clean up audio context and analyzer
+  const cleanupAudioAnalysis = () => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(console.error);
+      audioContextRef.current = null;
+    }
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+
+    analyserRef.current = null;
+    dataArrayRef.current = null;
+    
+    // Reset visualization to default state
+    setEqualizerBars(Array(5).fill(0.2));
+    setWaveAmplitude(10);
+    setWaveHeight(15);
+    setWaveSpeed(0.1);
+  };
+
+  const spawnParticles = (count: number) => {
+    const newParticles = Array.from({ length: count }).map(() => {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 20 + Math.random() * 30; // base pixel speed
+      return { id: crypto.randomUUID(), angle, speed };
+    });
+    setParticles(prev => [...prev, ...newParticles]);
+    newParticles.forEach(p => {
+      setTimeout(() => {
+        setParticles(prev => prev.filter(x => x.id !== p.id));
+      }, 600);
+    });
+  };
+
+  // Update visualization based on microphone input
+  const updateVisualization = () => {
+    if (!analyserRef.current || !dataArrayRef.current || !isListening) return;
+
+    // Get frequency data
+    analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+    
+    // Calculate average volume (0-255)
+    const average = dataArrayRef.current.reduce((a, b) => a + b, 0) / dataArrayRef.current.length;
+    
+    // Log average volume every 30 frames for debugging
+    if (Math.random() < 0.03) {
+      console.log("Audio level:", average);
+    }
+    
+    // Normalize to 0-1 range
+    const normalizedVolume = average / 255;
+    
+    // Apply a sensitivity curve to make visualization more responsive
+    // This makes quiet sounds more visible while keeping loud sounds from maxing out
+    const enhancedVolume = Math.pow(normalizedVolume, 0.6); // Sensitivity adjustment
+    
+    // Particle bursts on peaks
+    frameRef.current++;
+    if (frameRef.current % 15 === 0 && enhancedVolume > 0.3) {
+      const count = Math.max(2, Math.floor(enhancedVolume * 10));
+      spawnParticles(count);
+    }
+    
+    // Set new equalizer bar heights based on different frequency bands
+    // For simplicity, we'll use slices of the frequency data for each bar
+    const numBars = 5;
+    const barValues = [];
+    
+    for (let i = 0; i < numBars; i++) {
+      // Focus on the more important vocal frequency ranges (roughly 200Hz-4000Hz)
+      // This makes the visualization respond better to speech
+      const startFreq = i === 0 ? 0 : Math.floor(dataArrayRef.current.length * (i * 0.05 + 0.1));
+      const endFreq = Math.floor(dataArrayRef.current.length * ((i + 1) * 0.05 + 0.1));
+      const startIndex = Math.min(startFreq, dataArrayRef.current.length - 1);
+      const endIndex = Math.min(endFreq, dataArrayRef.current.length - 1);
+      
+      let sum = 0;
+      for (let j = startIndex; j < endIndex; j++) {
+        sum += dataArrayRef.current[j];
+      }
+      
+      // Normalize to 0.2-0.9 range (minimum 0.2 height, max 0.9)
+      // Apply the enhanced volume curve for more responsive bars
+      const avgBandValue = sum / (endIndex - startIndex) / 255;
+      const barHeight = 0.2 + (0.7 * Math.pow(avgBandValue, 0.7));
+      barValues.push(barHeight);
+    }
+    
+    setEqualizerBars(barValues);
+    
+    // Update wave parameters based on volume
+    // More volume = higher amplitude and faster speed
+    setWaveAmplitude(5 + (enhancedVolume * 30)); // 5-35 range, more dramatic
+    setWaveHeight(10 + (enhancedVolume * 25)); // 10-35 range, higher peaks
+    // Slower speed mapping: 0.1-0.4 range for smoother waves
+    setWaveSpeed(0.1 + (enhancedVolume * 0.3));
+    
+    // Continue animation loop
+    animationRef.current = requestAnimationFrame(updateVisualization);
+  };
 
   // Handle toggle mode
   const toggleListening = () => {
@@ -138,88 +278,52 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   }
 
   return (
-    <div className={`relative flex items-center ${className}`} ref={ref}>
-      {/* Main Button with Animation Container */}
+    <div className={`relative flex justify-center ${className}`} ref={ref}>
+      {/* Pill-shaped wave button */}
       <motion.div
-        className="relative"
+        onClick={toggleListening}
+        className={`relative flex items-center cursor-pointer select-none
+          ${isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}
+          rounded-full px-4 py-2 overflow-visible`}
         initial={{ scale: 1 }}
-        whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        {/* The button */}
-        <motion.button
-          onClick={toggleListening}
-          className={`relative p-2.5 z-10 rounded-full shadow-lg text-white
-            ${isListening 
-              ? 'bg-red-500 hover:bg-red-600' 
-              : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          title={isListening ? "Click to stop recording" : "Click to start recording"}
-        >
+        {/* Wave as button background */}
+        <Wave
+          fill={isListening ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)'}
+          paused={!isListening}
+          options={{ height: 20, amplitude: waveAmplitude, speed: waveSpeed, points: 3 }}
+          className="absolute inset-0 w-full h-full"
+        />
+
+        {/* Particle Burst Emitter */}
+        <AnimatePresence>
+          {particles.map(p => (
+            <motion.div
+              key={p.id}
+              className="absolute bg-white rounded-full"
+              style={{ width: 4, height: 4, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+              initial={{ x: 0, y: 0, opacity: 1, scale: 0.5 }}
+              animate={{ x: Math.cos(p.angle) * p.speed, y: Math.sin(p.angle) * p.speed, opacity: 0 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+            />
+          ))}
+        </AnimatePresence>
+
+        {/* Content overlay */}
+        <div className="relative z-10 flex items-center space-x-2 text-white font-medium">
           {isListening ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-2-11a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2a1 1 0 01-1-1V7z" clipRule="evenodd" />
             </svg>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7 7 0 003 10a1 1 0 012 0 5 5 0 0010 0 1 1 0 112 0 7 7 0 01-7 7.93V17h-2v-2.07z" clipRule="evenodd" />
             </svg>
           )}
-        </motion.button>
-        
-        {/* Animated Wave Background */}
-        <AnimatePresence>
-          {isListening && (
-            <motion.div 
-              className="absolute inset-0 rounded-full overflow-hidden z-0"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1.3 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-red-600 opacity-50 rounded-full" />
-              <div className="absolute -inset-2 overflow-hidden rounded-full">
-                <Wave 
-                  fill='rgba(239, 68, 68, 0.4)'
-                  paused={!isListening}
-                  options={{
-                    height: 15,
-                    amplitude: 10,
-                    speed: 0.3,
-                    points: 3
-                  }}
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <span>{isListening ? 'Stop' : 'Speak'}</span>
+        </div>
       </motion.div>
-      
-      {/* Equalizer Bars (only shown when recording) */}
-      <AnimatePresence>
-        {isListening && (
-          <motion.div 
-            className="absolute -right-6 top-0 -translate-y-full flex items-end justify-center gap-[2px] h-14 pb-1"
-            initial={{ opacity: 0, height: 0, width: 0 }}
-            animate={{ opacity: 1, height: 'auto', width: 'auto' }}
-            exit={{ opacity: 0, height: 0, width: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {equalizerBars.map((height, i) => (
-              <motion.div
-                key={i}
-                className="w-1 bg-gradient-to-t from-red-400 to-red-600 rounded-full"
-                style={{ height: `${height * 100}%` }}
-                animate={{ 
-                  height: `${height * 100}%`,
-                  backgroundColor: i % 2 === 0 ? '#ef4444' : '#dc2626'
-                }}
-                transition={{ duration: 0.1 }}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Error Message */}
       {showError && (
