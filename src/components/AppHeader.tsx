@@ -8,12 +8,23 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.3.6';
+const APP_VERSION = 'v1.3.7';
 // Release date
 const RELEASE_DATE = 'May 4, 2024';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.3.7',
+    date: 'May 5, 2024',
+    changes: [
+      'Enhanced voice input with live waveform and equalizer visualization',
+      'Fixed voice transcript rendering for improved user experience', 
+      'Added animated wave effect during recording for better feedback',
+      'Improved visual feedback while speaking with dynamic audio level bars',
+      'Fixed issues with transcript persistence after sending messages'
+    ]
+  },
   {
     version: 'v1.3.6',
     date: 'May 4, 2024',

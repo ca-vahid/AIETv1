@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useSpeechToText from '@/lib/hooks/useSpeechToText';
+import Wave from 'react-wavify';
 import { motion, AnimatePresence } from 'framer-motion';
+import useMeasure from 'react-use-measure';
 
 interface VoiceInputProps {
   onTranscriptUpdate: (text: string) => void;
@@ -18,6 +20,11 @@ interface VoiceInputProps {
   className?: string;
 }
 
+// Equalizer bar heights - simulated audio levels
+const generateBarHeights = () => {
+  return Array.from({ length: 5 }, () => Math.random() * 0.6 + 0.2); // Values between 0.2 and 0.8
+};
+
 const VoiceInput: React.FC<VoiceInputProps> = ({
   onTranscriptUpdate,
   onListenStart,
@@ -27,8 +34,9 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   className = '',
 }) => {
   const [showError, setShowError] = useState(false);
-  // Bars for the audio visualization
-  const bars = [0, 1, 2, 3, 4];
+  const [equalizerBars, setEqualizerBars] = useState(generateBarHeights());
+  const animationRef = useRef<number | null>(null);
+  const [ref, bounds] = useMeasure();
 
   const {
     isListening,
@@ -45,6 +53,28 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
     continuous: true
   });
 
+  // Animate equalizer bars
+  useEffect(() => {
+    const updateBars = () => {
+      if (isListening) {
+        setEqualizerBars(generateBarHeights());
+        animationRef.current = requestAnimationFrame(updateBars);
+      }
+    };
+
+    if (isListening) {
+      animationRef.current = requestAnimationFrame(updateBars);
+    } else if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isListening]);
+
   // Handle toggle mode
   const toggleListening = () => {
     if (isListening) {
@@ -57,6 +87,14 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
     }
   };
 
+  // Clear transcript when parent indicates a reset
+  useEffect(() => {
+    if (typeof resetKey === 'number') {
+      clearTranscript();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey]);
+
   // Display error for a few seconds then hide it
   useEffect(() => {
     if (error) {
@@ -67,14 +105,6 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
       return () => clearTimeout(timer);
     }
   }, [error]);
-
-  // Clear transcript when reset key changes
-  useEffect(() => {
-    if (typeof resetKey === 'number') {
-      clearTranscript();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetKey]);
 
   // If speech recognition is not supported, render nothing
   if (browserSupportsSpeechRecognition === false) {
@@ -108,105 +138,88 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   }
 
   return (
-    <div className={`relative flex items-center ${className}`}>
-      {/* Microphone Button with Ripple & Glow Effects */}
-      <div className="relative">
+    <div className={`relative flex items-center ${className}`} ref={ref}>
+      {/* Main Button with Animation Container */}
+      <motion.div
+        className="relative"
+        initial={{ scale: 1 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        {/* The button */}
         <motion.button
           onClick={toggleListening}
-          className={`p-2.5 rounded-full shadow-md transition-all duration-200 overflow-hidden ${
-            isListening 
+          className={`relative p-2.5 z-10 rounded-full shadow-lg text-white
+            ${isListening 
               ? 'bg-red-500 hover:bg-red-600' 
               : 'bg-blue-600 hover:bg-blue-700'
-          } text-white`}
+            }`}
           title={isListening ? "Click to stop recording" : "Click to start recording"}
-          whileTap={{ scale: 0.95 }}
-          animate={{ 
-            boxShadow: isListening 
-              ? '0 0 0 4px rgba(239, 68, 68, 0.3)' 
-              : '0 0 0 0px rgba(37, 99, 235, 0)'
-          }}
         >
-          {/* Ripple Effect (Active only when listening) */}
-          <AnimatePresence>
-            {isListening && (
-              <motion.span
-                className="absolute inset-0 rounded-full"
-                initial={{ opacity: 0.7, scale: 1 }}
-                animate={{ 
-                  opacity: 0,
-                  scale: 1.5,
-                }}
-                exit={{ opacity: 0 }}
-                transition={{ 
-                  repeat: Infinity,
-                  duration: 1.5,
-                  ease: "easeOut"
-                }}
-              />
-            )}
-          </AnimatePresence>
-          
-          {/* Microphone Icon */}
           {isListening ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 relative z-10" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
             </svg>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 relative z-10" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
             </svg>
           )}
         </motion.button>
         
-        {/* Audio Wave Visualization (Appears when recording) */}
-        {isListening && (
-          <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 flex gap-[2px] h-8">
-            {bars.map((i) => (
-              <motion.span
-                key={i}
-                className="bg-red-400 w-1 rounded-full"
-                initial={{ height: 4 }}
-                animate={{ 
-                  height: [4, 12 + Math.random() * 10, 4],
-                }}
-                transition={{
-                  duration: 0.8 + Math.random() * 0.5,
-                  repeat: Infinity,
-                  repeatType: "reverse",
-                  ease: "easeInOut",
-                  delay: i * 0.1
-                }}
-              />
-            ))}
-          </div>
-        )}
-        
-        {/* Recording indicator pulsing animation */}
-        {isListening && (
-          <motion.span 
-            className="absolute -right-1 -top-1 h-3 w-3"
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-          </motion.span>
-        )}
-        
-        {/* "Recording" label */}
+        {/* Animated Wave Background */}
         <AnimatePresence>
           {isListening && (
-            <motion.span
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 5 }}
-              className="absolute -bottom-7 left-1/2 transform -translate-x-1/2 text-xs bg-red-500 text-white px-1.5 py-0.5 rounded whitespace-nowrap"
+            <motion.div 
+              className="absolute inset-0 rounded-full overflow-hidden z-0"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1.3 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
             >
-              Recording
-            </motion.span>
+              <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-red-600 opacity-50 rounded-full" />
+              <div className="absolute -inset-2 overflow-hidden rounded-full">
+                <Wave 
+                  fill='rgba(239, 68, 68, 0.4)'
+                  paused={!isListening}
+                  options={{
+                    height: 15,
+                    amplitude: 10,
+                    speed: 0.3,
+                    points: 3
+                  }}
+                />
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
+      
+      {/* Equalizer Bars (only shown when recording) */}
+      <AnimatePresence>
+        {isListening && (
+          <motion.div 
+            className="absolute -right-6 top-0 -translate-y-full flex items-end justify-center gap-[2px] h-14 pb-1"
+            initial={{ opacity: 0, height: 0, width: 0 }}
+            animate={{ opacity: 1, height: 'auto', width: 'auto' }}
+            exit={{ opacity: 0, height: 0, width: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {equalizerBars.map((height, i) => (
+              <motion.div
+                key={i}
+                className="w-1 bg-gradient-to-t from-red-400 to-red-600 rounded-full"
+                style={{ height: `${height * 100}%` }}
+                animate={{ 
+                  height: `${height * 100}%`,
+                  backgroundColor: i % 2 === 0 ? '#ef4444' : '#dc2626'
+                }}
+                transition={{ duration: 0.1 }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Error Message */}
       {showError && (

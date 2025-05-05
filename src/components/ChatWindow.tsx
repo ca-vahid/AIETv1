@@ -3,8 +3,14 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useSessionProfile } from "@/lib/contexts/SessionProfileContext";
 import { getIdToken } from "firebase/auth";
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import VoiceInput from './VoiceInput';
+
+// Dynamic import for VoiceInput
+const VoiceInput = dynamic(() => import('./VoiceInput'), {
+  ssr: false,
+  loading: () => <div className="p-2.5 rounded-full bg-slate-600 opacity-50 h-[40px] w-[40px]" title="Loading voice input..."></div>
+});
 
 // Types
 interface Message {
@@ -66,7 +72,6 @@ export default function ChatWindow({
   const [internalChatId, setInternalChatId] = useState<string | undefined>(conversationId); // Internal tracking
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [voiceClearTrigger, setVoiceClearTrigger] = useState(0);
   const baseTextRef = useRef<string>(""); // Ref to store text before listening starts
   const [currentModel, setCurrentModel] = useState<string>("");
   const [useThinkingModel, setUseThinkingModel] = useState<boolean>(false);
@@ -77,6 +82,8 @@ export default function ChatWindow({
   const [detailedContext, setDetailedContext] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  // Key to signal voice input to reset its transcript when a message is sent
+  const [voiceResetKey, setVoiceResetKey] = useState(0);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -307,6 +314,8 @@ export default function ChatWindow({
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    // Signal voice input to clear transcript after sending
+    setVoiceResetKey((k) => k + 1);
 
     try {
       if (!firebaseUser) {
@@ -430,8 +439,6 @@ export default function ChatWindow({
       ]);
     } finally {
       setIsLoading(false);
-      // Reset voice input transcript after sending
-      setVoiceClearTrigger((prev) => prev + 1);
     }
   };
 
@@ -629,8 +636,6 @@ export default function ChatWindow({
       } finally{
         setIsLoading(false);
         setDecisionMode(false);
-        // Clear voice input transcript on quick commands
-        setVoiceClearTrigger((prev) => prev + 1);
       }
     } else {
       setInput(command);
@@ -780,11 +785,11 @@ export default function ChatWindow({
           </div>
           
           {/* Voice Input Button */}
-          <VoiceInput
-            clearTrigger={voiceClearTrigger}
+          <VoiceInput 
             onTranscriptUpdate={handleVoiceInputUpdate}
             onListenStart={handleListenStart}
             onListenStop={handleListenStop}
+            resetKey={voiceResetKey}
             className="flex-shrink-0"
           />
           

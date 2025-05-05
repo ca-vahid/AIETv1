@@ -25,6 +25,7 @@ const useSpeechToText = ({
   const [localIsListening, setLocalIsListening] = useState(false);
   const [finalTranscriptHandled, setFinalTranscriptHandled] = useState(false);
   const [localTranscript, setLocalTranscript] = useState('');
+  const [accumulatedTranscript, setAccumulatedTranscript] = useState('');
   const [isPolyfillInitialized, setIsPolyfillInitialized] = useState(isPolyfillApplied);
 
   // Initialize polyfill on client-side mount
@@ -75,25 +76,36 @@ const useSpeechToText = ({
     commands: []
   });
 
-  // Update transcript when it changes - using both interim and final
+  // Update transcript when it changes - prioritize interim results and combine
   useEffect(() => {
-    // For live updates during speaking, use both interim and final
-    const currentText = finalTranscript || interimTranscript || transcript;
-    if (currentText && currentText.trim() !== '') {
-      setLocalTranscript(currentText);
-      onTranscriptChange?.(currentText);
-    }
-  }, [transcript, interimTranscript, finalTranscript, onTranscriptChange]);
+    // Combine the stable accumulated transcript with the live interim one
+    const combined = (
+      accumulatedTranscript +
+      (accumulatedTranscript && interimTranscript ? ' ' : '') + // Add space if needed
+      interimTranscript
+    ).trim();
 
-  // Handle final transcript when it's available
+    // If combined has text, use it. Otherwise, fallback to final/transcript if available.
+    const displayText = combined || finalTranscript || transcript;
+
+    if (displayText !== localTranscript) {
+      setLocalTranscript(displayText);
+      onTranscriptChange?.(displayText);
+    }
+  // localTranscript dependency added to prevent potential loops if parent updates are slow
+  }, [transcript, interimTranscript, finalTranscript, accumulatedTranscript, onTranscriptChange, localTranscript]);
+
+  // Handle final transcript when it's available - update accumulated
   useEffect(() => {
-    if (finalTranscript && finalTranscript.trim() !== '' && !finalTranscriptHandled && !listening) {
+    // Update accumulated only when finalTranscript provides a new, non-empty value
+    if (finalTranscript && finalTranscript.trim() !== '' && finalTranscript !== accumulatedTranscript) {
+      setAccumulatedTranscript(finalTranscript); // Store the confirmed part
       if (onFinalTranscript) {
         onFinalTranscript(finalTranscript);
       }
       setFinalTranscriptHandled(true);
     }
-  }, [finalTranscript, finalTranscriptHandled, listening, onFinalTranscript]);
+  }, [finalTranscript, accumulatedTranscript, onFinalTranscript]);
 
   // Reset the finalTranscriptHandled flag when listening changes
   useEffect(() => {
@@ -160,6 +172,7 @@ const useSpeechToText = ({
     if (!isPolyfillInitialized) return;
     resetTranscript();
     setLocalTranscript('');
+    setAccumulatedTranscript(''); // Reset accumulated text
     setFinalTranscriptHandled(false);
   }, [isPolyfillInitialized, resetTranscript]);
 
