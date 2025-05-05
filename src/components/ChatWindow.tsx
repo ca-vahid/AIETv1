@@ -85,6 +85,12 @@ export default function ChatWindow({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
+  // Dedicated function to reset all voice input state
+  const resetVoiceInput = useCallback(() => {
+    baseTextRef.current = "";
+    voiceInputRef.current?.clearTranscript();
+  }, []);
+
   // Scroll to bottom whenever messages change
   useEffect(() => {
     scrollToBottom();
@@ -96,6 +102,26 @@ export default function ChatWindow({
       inputRef.current.focus();
     }
   }, []);
+
+  // Reset voice input when component mounts or conversation changes
+  useEffect(() => {
+    // Reset all voice input state on mount or conversation ID change
+    resetVoiceInput();
+    
+    // Also stop any ongoing recording
+    voiceInputRef.current?.stopListening?.();
+    
+    // Clear the input field for good measure
+    setInput("");
+    
+    // Cleanup function for component unmount
+    return () => {
+      if (voiceInputRef.current?.stopListening) {
+        voiceInputRef.current.stopListening();
+      }
+      resetVoiceInput();
+    };
+  }, [chatId, internalChatId, resetVoiceInput]);
 
   // Bootstrap conversation: start new chat or load existing
   useEffect(() => {
@@ -253,12 +279,6 @@ export default function ChatWindow({
   const handleListenStart = useCallback(() => {
     baseTextRef.current = input.trim(); // Store current input, trimmed
   }, [input]);
-
-  // Dedicated function to reset all voice input state
-  const resetVoiceInput = useCallback(() => {
-    baseTextRef.current = "";
-    voiceInputRef.current?.clearTranscript();
-  }, []);
 
   // Callback when listening stops (optional cleanup)
   const handleListenStop = useCallback(() => {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import useSpeechToText from '@/lib/hooks/useSpeechToText';
+import SpeechRecognition from 'react-speech-recognition';
 
 interface VoiceInputProps {
   onTranscriptUpdate: (text: string) => void;
@@ -44,7 +45,18 @@ const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
 
   // Expose methods to parent component via ref
   useImperativeHandle(ref, () => ({
-    clearTranscript,
+    clearTranscript: () => {
+      // Reset the library transcript
+      clearTranscript();
+      // If currently listening, abort to ensure clean slate
+      if (isListening) {
+        try {
+          SpeechRecognition.abortListening();
+        } catch (err) {
+          console.error("Error aborting speech recognition:", err);
+        }
+      }
+    },
     startListening,
     stopListening
   }));

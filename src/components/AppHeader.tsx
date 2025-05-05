@@ -8,12 +8,22 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.3.7';
+const APP_VERSION = 'v1.3.8';
 // Release date
 const RELEASE_DATE = 'May 4, 2024';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.3.8',
+    date: 'May 4, 2024',
+    changes: [
+      'Fixed critical voice input bug with text persisting across page navigations',
+      'Added component lifecycle cleanup for voice recognition',
+      'Improved voice input state management and cleanup',
+      'Enhanced cross-page voice state isolation'
+    ]
+  },
   {
     version: 'v1.3.7',
     date: 'May 4, 2024',
