@@ -52,10 +52,10 @@ export async function POST(req: NextRequest) {
     let prompt = "";
     if (isDetailed) {
       // Prompt for a more detailed title, perhaps incorporating more context later
-      prompt = `Generate a concise and informative title (max 10 words) for an automation request based on this key information: "${context}"`;
+      prompt = `Generate a concise and informative title (max 15 words) for an automation request based on this key information: "${context}"`;
     } else {
       // Prompt for the initial, simpler title
-      prompt = `Generate a short title (max 5 words) for an automation request described as: "${context}"`;
+      prompt = `Generate a concise and informative (max 15 words) for an automation request described as: "${context}"`;
     }
 
     const result = await model.generateContent(prompt);

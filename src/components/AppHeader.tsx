@@ -8,12 +8,23 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.3.5';
+const APP_VERSION = 'v1.3.6';
 // Release date
 const RELEASE_DATE = 'May 4, 2024';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.3.6',
+    date: 'May 4, 2024',
+    changes: [
+      'Improved details phase completion with automatic transition on [DETAILS COMPLETED]',
+      'Fixed LLM system instructions for Go Deeper flow to ensure correct prompting',
+      'Enhanced conversation state management for smoother user experience',
+      'Optimized state transitions to require fewer user interactions',
+      'Fixed detection of LLM markers to ensure proper state progression'
+    ]
+  },
   {
     version: 'v1.3.5',
     date: 'May 4, 2024',

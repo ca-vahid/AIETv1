@@ -94,10 +94,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Create user message only if a plain message is provided
-    const userMessage: Message | null = message
-      ? { role: 'user', content: message, timestamp: Date.now() }
-      : null;
+    // Normalize command string once (we'll reuse it later)
+    const cmd = command?.toUpperCase();
+
+    // Build a user message so the LLM sees explicit intent.
+    // If a textual message is provided, use it directly. Otherwise, synthesize a marker message
+    // for command-based actions (e.g., *GO DEEPER*, *SUBMIT*). This helps the model understand
+    // the user decision and avoids repeating the decision prompt.
+    let userMessage: Message | null = null;
+
+    if (message) {
+      userMessage = { role: 'user', content: message, timestamp: Date.now() };
+    } else if (cmd === 'GO_DEEPER') {
+      userMessage = { role: 'user', content: '*GO DEEPER*', timestamp: Date.now() };
+    } else if (cmd === 'SUBMIT') {
+      userMessage = { role: 'user', content: '*SUBMIT*', timestamp: Date.now() };
+    }
 
     // Get user profile if needed (using migrated baseState)
     let userProfile;
@@ -111,7 +123,6 @@ export async function POST(req: NextRequest) {
 
     // Determine transition using migrated baseState
     let transition: Transition | null = null;
-    const cmd = command?.toUpperCase();
     if (cmd === 'GO_DEEPER') {
       transition = { type: 'NEXT', step: 'details' };
     } else if (cmd === 'SUBMIT') {
@@ -177,17 +188,21 @@ export async function POST(req: NextRequest) {
       
       console.log("\x1b[32m%s\x1b[0m", "[API] Preparing model contents with chat history");
       
-      // Create contents array with chat history plus the new message
+      // Include the latest user action (text or synthesized) so the model sees the intent.
       const contents = [
         ...chatHistory,
-        ...(message ? [{ role: 'user', parts: [{ text: message }] }] : [])
+        ...(userMessage ? [{ role: 'user', parts: [{ text: userMessage.content }] }] : [])
       ];
+      
+      // Track state that may change during streaming (e.g., details -> attachments auto jump)
+      let finalState = newStatePreLLM;
       
       // Stream the response using generateContentStream
       console.log("\x1b[32m%s\x1b[0m", "[API] Sending message stream with Gemini API");
       const responseStream = await model.generateContentStream({
-        contents: contents,
-        systemInstruction: systemPrompt, // Set as a separate parameter
+        contents,
+        // systemInstruction must be a Content object, not plain string.
+        systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] },
       });
       
       // Use ReadableStream for proper server-sent events
@@ -216,15 +231,29 @@ export async function POST(req: NextRequest) {
               timestamp: Date.now()
             };
             
+            // Auto-transition if assistant signals details completion
+            let newState = newStatePreLLM;
+            if (
+              baseState.currentStep === 'details' &&
+              newStatePreLLM.currentStep === 'details' &&
+              /\[DETAILS COMPLETED\]/i.test(assistantMessage)
+            ) {
+              console.log(
+                "\x1b[32m%s\x1b[0m",
+                '[API] Detected [DETAILS COMPLETED], auto-transitioning: details -> attachments'
+              );
+              newState = conversationReducerNew(newStatePreLLM, {
+                type: 'NEXT',
+                step: 'attachments',
+              });
+            }
+            
             // Update messages in conversation data
             const updatedMessages = [
               ...conversationData.messages,
               ...(userMessage ? [userMessage] : []),
               newAssistantMessage,
             ];
-            
-            // Use state that was computed prior to LLM
-            const newState = newStatePreLLM;
             
             if (transition) {
               console.log(
@@ -322,6 +351,9 @@ export async function POST(req: NextRequest) {
               }
             }
             
+            // Persist to outer scope for header usage
+            finalState = newState;
+            
             controller.close();
           } catch (streamError) {
             console.error("\x1b[31m%s\x1b[0m", `[API] Error processing stream: ${streamError}`);
@@ -343,7 +375,7 @@ export async function POST(req: NextRequest) {
           'Connection': 'keep-alive',
           'X-Model-Used': modelType,
           'X-Model-Name': modelName,
-          'X-Conversation-State': newStatePreLLM.currentStep
+          'X-Conversation-State': finalState.currentStep
         },
       });
     } catch (error) {
