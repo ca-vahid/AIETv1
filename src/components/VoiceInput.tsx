@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import useSpeechToText from '@/lib/hooks/useSpeechToText';
 
 interface VoiceInputProps {
@@ -11,13 +11,20 @@ interface VoiceInputProps {
   className?: string;
 }
 
-const VoiceInput: React.FC<VoiceInputProps> = ({
+// Export the handle type for TypeScript
+export interface VoiceInputHandle {
+  clearTranscript: () => void;
+  startListening: () => void;
+  stopListening: () => void;
+}
+
+const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
   onTranscriptUpdate,
   onListenStart,
   onListenStop,
   language = 'en-US',
   className = '',
-}) => {
+}, ref) => {
   const [showError, setShowError] = useState(false);
 
   const {
@@ -34,6 +41,13 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
     language: language,
     continuous: true
   });
+
+  // Expose methods to parent component via ref
+  useImperativeHandle(ref, () => ({
+    clearTranscript,
+    startListening,
+    stopListening
+  }));
 
   // Handle toggle mode
   const toggleListening = () => {
@@ -130,6 +144,8 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
       )}
     </div>
   );
-};
+});
+
+VoiceInput.displayName = 'VoiceInput';
 
 export default VoiceInput; 

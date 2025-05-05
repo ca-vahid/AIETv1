@@ -8,12 +8,22 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.3.6';
+const APP_VERSION = 'v1.3.7';
 // Release date
 const RELEASE_DATE = 'May 4, 2024';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.3.7',
+    date: 'May 4, 2024',
+    changes: [
+      'Fixed bug where voice input text would remain in input box after sending message',
+      'Added robust transcript clearing across all message sending paths',
+      'Implemented proper voice input component reference and control',
+      'Enhanced cross-component state coordination for cleaner user experience'
+    ]
+  },
   {
     version: 'v1.3.6',
     date: 'May 4, 2024',

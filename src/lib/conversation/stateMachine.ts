@@ -186,7 +186,7 @@ export function promptFor(state: ConversationState, userProfile?: any): string {
           "Think about this carefully and ask the user specific questions to help you understand their request better.\n" +
           "Specially that the requst can be implemented by some sort of AI or automation. \n" +
           "\n" +
-          "Try to ask specific questions in each prompt and then move on to the next one. \n" +
+          "Try to ask one specific questions in each prompt and then move on to the next one. \n" +
           "Once you feel that enough information has been gathered or if you feel that the user wants to move on to the next step, provide the signal to move on to the next step which is saying [DETAILS COMPLETED]";
   
     case "attachments":

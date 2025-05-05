@@ -5,6 +5,7 @@ import { useSessionProfile } from "@/lib/contexts/SessionProfileContext";
 import { getIdToken } from "firebase/auth";
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import { VoiceInputHandle } from './VoiceInput';
 
 // Dynamic import for VoiceInput
 const VoiceInput = dynamic(() => import('./VoiceInput'), {
@@ -73,6 +74,7 @@ export default function ChatWindow({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const baseTextRef = useRef<string>(""); // Ref to store text before listening starts
+  const voiceInputRef = useRef<VoiceInputHandle>(null); // Reference to VoiceInput component for control
   const [currentModel, setCurrentModel] = useState<string>("");
   const [useThinkingModel, setUseThinkingModel] = useState<boolean>(false);
   const [decisionMode, setDecisionMode] = useState(false);
@@ -252,10 +254,20 @@ export default function ChatWindow({
     baseTextRef.current = input.trim(); // Store current input, trimmed
   }, [input]);
 
+  // Dedicated function to reset all voice input state
+  const resetVoiceInput = useCallback(() => {
+    baseTextRef.current = "";
+    voiceInputRef.current?.clearTranscript();
+  }, []);
+
   // Callback when listening stops (optional cleanup)
   const handleListenStop = useCallback(() => {
-    baseTextRef.current = ""; // Clear the base text ref
-  }, []);
+    // If the input box is empty at this point, it likely means the message was just sent
+    // In that case, also clear our baseTextRef to prevent transcript persistence
+    if (!input.trim()) {
+      resetVoiceInput();
+    }
+  }, [input, resetVoiceInput]);
 
   // Callback to update input from voice
   const handleVoiceInputUpdate = useCallback((newTranscript: string) => {
@@ -312,6 +324,9 @@ export default function ChatWindow({
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    
+    // Reset voice input to avoid transcript persisting after sending
+    resetVoiceInput();
 
     try {
       if (!firebaseUser) {
@@ -582,8 +597,11 @@ export default function ChatWindow({
   const sendQuickCommand = async (command: string) => {
     if (isLoading || isSubmitting || !internalChatId) return;
     
+    // Clear input field and voice transcript to prevent text remaining
+    setInput('');
+    resetVoiceInput();
+    
     if (command === 'submit') {
-      setInput('');
       setIsSubmitting(true); // No title generation here
       await handleCompleteChat();
       setDecisionMode(false);
@@ -782,6 +800,7 @@ export default function ChatWindow({
           
           {/* Voice Input Button */}
           <VoiceInput 
+            ref={voiceInputRef}
             onTranscriptUpdate={handleVoiceInputUpdate}
             onListenStart={handleListenStart}
             onListenStop={handleListenStop}
