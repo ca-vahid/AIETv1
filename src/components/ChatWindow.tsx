@@ -3,15 +3,8 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useSessionProfile } from "@/lib/contexts/SessionProfileContext";
 import { getIdToken } from "firebase/auth";
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { VoiceInputHandle } from './VoiceInput';
-
-// Dynamic import for VoiceInput
-const VoiceInput = dynamic(() => import('./VoiceInput'), {
-  ssr: false,
-  loading: () => <div className="p-2.5 rounded-full bg-slate-600 opacity-50 h-[40px] w-[40px]" title="Loading voice input..."></div>
-});
+import VoiceInput from './VoiceInput';
 
 // Types
 interface Message {
@@ -73,8 +66,8 @@ export default function ChatWindow({
   const [internalChatId, setInternalChatId] = useState<string | undefined>(conversationId); // Internal tracking
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [voiceClearTrigger, setVoiceClearTrigger] = useState(0);
   const baseTextRef = useRef<string>(""); // Ref to store text before listening starts
-  const voiceInputRef = useRef<VoiceInputHandle>(null); // Reference to VoiceInput component for control
   const [currentModel, setCurrentModel] = useState<string>("");
   const [useThinkingModel, setUseThinkingModel] = useState<boolean>(false);
   const [decisionMode, setDecisionMode] = useState(false);
@@ -84,12 +77,6 @@ export default function ChatWindow({
   const [detailedContext, setDetailedContext] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-
-  // Dedicated function to reset all voice input state
-  const resetVoiceInput = useCallback(() => {
-    baseTextRef.current = "";
-    voiceInputRef.current?.clearTranscript();
-  }, []);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -102,26 +89,6 @@ export default function ChatWindow({
       inputRef.current.focus();
     }
   }, []);
-
-  // Reset voice input when component mounts or conversation changes
-  useEffect(() => {
-    // Reset all voice input state on mount or conversation ID change
-    resetVoiceInput();
-    
-    // Also stop any ongoing recording
-    voiceInputRef.current?.stopListening?.();
-    
-    // Clear the input field for good measure
-    setInput("");
-    
-    // Cleanup function for component unmount
-    return () => {
-      if (voiceInputRef.current?.stopListening) {
-        voiceInputRef.current.stopListening();
-      }
-      resetVoiceInput();
-    };
-  }, [chatId, internalChatId, resetVoiceInput]);
 
   // Bootstrap conversation: start new chat or load existing
   useEffect(() => {
@@ -282,12 +249,8 @@ export default function ChatWindow({
 
   // Callback when listening stops (optional cleanup)
   const handleListenStop = useCallback(() => {
-    // If the input box is empty at this point, it likely means the message was just sent
-    // In that case, also clear our baseTextRef to prevent transcript persistence
-    if (!input.trim()) {
-      resetVoiceInput();
-    }
-  }, [input, resetVoiceInput]);
+    baseTextRef.current = ""; // Clear the base text ref
+  }, []);
 
   // Callback to update input from voice
   const handleVoiceInputUpdate = useCallback((newTranscript: string) => {
@@ -344,9 +307,6 @@ export default function ChatWindow({
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
-    
-    // Reset voice input to avoid transcript persisting after sending
-    resetVoiceInput();
 
     try {
       if (!firebaseUser) {
@@ -470,6 +430,8 @@ export default function ChatWindow({
       ]);
     } finally {
       setIsLoading(false);
+      // Reset voice input transcript after sending
+      setVoiceClearTrigger((prev) => prev + 1);
     }
   };
 
@@ -617,11 +579,8 @@ export default function ChatWindow({
   const sendQuickCommand = async (command: string) => {
     if (isLoading || isSubmitting || !internalChatId) return;
     
-    // Clear input field and voice transcript to prevent text remaining
-    setInput('');
-    resetVoiceInput();
-    
     if (command === 'submit') {
+      setInput('');
       setIsSubmitting(true); // No title generation here
       await handleCompleteChat();
       setDecisionMode(false);
@@ -670,6 +629,8 @@ export default function ChatWindow({
       } finally{
         setIsLoading(false);
         setDecisionMode(false);
+        // Clear voice input transcript on quick commands
+        setVoiceClearTrigger((prev) => prev + 1);
       }
     } else {
       setInput(command);
@@ -819,8 +780,8 @@ export default function ChatWindow({
           </div>
           
           {/* Voice Input Button */}
-          <VoiceInput 
-            ref={voiceInputRef}
+          <VoiceInput
+            clearTrigger={voiceClearTrigger}
             onTranscriptUpdate={handleVoiceInputUpdate}
             onListenStart={handleListenStart}
             onListenStop={handleListenStop}

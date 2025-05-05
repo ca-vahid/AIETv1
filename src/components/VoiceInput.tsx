@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect } from 'react';
 import useSpeechToText from '@/lib/hooks/useSpeechToText';
-import SpeechRecognition from 'react-speech-recognition';
 
 interface VoiceInputProps {
   onTranscriptUpdate: (text: string) => void;
@@ -10,22 +9,17 @@ interface VoiceInputProps {
   onListenStop?: () => void;
   language?: string;
   className?: string;
+  clearTrigger?: number;
 }
 
-// Export the handle type for TypeScript
-export interface VoiceInputHandle {
-  clearTranscript: () => void;
-  startListening: () => void;
-  stopListening: () => void;
-}
-
-const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
+const VoiceInput: React.FC<VoiceInputProps> = ({
   onTranscriptUpdate,
   onListenStart,
   onListenStop,
   language = 'en-US',
   className = '',
-}, ref) => {
+  clearTrigger,
+}) => {
   const [showError, setShowError] = useState(false);
 
   const {
@@ -43,35 +37,25 @@ const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
     continuous: true
   });
 
-  // Expose methods to parent component via ref
-  useImperativeHandle(ref, () => ({
-    clearTranscript: () => {
-      // Reset the library transcript
-      clearTranscript();
-      // If currently listening, abort to ensure clean slate
-      if (isListening) {
-        try {
-          SpeechRecognition.abortListening();
-        } catch (err) {
-          console.error("Error aborting speech recognition:", err);
-        }
-      }
-    },
-    startListening,
-    stopListening
-  }));
-
-  // Handle toggle mode
-  const toggleListening = () => {
-    if (isListening) {
+  // Reset voice transcript when clearTrigger changes
+  useEffect(() => {
+    if (clearTrigger !== undefined && isListening) {
+      // Simulate turning the mic off and on to clear cached transcripts
       onListenStop?.();
       stopListening();
-    } else {
-      onListenStart?.();
       clearTranscript();
       startListening();
+      onListenStart?.();
     }
-  };
+  }, [
+    clearTrigger,
+    isListening,
+    onListenStop,
+    onListenStart,
+    stopListening,
+    clearTranscript,
+    startListening,
+  ]);
 
   // Display error for a few seconds then hide it
   useEffect(() => {
@@ -120,7 +104,16 @@ const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
       {/* Microphone Button */}
       <div className="relative">
         <button
-          onClick={toggleListening}
+          onClick={() => {
+            if (isListening) {
+              onListenStop?.();
+              stopListening();
+            } else {
+              onListenStart?.();
+              clearTranscript();
+              startListening();
+            }
+          }}
           className={`p-2.5 rounded-full shadow-md transition-all duration-200 ${
             isListening 
               ? 'bg-red-500 hover:bg-red-600 ring-4 ring-red-300/30 scale-110' 
@@ -156,8 +149,6 @@ const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
       )}
     </div>
   );
-});
-
-VoiceInput.displayName = 'VoiceInput';
+};
 
 export default VoiceInput; 
