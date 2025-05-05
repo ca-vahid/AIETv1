@@ -15,19 +15,21 @@ export interface ConversationState {
     | 'init'
     | 'lite_description'   // Fast-track Q1 – brief task description
     | 'lite_impact'        // Fast-track Q2 – quick benefit / impact statement
-    | 'summary_lite'       // AI summary & decision node (submit vs. deep dive)
-    | 'full_details'       // Condensed deep info collection
+    | 'decision'           // Decision point: submit vs. details
+    | 'details'            // Condensed deep info collection
     | 'attachments'
     | 'summary'
     | 'submit'
-    // Legacy deep flow (no longer auto-driven, but retained for compatibility)
+    // legacy deep flow (no longer auto-driven, but retained for compatibility)
     | 'profile'
     | 'task_description'
     | 'pain'
     | 'frequency'
     | 'tools'
-    | 'impact';
-  missingProfileFields: string[];
+    | 'impact'
+    | 'summary_lite'
+    | 'full_details'
+    missingProfileFields: string[];
   collectedData: {
     processDescription?: string;
     painType?: string[];

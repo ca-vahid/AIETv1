@@ -7,11 +7,12 @@ import { Message } from "@/lib/types/conversation";
 import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { 
-  analyzeConversation, 
-  conversationReducer, 
-  generatePromptForState 
-} from "@/lib/chat/stateMachine";
+import {
+  analyseUserMessage,
+  reducer as conversationReducerNew,
+  promptFor,
+  Transition,
+} from "@/lib/conversation/stateMachine";
 
 // Remove Edge runtime configuration
 // export const runtime = 'edge';
@@ -57,11 +58,11 @@ export async function POST(req: NextRequest) {
 
     // Parse request body
     const requestBody = await req.json();
-    const { conversationId, message } = requestBody;
+    const { conversationId, message, command } = requestBody;
     // Explicitly check if useThinkingModel is defined to distinguish between undefined and false
     const useThinkingModel = requestBody.useThinkingModel;
     
-    if (!conversationId || !message) {
+    if (!conversationId || (!message && !command)) {
       console.log("\x1b[31m%s\x1b[0m", "[API] Missing required fields in request");
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -78,21 +79,29 @@ export async function POST(req: NextRequest) {
     }
 
     const conversationData = conversationDoc.data();
+    // Migrate legacy state steps to new flow
+    const origState = conversationData.state;
+    let baseState = origState;
+    if (origState.currentStep === 'summary_lite') {
+      baseState = { ...baseState, currentStep: 'decision' };
+    }
+    if (origState.currentStep === 'full_details') {
+      baseState = { ...baseState, currentStep: 'details' };
+    }
+
     if (conversationData.userId !== userId) {
-      console.log("\x1b[31m%s\x1b[0m", "[API] User not authorized to access this conversation");
+      console.log("\x1b[31m%s\x1b[0m", `[API] User not authorized to access this conversation`);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Add user message to conversation
-    const userMessage: Message = {
-      role: 'user',
-      content: message,
-      timestamp: Date.now()
-    };
+    // Create user message only if a plain message is provided
+    const userMessage: Message | null = message
+      ? { role: 'user', content: message, timestamp: Date.now() }
+      : null;
 
-    // Get user profile if needed
+    // Get user profile if needed (using migrated baseState)
     let userProfile;
-    if (conversationData.state.currentStep === 'init') {
+    if (baseState.currentStep === 'init') {
       console.log("\x1b[36m%s\x1b[0m", "[API] Fetching user profile for initial conversation");
       const userDoc = await getDoc(doc(db, 'users', userId));
       if (userDoc.exists()) {
@@ -100,9 +109,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Generate appropriate prompt based on current state
-    const systemPrompt = generatePromptForState(conversationData.state, userProfile);
-    console.log("\x1b[36m%s\x1b[0m", `[API] Current conversation state: ${conversationData.state.currentStep}`);
+    // Determine transition using migrated baseState
+    let transition: Transition | null = null;
+    const cmd = command?.toUpperCase();
+    if (cmd === 'GO_DEEPER') {
+      transition = { type: 'NEXT', step: 'details' };
+    } else if (cmd === 'SUBMIT') {
+      transition = { type: 'NEXT', step: 'submit' };
+    } else if (message) {
+      // Need full history for the logic checker
+      const fullHistory = conversationData.messages.concat([
+        { role: 'user', content: message, timestamp: Date.now() }
+      ]);
+      transition = await analyseUserMessage(
+         { role: 'user', content: message, timestamp: Date.now() },
+         baseState,
+         fullHistory // Pass history here
+       );
+    }
+
+    const newStatePreLLM = transition
+      ? conversationReducerNew(baseState, transition)
+      : baseState;
+
+    // Generate prompt for the *updated* state so LLM knows context for the next step
+    const systemPrompt = promptFor(newStatePreLLM, userProfile);
+    console.log("\x1b[36m%s\x1b[0m", `[API] Prompting for state: ${newStatePreLLM.currentStep} (Previous: ${baseState.currentStep})`);
 
     try {
       // Choose model based on user preference (prioritize) over automatic state-based selection
@@ -113,10 +145,10 @@ export async function POST(req: NextRequest) {
         MODEL = useThinkingModel ? THINKING_MODEL : STANDARD_MODEL;
       } else {
         // Otherwise, fall back to state-based selection
-        MODEL = conversationData.state.currentStep === 'summary' ? THINKING_MODEL : STANDARD_MODEL;
+        MODEL = newStatePreLLM.currentStep === 'summary' ? THINKING_MODEL : STANDARD_MODEL;
       }
       
-      console.log("\x1b[33m%s\x1b[0m", `[API] Using model: ${MODEL} (user selected thinking model: ${useThinkingModel})`);
+      console.log("\x1b[33m%s\x1b[0m", `[API] Using model: ${MODEL} (state-based or user-selected thinking model: ${useThinkingModel})`);
       
       // Convert our message format to Gemini format
       const chatHistory = [];
@@ -148,7 +180,7 @@ export async function POST(req: NextRequest) {
       // Create contents array with chat history plus the new message
       const contents = [
         ...chatHistory,
-        { role: 'user', parts: [{ text: message }] }
+        ...(message ? [{ role: 'user', parts: [{ text: message }] }] : [])
       ];
       
       // Stream the response using generateContentStream
@@ -185,22 +217,26 @@ export async function POST(req: NextRequest) {
             };
             
             // Update messages in conversation data
-            const updatedMessages = [...conversationData.messages, userMessage, newAssistantMessage];
+            const updatedMessages = [
+              ...conversationData.messages,
+              ...(userMessage ? [userMessage] : []),
+              newAssistantMessage,
+            ];
             
-            // Analyze conversation for state transitions
-            const stateTransition = analyzeConversation(updatedMessages, conversationData.state);
-            const newState = stateTransition 
-              ? conversationReducer(conversationData.state, stateTransition)
-              : conversationData.state;
+            // Use state that was computed prior to LLM
+            const newState = newStatePreLLM;
             
-            if (stateTransition) {
-              console.log("\x1b[33m%s\x1b[0m", `[API] State transition detected: ${conversationData.state.currentStep} -> ${newState.currentStep}`);
+            if (transition) {
+              console.log(
+                "\x1b[33m%s\x1b[0m",
+                `[API] State transition detected: ${conversationData.state.currentStep} -> ${newState.currentStep}`
+              );
             }
             
-            // Debug logging for full_details transition conditions
-            if (conversationData.state.currentStep === 'full_details' && !stateTransition) {
+            // Debug logging for details transition conditions
+            if (conversationData.state.currentStep === 'details' && !transition) {
               const d = conversationData.state.collectedData;
-              console.log("\x1b[35m%s\x1b[0m", `[API DEBUG] full_details data check:`);
+              console.log("\x1b[35m%s\x1b[0m", `[API DEBUG] details data check:`);
               console.log("\x1b[35m%s\x1b[0m", `- tools: ${JSON.stringify(d.tools)}, isArray: ${Array.isArray(d.tools)}, length: ${Array.isArray(d.tools) ? d.tools.length : 0}`);
               console.log("\x1b[35m%s\x1b[0m", `- frequency: ${d.frequency}`);
               console.log("\x1b[35m%s\x1b[0m", `- impactNarrative: ${d.impactNarrative}`);
@@ -306,7 +342,8 @@ export async function POST(req: NextRequest) {
           'Cache-Control': 'no-cache',
           'Connection': 'keep-alive',
           'X-Model-Used': modelType,
-          'X-Model-Name': modelName
+          'X-Model-Name': modelName,
+          'X-Conversation-State': newStatePreLLM.currentStep
         },
       });
     } catch (error) {

@@ -23,10 +23,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing conversationId' }, { status: 400 });
     }
 
+    // Idempotency – if request already exists, acknowledge success
+    const existingReqSnap = await getDoc(doc(db, 'requests', conversationId));
+    if (existingReqSnap.exists()) {
+      return NextResponse.json({ success: true, requestId: conversationId });
+    }
+
+    // Fetch draft
     const draftRef = doc(db, 'conversations', conversationId);
     const draftSnap = await getDoc(draftRef);
     if (!draftSnap.exists()) {
-      return NextResponse.json({ error: 'Draft not found' }, { status: 404 });
+      // Draft already deleted (possibly by another process) – treat as success
+      return NextResponse.json({ success: true, requestId: conversationId });
     }
     const draft = draftSnap.data() as DraftConversation;
     if (draft.userId !== userId) {

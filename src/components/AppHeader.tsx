@@ -8,15 +8,29 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.3.0';
+const APP_VERSION = 'v1.3.5';
 // Release date
-const RELEASE_DATE = 'May 4, 2025';
+const RELEASE_DATE = 'May 4, 2024';
 
 // Changelog entries - newest first
 const CHANGELOG = [
   {
+    version: 'v1.3.5',
+    date: 'May 4, 2024',
+    changes: [
+      'Added interactive state visualization with vertical stepper UI',
+      'Implemented smooth animations between conversation states',
+      'Added ability to navigate directly to any state by clicking on the stepper',
+      'Improved dark mode support with automatic theme detection',
+      'Fixed scrollbar issues for cleaner UI appearance',
+      'Enhanced title generation to provide better summaries based on context',
+      'Added two-stage title generation for more detailed titles after deeper conversations',
+      'Improved layout spacing and visual hierarchy for better user experience'
+    ]
+  },
+  {
     version: 'v1.3.0',
-    date: 'May 4, 2025',
+    date: 'May 4, 2024',
     changes: [
       'Added voice input functionality for chat messages',
       'Integrated Microsoft Azure Speech Services for superior speech recognition',
@@ -27,7 +41,7 @@ const CHANGELOG = [
   },
   {
     version: 'v1.2.6',
-    date: 'May 3, 2025',
+    date: 'May 3, 2024',
     changes: [
       'Added automatic title generation for automation requests',
       'Updated request list view to display generated titles instead of conversation snippets',

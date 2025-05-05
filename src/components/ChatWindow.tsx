@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useSessionProfile } from "@/lib/contexts/SessionProfileContext";
 import { getIdToken } from "firebase/auth";
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 
 // Dynamic import for VoiceInput
 const VoiceInput = dynamic(() => import('./VoiceInput'), {
@@ -22,6 +23,8 @@ interface Message {
 interface ChatWindowProps {
   conversationId?: string;
   hideHeader?: boolean;
+  currentStep: string;
+  onStepChange: (step: string) => void;
 }
 
 // Add a helper function to convert markdown-like formatting to HTML
@@ -44,25 +47,41 @@ function formatMessageText(text: string): string {
   return formattedText;
 }
 
+// Helper to decide if the assistant's text offers submit vs go deeper
+function shouldShowDecisionPrompt(text: string): boolean {
+  const submitRegex = /\b(submit now)\b/i;
+  const detailsRegex = /\b(provide more details|more details)\b/i; // Match variations
+
+  return submitRegex.test(text) && detailsRegex.test(text);
+}
+
 /**
  * ChatWindow component - Handles the display and interaction with the chat interface
  */
-export default function ChatWindow({ conversationId, hideHeader = false }: ChatWindowProps & { hideHeader?: boolean }) {
+export default function ChatWindow({
+  conversationId,
+  hideHeader = false,
+  currentStep,
+  onStepChange,
+}: ChatWindowProps) {
   const { profile, firebaseUser } = useSessionProfile();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [chatId, setChatId] = useState<string | undefined>(conversationId);
+  const [internalChatId, setInternalChatId] = useState<string | undefined>(conversationId); // Internal tracking
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const baseTextRef = useRef<string>(""); // Ref to store text before listening starts
   const [currentModel, setCurrentModel] = useState<string>("");
   const [useThinkingModel, setUseThinkingModel] = useState<boolean>(false);
   const [decisionMode, setDecisionMode] = useState(false);
-  const [titleGenerated, setTitleGenerated] = useState(false);
-  const [firstUserMessageSent, setFirstUserMessageSent] = useState(false);
-  const [lastDescription, setLastDescription] = useState("");
+  const [initialTitleGenerated, setInitialTitleGenerated] = useState(false);
+  const [detailedTitleGenerated, setDetailedTitleGenerated] = useState(false);
+  const [initialDescription, setInitialDescription] = useState<string | null>(null);
+  const [detailedContext, setDetailedContext] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -86,6 +105,11 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
       startNewChat();
     }
   }, [conversationId, chatId, profile]);
+
+  // Effect to update internalChatId when conversationId prop changes
+  useEffect(() => {
+    setInternalChatId(conversationId);
+  }, [conversationId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -113,6 +137,7 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
 
       const data = await response.json();
       setChatId(data.conversationId);
+      setInternalChatId(data.conversationId); // Update internal state too
       // initial load will be triggered by useEffect on chatId change
     } catch (error) {
       console.error("Error starting chat:", error);
@@ -132,6 +157,7 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
       
       // Set the chat ID
       setChatId(id);
+      setInternalChatId(id); // Update internal state
       
       // Get the ID token
       const idToken = await getIdToken(firebaseUser);
@@ -149,8 +175,18 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
 
       const data = await response.json();
       
+      // Ensure old drafts still show a friendly init greeting
+      let serverMessages = data.conversation.messages;
+      if (data.conversation.state.currentStep === 'init' && serverMessages.length > 0) {
+        const firstName = profile?.name?.split(' ')[0] || 'there';
+        const greeting =
+          `Hi ${firstName}! Welcome to the AIET Intake Portal. ` +
+          `I'm AIET-IntakeBot, here to help you submit tasks for automation. ` +
+          `What task would you like to automate today?`;
+        serverMessages[0] = { ...serverMessages[0], content: greeting };
+      }
       // Convert Firebase messages to our format
-      const loadedMessages = data.conversation.messages.map((message: any) => ({
+      const loadedMessages = serverMessages.map((message: any) => ({
         id: `${message.role}-${message.timestamp}`,
         role: message.role,
         content: message.content,
@@ -168,9 +204,30 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
       
       console.log("Loaded conversation with", loadedMessages.length, "messages");
       
+      onStepChange(data.conversation.state.currentStep);
+      
+      // Restore flags based on saved state (assuming flags are saved - TBD)
+      setInitialTitleGenerated(data.conversation.state.initialTitleGenerated || false); 
+      setDetailedTitleGenerated(data.conversation.state.detailedTitleGenerated || false);
+      
     } catch (error) {
       console.error("Error loading conversation:", error);
-      // If loading fails, initialize with welcome message
+
+      // If the draft no longer exists, attempt to open readonly request
+      try {
+        if (error instanceof Error && /Failed to load conversation/.test(error.message)) {
+          const idToken = firebaseUser ? await getIdToken(firebaseUser) : undefined;
+          const res = await fetch(`/api/requests/${id}`, {
+            headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+          });
+          if (res.ok) {
+            router.push(`/requests/${id}?readonly=1`);
+            return;
+          }
+        }
+      } catch (_) {}
+
+      // Fallback – start new conversation context
       setMessages([
         {
           id: "error",
@@ -181,7 +238,7 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
         {
           id: "welcome",
           role: "assistant",
-          content: `Hello${profile ? ` ${profile.name}` : ""}! I'm the AIET Intake Assistant. I can help you submit tasks for automation. What task would you like help with today?`,
+          content: `Hello${profile ? ` ${profile.name}` : ""}! I'm the AIET Intake Assistant. What task would you like help with today?`,
           timestamp: Date.now(),
         },
       ]);
@@ -239,7 +296,7 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
   };
 
   const handleSendMessage = async () => {
-    if (!input.trim() || !chatId) return;
+    if (!input.trim() || !internalChatId) return;
 
     // Add user message to the UI
     const userMessage: Message = {
@@ -249,15 +306,12 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
       timestamp: Date.now(),
     };
 
+    // Store previous step *before* the message is sent and state potentially changes
+    const previousStep = currentStep; 
+
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
-
-    // If this is the first user message, store it as the description for title generation
-    if (!firstUserMessageSent) {
-      setFirstUserMessageSent(true);
-      setLastDescription(userMessage.content);
-    }
 
     try {
       if (!firebaseUser) {
@@ -275,7 +329,7 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
           "Authorization": `Bearer ${idToken}`
         },
         body: JSON.stringify({
-          conversationId: chatId,
+          conversationId: internalChatId, 
           message: userMessage.content,
           useThinkingModel: useThinkingModel,
         }),
@@ -283,6 +337,14 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
 
       if (!response.ok) {
         throw new Error("Failed to send message");
+      }
+
+      // Update current step from response header
+      const newState = response.headers.get('X-Conversation-State');
+      let newStep = currentStep;
+      if (newState) {
+        newStep = newState;
+        onStepChange(newState);
       }
 
       if (!response.body) {
@@ -331,14 +393,34 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
         );
       }
 
-      // After full assistant message received, check if it contains the decision prompt
-      if (/submit now/i.test(assistantMessage) && /go deeper/i.test(assistantMessage)) {
-        setDecisionMode(true);
+      // --- Title Generation Logic --- 
+      // 1. Initial Title: Trigger after moving *to* lite_impact
+      if (newStep === 'lite_impact' && previousStep === 'lite_description' && !initialTitleGenerated) {
+        console.log("[ChatWindow] Capturing initial description:", userMessage.content);
+        setInitialDescription(userMessage.content);
+        await generateTitle(userMessage.content, false); // false = not detailed
+        setInitialTitleGenerated(true);
       }
 
+      // 2. Detailed Title: Trigger after moving *to* attachments (from details)
+      //    Using last user message as proxy context for now.
+      if ((newStep === 'attachments' || newStep === 'summary') && previousStep === 'details' && !detailedTitleGenerated) {
+        console.log("[ChatWindow] Capturing detailed context (proxy):", userMessage.content);
+        setDetailedContext(userMessage.content);
+        await generateTitle(userMessage.content, true); // true = detailed
+        setDetailedTitleGenerated(true);
+      }
+      // --- End Title Generation --- 
+
       // After receiving assistant response, generate title if it's the first message
-      if (!titleGenerated && firstUserMessageSent && lastDescription) {
-        await generateTitle(lastDescription);
+      if (!initialTitleGenerated && !detailedTitleGenerated && initialDescription && detailedContext) {
+        await generateTitle(initialDescription, false);
+        await generateTitle(detailedContext, true);
+      }
+
+      // Check for decision prompt *after* potential state updates and title generation
+      if (shouldShowDecisionPrompt(assistantMessage)) {
+        setDecisionMode(true);
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -364,33 +446,12 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
     if (!input.trim()) return;
     
     const trimmed = input.trim().toLowerCase();
-    if (/\b(submit|done|finish|send)\b/i.test(trimmed)) {
+    if (/(submit|done|finish|send)/i.test(trimmed)) {
       sendQuickCommand('submit');
-    } else if (/\b(deep(er)?|more|details)\b/i.test(trimmed)) {
+    } else if (/(deep(er)?|more|details)/i.test(trimmed)) {
       sendQuickCommand('go deeper');
     }
   }, [input, decisionMode]);
-
-  // Also auto-detect submission commands in summary state
-  useEffect(() => {
-    // Skip if already submitting or loading
-    if (isSubmitting || isLoading) return;
-    
-    // If we're in summary state and not already in decision mode
-    if (messages.length > 0 && 
-        !decisionMode && 
-        input.trim() && 
-        /\b(yes|confirm|looks good|correct|submit|done|finish|send)\b/i.test(input.trim().toLowerCase())) {
-      
-      // Check if the last assistant message was asking for confirmation
-      const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
-      if (lastAssistantMsg && 
-          /\b(look.*correct|confirm|review|summary)\b/i.test(lastAssistantMsg.content.toLowerCase())) {
-        // Auto-submit
-        sendQuickCommand('submit');
-      }
-    }
-  }, [input, messages, decisionMode, isSubmitting, isLoading]);
 
   // Remove filtering: display all messages by default
   const visibleMessages = messages;
@@ -413,7 +474,7 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
 
   // Handle completion of chat draft into final request
   const handleCompleteChat = useCallback(async () => {
-    if (!firebaseUser || !chatId) return;
+    if (!firebaseUser || !internalChatId) return;
     try {
       setIsLoading(true);
       setIsSubmitting(true);
@@ -436,7 +497,7 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
           'Authorization': `Bearer ${idToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ conversationId: chatId })
+        body: JSON.stringify({ conversationId: internalChatId })
       });
       
       if (!response.ok) {
@@ -469,15 +530,15 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
           timestamp: Date.now(),
         }
       ]);
-      setIsSubmitting(false); // Reset submitting state on error so they can try again
     } finally {
       setIsLoading(false);
+      setIsSubmitting(false);
     }
-  }, [firebaseUser, chatId]);
+  }, [firebaseUser, internalChatId]);
 
-  // Generate title based on the user's first message (process description)
-  const generateTitle = async (description: string) => {
-    if (!firebaseUser || !chatId) return;
+  // Generate title function updated
+  const generateTitle = async (context: string, isDetailed: boolean) => {
+    if (!firebaseUser || !internalChatId || !context) return;
     
     try {
       const idToken = await getIdToken(firebaseUser);
@@ -488,68 +549,99 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-          conversationId: chatId,
-          description 
+          conversationId: internalChatId,
+          context: context,
+          isDetailed: isDetailed
         })
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to generate title');
-      }
-      
+      if (!response.ok) throw new Error('Failed to generate title');
       const data = await response.json();
       
-      // Add the title announcement to the chat
+      // Add/Update the title announcement
+      const titleMessageId = `title-${isDetailed ? 'detailed' : 'initial'}-${Date.now()}`;
       setMessages(prev => [
         ...prev,
         {
-          id: `title-${Date.now()}`,
+          id: titleMessageId,
           role: 'assistant',
-          content: `**Title created:** ${data.title}`,
+          content: `**${isDetailed ? 'Updated Title' : 'Title Created'}:** ${data.title}`,
           timestamp: Date.now(),
         }
       ]);
       
-      setTitleGenerated(true);
-      
     } catch (error) {
       console.error('Error generating title:', error);
-      // Silently fail - we'll just not have a title
-      setTitleGenerated(true); // Mark as done anyway to avoid retrying
+      // Silently fail for now, but mark as generated to prevent retries
+      if (isDetailed) setDetailedTitleGenerated(true);
+      else setInitialTitleGenerated(true);
     }
   };
 
-  // Helper to send quick commands for decision buttons
+  // Extend sendQuickCommand to update step on GO_DEEPER and generic flow
   const sendQuickCommand = async (command: string) => {
-    // Prevent multiple submissions or operations while loading
-    if (isLoading || isSubmitting) return;
+    if (isLoading || isSubmitting || !internalChatId) return;
     
     if (command === 'submit') {
-      setInput(''); // Clear input first to prevent double submission
-      setIsSubmitting(true);
+      setInput('');
+      setIsSubmitting(true); // No title generation here
       await handleCompleteChat();
       setDecisionMode(false);
     } else if (command === 'go deeper' || command.toLowerCase().includes('deep')) {
-      // When going deeper, we might want to regenerate the title later
-      setTitleGenerated(false); 
+      setDetailedTitleGenerated(false); // Reset detailed flag only
+      const previousStep = currentStep; // Track step before command
       
-      // Explicitly communicate to server this is a "go deeper" command
-      // to prevent auto-completion behavior
-      const deeperMessage = "*GO DEEPER* " + command;
-      setInput(deeperMessage);
-      await handleSendMessage();
-      setDecisionMode(false);
+      try {
+        if (!firebaseUser) return;
+        setIsLoading(true);
+        const idToken = await getIdToken(firebaseUser);
+        const res = await fetch('/api/chat/message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ conversationId: internalChatId, command: 'GO_DEEPER', useThinkingModel }),
+        });
+
+        const headerStep = res.headers.get('X-Conversation-State');
+        let newStep = currentStep;
+        if (headerStep) {
+          newStep = headerStep;
+          onStepChange(headerStep);
+        }
+        if (!res.ok) throw new Error('Failed command');
+        if (!res.body) throw new Error('No body');
+
+        // --- Streaming for Go Deeper --- 
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let assistantMsg = '';
+        const botId = `assistant-${Date.now()}`;
+        setMessages(prev => [...prev, { id: botId, role:'assistant', content:'', timestamp:Date.now() }]);
+        while(true){
+          const {done, value} = await reader.read();
+          if(done) break;
+          assistantMsg += decoder.decode(value, {stream:true});
+          setMessages(prev=> prev.map(m=> m.id===botId?{...m,content:assistantMsg}:m));
+        }
+        // --- End Streaming --- 
+
+      } catch(err){
+        console.error(err);
+      } finally{
+        setIsLoading(false);
+        setDecisionMode(false);
+      }
     } else {
       setInput(command);
-      await handleSendMessage();
+      await handleSendMessage(); // This will handle potential title generation
       setDecisionMode(false);
     }
   };
 
   return (
     <div className="flex flex-col bg-slate-800/40 backdrop-blur-sm h-full rounded-xl shadow-xl overflow-hidden">
-      {/* Chat header removed to save vertical space - controls moved to AppHeader */}
-
       {/* Messages container */}
       <div className="flex-1 overflow-y-auto py-6 px-6 space-y-6 bg-slate-800/30">
         {visibleMessages.map((message) => (
@@ -565,7 +657,7 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
                   </div>
                 </div>
               )}
-  
+        
               {/* Message content */}
               <div className="group relative max-w-[80%]">
                 <div 
@@ -595,7 +687,7 @@ export default function ChatWindow({ conversationId, hideHeader = false }: ChatW
                   {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
-  
+        
               {message.role === "user" && (
                 <div className="flex-shrink-0 ml-2 mb-1">
                   {profile?.photoUrl ? (

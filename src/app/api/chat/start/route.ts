@@ -4,7 +4,7 @@ import { DraftConversation } from '@/lib/types/conversation';
 import { collection, doc, setDoc, getDoc, doc as adminDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
-import { generatePromptForState } from '@/lib/chat/stateMachine';
+import { promptFor } from '@/lib/conversation/stateMachine';
 
 /**
  * POST /api/chat/start - Creates a new conversation draft in Firestore
@@ -33,14 +33,12 @@ export async function POST(req: Request) {
     const userProfileDoc = await getDoc(adminDoc(db, 'users', userId));
     const userProfile = userProfileDoc.exists() ? userProfileDoc.data() : null;
     
-    // Generate full system prompt (used by AI engine later)
-    const systemPrompt = generatePromptForState(
-      { currentStep: 'init', missingProfileFields: [], collectedData: {}, validations: {} },
-      userProfile
-    );
-    // Derive UI greeting by stripping the first line (basePrompt)
-    const uiLines = systemPrompt.split('\n');
-    const uiPrompt = uiLines.slice(1).join('\n').trim();
+    // Create a friendly initial greeting for the UI
+    const firstName = userProfile?.name?.split(' ')[0] || 'there';
+    const uiPrompt =
+      `Hi ${firstName}! Welcome to the AIET Intake Portal. ` +
+      `I'm AIET-IntakeBot, here to help you submit tasks for automation. ` +
+      `What task would you like to automate today?`;
 
     // Create new draft conversation
     const newConversation: DraftConversation = {
