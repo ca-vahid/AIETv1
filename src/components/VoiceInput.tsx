@@ -2,25 +2,33 @@
 
 import React, { useState, useEffect } from 'react';
 import useSpeechToText from '@/lib/hooks/useSpeechToText';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface VoiceInputProps {
   onTranscriptUpdate: (text: string) => void;
   onListenStart?: () => void;
   onListenStop?: () => void;
+  /**
+   * An incrementing key from the parent component. When this value changes,
+   * the transcript is cleared. This is useful for resetting the input after
+   * a message is sent while the microphone is still listening.
+   */
+  resetKey?: number;
   language?: string;
   className?: string;
-  clearTrigger?: number;
 }
 
 const VoiceInput: React.FC<VoiceInputProps> = ({
   onTranscriptUpdate,
   onListenStart,
   onListenStop,
+  resetKey,
   language = 'en-US',
   className = '',
-  clearTrigger,
 }) => {
   const [showError, setShowError] = useState(false);
+  // Bars for the audio visualization
+  const bars = [0, 1, 2, 3, 4];
 
   const {
     isListening,
@@ -37,25 +45,17 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
     continuous: true
   });
 
-  // Reset voice transcript when clearTrigger changes
-  useEffect(() => {
-    if (clearTrigger !== undefined && isListening) {
-      // Simulate turning the mic off and on to clear cached transcripts
+  // Handle toggle mode
+  const toggleListening = () => {
+    if (isListening) {
       onListenStop?.();
       stopListening();
+    } else {
+      onListenStart?.();
       clearTranscript();
       startListening();
-      onListenStart?.();
     }
-  }, [
-    clearTrigger,
-    isListening,
-    onListenStop,
-    onListenStart,
-    stopListening,
-    clearTranscript,
-    startListening,
-  ]);
+  };
 
   // Display error for a few seconds then hide it
   useEffect(() => {
@@ -67,6 +67,14 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  // Clear transcript when reset key changes
+  useEffect(() => {
+    if (typeof resetKey === 'number') {
+      clearTranscript();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey]);
 
   // If speech recognition is not supported, render nothing
   if (browserSupportsSpeechRecognition === false) {
@@ -101,44 +109,103 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
 
   return (
     <div className={`relative flex items-center ${className}`}>
-      {/* Microphone Button */}
+      {/* Microphone Button with Ripple & Glow Effects */}
       <div className="relative">
-        <button
-          onClick={() => {
-            if (isListening) {
-              onListenStop?.();
-              stopListening();
-            } else {
-              onListenStart?.();
-              clearTranscript();
-              startListening();
-            }
-          }}
-          className={`p-2.5 rounded-full shadow-md transition-all duration-200 ${
+        <motion.button
+          onClick={toggleListening}
+          className={`p-2.5 rounded-full shadow-md transition-all duration-200 overflow-hidden ${
             isListening 
-              ? 'bg-red-500 hover:bg-red-600 ring-4 ring-red-300/30 scale-110' 
+              ? 'bg-red-500 hover:bg-red-600' 
               : 'bg-blue-600 hover:bg-blue-700'
           } text-white`}
           title={isListening ? "Click to stop recording" : "Click to start recording"}
+          whileTap={{ scale: 0.95 }}
+          animate={{ 
+            boxShadow: isListening 
+              ? '0 0 0 4px rgba(239, 68, 68, 0.3)' 
+              : '0 0 0 0px rgba(37, 99, 235, 0)'
+          }}
         >
+          {/* Ripple Effect (Active only when listening) */}
+          <AnimatePresence>
+            {isListening && (
+              <motion.span
+                className="absolute inset-0 rounded-full"
+                initial={{ opacity: 0.7, scale: 1 }}
+                animate={{ 
+                  opacity: 0,
+                  scale: 1.5,
+                }}
+                exit={{ opacity: 0 }}
+                transition={{ 
+                  repeat: Infinity,
+                  duration: 1.5,
+                  ease: "easeOut"
+                }}
+              />
+            )}
+          </AnimatePresence>
+          
+          {/* Microphone Icon */}
           {isListening ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 relative z-10" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
             </svg>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 relative z-10" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
             </svg>
           )}
-        </button>
+        </motion.button>
+        
+        {/* Audio Wave Visualization (Appears when recording) */}
+        {isListening && (
+          <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 flex gap-[2px] h-8">
+            {bars.map((i) => (
+              <motion.span
+                key={i}
+                className="bg-red-400 w-1 rounded-full"
+                initial={{ height: 4 }}
+                animate={{ 
+                  height: [4, 12 + Math.random() * 10, 4],
+                }}
+                transition={{
+                  duration: 0.8 + Math.random() * 0.5,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  ease: "easeInOut",
+                  delay: i * 0.1
+                }}
+              />
+            ))}
+          </div>
+        )}
         
         {/* Recording indicator pulsing animation */}
         {isListening && (
-          <span className="absolute -right-1 -top-1 h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <motion.span 
+            className="absolute -right-1 -top-1 h-3 w-3"
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-          </span>
+          </motion.span>
         )}
+        
+        {/* "Recording" label */}
+        <AnimatePresence>
+          {isListening && (
+            <motion.span
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 5 }}
+              className="absolute -bottom-7 left-1/2 transform -translate-x-1/2 text-xs bg-red-500 text-white px-1.5 py-0.5 rounded whitespace-nowrap"
+            >
+              Recording
+            </motion.span>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Error Message */}
