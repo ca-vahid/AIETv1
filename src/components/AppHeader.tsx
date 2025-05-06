@@ -8,12 +8,24 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.3.7';
+const APP_VERSION = 'v1.3.8';
 // Release date
-const RELEASE_DATE = 'May 4, 2024';
+const RELEASE_DATE = 'May 5, 2024';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.3.8',
+    date: 'May 5, 2024',
+    changes: [
+      'Enhanced state visualization with premium glassmorphism effects',
+      'Added special color-coding for decision and submit step icons',
+      'Improved progress indicator with gradient animation',
+      'Fixed line extension bug at final state',
+      'Added subtle animation effects to active icons',
+      'Upgraded loading indicators with fluid animations'
+    ]
+  },
   {
     version: 'v1.3.7',
     date: 'May 5, 2024',

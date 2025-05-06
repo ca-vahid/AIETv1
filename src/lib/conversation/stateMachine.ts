@@ -57,7 +57,7 @@ export async function analyseUserMessage(
       try {
         const checkResult = await checkCriterion(
           messagesHistory, // Pass the full history
-          "User provided information about the impact or benefit of automating the task"
+          "User provided information about the how would automating this help them or their team or the company"
         );
         log('\x1b[35m%s\x1b[0m', `[StateMachine] Criterion check raw response:`, checkResult.rawResponse);
 
@@ -114,12 +114,25 @@ export async function analyseUserMessage(
     }
 
     case "attachments": {
-      if (/attach|file|screenshot|upload/i.test(text) || /\bno\b/i.test(text)) {
-        log('\x1b[36m%s\x1b[0m', '[StateMachine] Transitioning: attachments -> summary');
-        return { type: "NEXT", step: "summary" };
+      log('\x1b[33m%s\x1b[0m', '[StateMachine] Checking criterion for attachments -> summary...');
+      try {
+        const checkResult = await checkCriterion(
+          messagesHistory,
+          "User indicated they have attached files or chosen not to attach any."
+        );
+        log('\x1b[35m%s\x1b[0m', `[StateMachine] Criterion check raw response:`, checkResult.rawResponse);
+
+        if (checkResult.satisfied) {
+          log('\x1b[32m%s\x1b[0m', '[StateMachine] Criterion SATISFIED. Transitioning: attachments -> summary');
+          return { type: "NEXT", step: "summary" };
+        } else {
+          log('\x1b[33m%s\x1b[0m', '[StateMachine] Criterion NOT satisfied. Staying in attachments.');
+          return null;
+        }
+      } catch (error) {
+        log('\x1b[31m%s\x1b[0m', '[StateMachine] Error during criterion check for attachments:', error);
+        return null;
       }
-      log('\x1b[33m%s\x1b[0m', '[StateMachine] Staying in attachments.');
-      return null;
     }
 
     case "summary": {
@@ -160,7 +173,10 @@ export function reducer(state: ConversationState, t: Transition): ConversationSt
  * should migrate.
  */
 export function promptFor(state: ConversationState, userProfile?: any): string {
-  const base = 'You are AIETv2-IntakeBot, a friendly assistant helping BGC employees submit automation ideas. This group that you are part of has recently been created to help employees find ideas to automate, repetative tasks or even exteremely hard work that is time consuming and can be automated. So that is your goal and your approach should be such that it helps with this. be through and specially when summarizing and going for submission include AS MUCH detials as psossible so nothing is missed. ';
+  const base = 'You are AIETv2 , a professional humorous witty assistant helping BGC employees submit ideas to be looked at by the AI team to see if we can use genAI or new AI systems to help user save time energy or be more efficient. ' +
+  'Not only that but maybe user want to do something but they couldnt because it too complicate reuquires programmnign or scripting skills ' +
+  'Important: Currently we are in this step: ';
+
   let prompt = base;
   // Personalize greeting if profile available
   if (state.currentStep === 'init' && userProfile) {
@@ -169,11 +185,11 @@ export function promptFor(state: ConversationState, userProfile?: any): string {
   }
   switch (state.currentStep) {
     case "init":
-      return prompt + "Greet the user and ask for a brief description of the task.";
+      return prompt + "-- THIS NEVER RUNS BECAUSE INIT IS STARTED IN ANOTHER FILE --";
     case "lite_description":
-      return prompt + "Please provide a short (1-2 sentence) description of the task.";
+      return prompt + "Ask the user to provide the description of the task they want to us to look into. Do not move into providing solutions or offering advice. Just ask for the description. Once you are happy say let's move on to the next step.";
     case "lite_impact":
-      return prompt + "Thanks! How would automating this help you?";
+      return prompt + "Thank the user for providing the description and ask how would automating this help them, or team, or company  ?";
     case "decision":
       return (
         prompt +
@@ -182,10 +198,7 @@ export function promptFor(state: ConversationState, userProfile?: any): string {
       );
       case "details":
         return prompt +
-          "Ask the user specific questions about their automation request. You can customize your answers based on the users request and try to find more details about how we can automate this. :\n\n" +
-          "Think about this carefully and ask the user specific questions to help you understand their request better.\n" +
-          "Specially that the requst can be implemented by some sort of AI or automation. \n" +
-          "\n" +
+          "Talk with user and drill down to the details." +
           "Try to ask one specific questions in each prompt and then move on to the next one. \n" +
           "Once you feel that enough information has been gathered or if you feel that the user wants to move on to the next step, provide the signal to move on to the next step which is saying [DETAILS COMPLETED]";
   

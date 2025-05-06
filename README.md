@@ -1,6 +1,6 @@
 # AIET Intake Portal (v1.3.5)
 # AIET Intake Portal (v1.3.6)
-# AIET Intake Portal (v1.3.7)
+# AIET Intake Portal (v1.3.8)
 
 A modern, AI-powered intake portal for BGC Engineering employees to submit automation requests. This application enables seamless communication between staff and the AI Efficiency Team (AIET) to identify and prioritize automation opportunities.
 
@@ -116,6 +116,15 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is proprietary software owned by BGC Engineering Inc.
 
 ## Changelog
+
+### v1.3.8 (May 5, 2024)
+
+- Enhanced state visualization with premium glassmorphism effects
+- Added special color-coding for decision and submit step icons
+- Improved progress indicator with gradient animation
+- Fixed line extension bug at final state
+- Added subtle animation effects to active icons
+- Upgraded loading indicators with fluid animations
 
 ### v1.3.7 (May 5, 2024)
 

@@ -5,6 +5,7 @@ import { useSessionProfile } from "@/lib/contexts/SessionProfileContext";
 import { getIdToken } from "firebase/auth";
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import { useSpring, animated, config } from '@react-spring/web';
 
 // Dynamic import for VoiceInput
 const VoiceInput = dynamic(() => import('./VoiceInput'), {
@@ -54,6 +55,104 @@ function shouldShowDecisionPrompt(text: string): boolean {
 
   return submitRegex.test(text) && detailsRegex.test(text);
 }
+
+// Typing indicator component with more pronounced animation
+const TypingIndicator = () => {
+  // First dot animation - continuous wave pattern
+  const firstDot = useSpring({
+    from: { 
+      transform: 'translateY(0px) scale(0.8)',
+      backgroundColor: 'rgba(96, 165, 250, 0.6)' 
+    },
+    to: async (next) => {
+      // Create an infinite loop of animation
+      while (true) {
+        // Move up and grow with color change
+        await next({ 
+          transform: 'translateY(-12px) scale(1.3)',
+          backgroundColor: 'rgba(96, 165, 250, 1)' 
+        });
+        // Return to starting position
+        await next({ 
+          transform: 'translateY(0px) scale(0.8)',
+          backgroundColor: 'rgba(96, 165, 250, 0.6)' 
+        });
+      }
+    },
+    config: { tension: 300, friction: 8 },
+  });
+
+  // Second dot animation with delay
+  const secondDot = useSpring({
+    from: { 
+      transform: 'translateY(0px) scale(0.8)',
+      backgroundColor: 'rgba(96, 165, 250, 0.6)' 
+    },
+    to: async (next) => {
+      // Delay the start slightly
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Create an infinite loop of animation
+      while (true) {
+        // Move up and grow with color change
+        await next({ 
+          transform: 'translateY(-12px) scale(1.3)',
+          backgroundColor: 'rgba(96, 165, 250, 1)' 
+        });
+        // Return to starting position
+        await next({ 
+          transform: 'translateY(0px) scale(0.8)',
+          backgroundColor: 'rgba(96, 165, 250, 0.6)' 
+        });
+      }
+    },
+    config: { tension: 300, friction: 8 },
+  });
+
+  // Third dot animation with more delay
+  const thirdDot = useSpring({
+    from: { 
+      transform: 'translateY(0px) scale(0.8)',
+      backgroundColor: 'rgba(96, 165, 250, 0.6)' 
+    },
+    to: async (next) => {
+      // Delay the start more
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      // Create an infinite loop of animation
+      while (true) {
+        // Move up and grow with color change
+        await next({ 
+          transform: 'translateY(-12px) scale(1.3)',
+          backgroundColor: 'rgba(96, 165, 250, 1)' 
+        });
+        // Return to starting position
+        await next({ 
+          transform: 'translateY(0px) scale(0.8)',
+          backgroundColor: 'rgba(96, 165, 250, 0.6)' 
+        });
+      }
+    },
+    config: { tension: 300, friction: 8 },
+  });
+
+  return (
+    <div className="flex items-center space-x-2">
+      <animated.div 
+        style={firstDot} 
+        className="w-3 h-3 rounded-full"
+      />
+      <animated.div 
+        style={secondDot}
+        className="w-3 h-3 rounded-full"
+      />
+      <animated.div 
+        style={thirdDot}
+        className="w-3 h-3 rounded-full"
+      />
+    </div>
+  );
+};
 
 /**
  * ChatWindow component - Handles the display and interaction with the chat interface
@@ -726,11 +825,8 @@ export default function ChatWindow({
                 </div>
               </div>
               <div className="max-w-[80%] px-5 py-3 rounded-2xl bg-slate-800/60 shadow-md border border-slate-600">
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: "300ms" }}></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: "600ms" }}></div>
-                </div>
+                {/* Modern Typing Indicator */}
+                <TypingIndicator />
               </div>
             </div>
           </div>
