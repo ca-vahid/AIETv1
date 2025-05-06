@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { auth, signInWithMicrosoft, handleMicrosoftRedirect } from '@/lib/firebase/firebaseUtils';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { getIdToken } from 'firebase/auth';
+import { useTheme } from '@/lib/contexts/ThemeContext';
 
 export default function SignInWithAzureAD() {
   const [user, loading] = useAuthState(auth);
@@ -12,6 +13,7 @@ export default function SignInWithAzureAD() {
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileUpdateAttempted, setProfileUpdateAttempted] = useState(false);
   const [msAccessToken, setMsAccessToken] = useState<string | null>(null);
+  const { theme } = useTheme(); // Use theme context
 
   // Helper function to convert Blob to Base64 Data URL
   const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -248,19 +250,27 @@ export default function SignInWithAzureAD() {
     <div className="flex flex-col items-center text-center space-y-2">
       <button
         onClick={handleSignIn}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors flex items-center shadow-sm"
+        className={`${
+          theme === 'dark'
+            ? 'bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white border border-slate-600'
+            : 'bg-white hover:bg-gray-100 text-gray-800 border border-gray-300'
+        } font-medium text-sm py-2.5 px-5 rounded shadow-sm flex items-center justify-center w-full transition-colors`}
       >
         <svg 
-          className="w-5 h-5 mr-2" 
-          xmlns="http://www.w3.org/2000/svg" 
-          viewBox="0 0 23 23"
-          fill="currentColor"
+          width="20" 
+          height="20" 
+          viewBox="0 0 20 20" 
+          className="mr-3"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <path d="M1 1h10v10H1V1zm0 11h10v10H1V12zm11-11h10v10H12V1zm0 11h10v10H12V12z" />
+          <rect x="1" y="1" width="8.4" height="8.4" fill="#f25022" />
+          <rect x="10.6" y="1" width="8.4" height="8.4" fill="#7fba00" />
+          <rect x="1" y="10.6" width="8.4" height="8.4" fill="#00a4ef" />
+          <rect x="10.6" y="10.6" width="8.4" height="8.4" fill="#ffb900" />
         </svg>
-        Sign in with Microsoft
+        Sign in with BGC or Cambio
       </button>
-      {authError && <p className="text-red-500 text-sm">{authError}</p>}
+      {authError && <p className="text-red-500 text-sm mt-2">{authError}</p>}
     </div>
   );
 } 

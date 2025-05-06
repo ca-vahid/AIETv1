@@ -98,20 +98,25 @@ export default function Home() {
           {/* Left column: Welcome and CTA */}
           <div className="lg:col-span-6 flex flex-col pt-4">
             <h2 className="text-3xl leading-tight font-bold text-white mb-3">
-              Simplify Your Workflow with AI Automation
+              Unlock AI &amp; Automation Opportunities at BGC Engineering&nbsp;&amp; Cambio Earth
             </h2>
             <p className="text-lg text-[#d1e4f1] max-w-prose mb-6">
-              Got a task that&apos;s time-consuming, error-prone, or just plain annoying? 
-              Let the AI Efficiency Team help automate it!
+              We&apos;re on a mission to uncover everyday processes that can be streamlined or enhanced with the latest Generative&nbsp;AI models. Share your pain points—from spreadsheet wrangling to document review—and our AI Efficiency Team will explore how automation can help.
             </p>
             
             {/* Primary CTA */}
             <div className="flex flex-col sm:flex-row gap-4">
               {!isLoggedIn && (
-                <div className="theme-panel p-6 rounded-lg shadow-md">
-                  <h3 className="text-lg font-medium text-white mb-3">Sign in to get started</h3>
-                  <p className="theme-text-muted mb-4">Use your corporate account to access all features</p>
-                  <SignInWithAzureAD />
+                <div className="theme-panel rounded-xl shadow-md overflow-hidden w-full max-w-lg mx-auto flex flex-col items-center relative">
+                  <div className="p-6 border-b border-slate-700 w-full">
+                    <h2 className="text-xl font-semibold text-white text-center">Sign in to get started</h2>
+                  </div>
+                  <div className="p-8 flex flex-col items-center">
+                    <p className="theme-text-muted mb-6 text-center">Log in with your BGC Engineering or Cambio Earth account</p>
+                    <div className="w-full max-w-xs">
+                      <SignInWithAzureAD />
+                    </div>
+                  </div>
                 </div>
               )}
               
@@ -249,55 +254,111 @@ export default function Home() {
             {isLoggedIn ? (
               <ProfileCard onEditClick={() => window.location.href = "/profile/edit"} />
             ) : (
-              <div className="theme-panel p-8 rounded-lg shadow-md flex flex-col items-center justify-center h-full min-h-[300px] max-w-md">
-                <div className="rounded-full bg-blue-900/50 p-6 mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+              <div className="theme-panel rounded-xl shadow-md overflow-hidden w-full flex flex-col">
+                <div className="p-6 border-b border-slate-700">
+                  <h2 className="text-xl font-semibold text-white">How Our Intake System Works</h2>
                 </div>
-                <h3 className="text-xl font-medium text-white mb-2">Your Profile</h3>
-                <p className="theme-text-muted text-center">Sign in to view your profile information</p>
+                <div className="p-8">
+                  {/* AI Chatbot Intake Process */}
+                  <div className="flex flex-col space-y-8">
+                    
+                    {/* AI Assistant Section */}
+                    <div className="flex items-start space-x-6">
+                      <div className="flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-white text-lg mb-2">AI-Guided Intake Process</h3>
+                        <p className="theme-text-muted mb-3">Our AI assistant chatbot will guide you through sharing your automation idea. It asks targeted questions to help you articulate needs and pain points in your workflow.</p>
+                        
+                        {/* Multilingual Support & Features */}
+                        <div className="mt-4">
+                          {/* Combined Multilingual & Attachment Row */}
+                          <div className="flex flex-wrap items-center text-gray-300 mb-3 gap-x-4 gap-y-2">
+                            <div className="flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                              </svg>
+                              <span className="text-sm font-medium mr-2">Multilingual:</span>
+                            </div>
+                            
+                            {/* Compact Language List */}
+                            <div className="flex flex-wrap gap-2">
+                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">English</span>
+                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">Français</span>
+                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">Español</span>
+                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">فارسی</span>
+                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">हिंदी</span>
+                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">中文</span>
+                            </div>
+                            
+                            {/* Attachment Info - Integrated inline */}
+                            <div className="flex items-center text-amber-300">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-1.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                              </svg>
+                              <span className="text-sm font-medium">File Uploads Supported</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pathway Choice Section */}
+                    <div className="flex items-start space-x-6">
+                      <div className="flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-white text-lg mb-2">Choose Your Path</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                          <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-600">
+                            <h4 className="text-white font-medium flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                              </svg>
+                              Fast Path
+                            </h4>
+                            <p className="theme-text-muted text-sm mt-2">Quick submission with basic information. Perfect for simple ideas or initial concepts that don't require extensive detail.</p>
+                          </div>
+                          <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-600">
+                            <h4 className="text-white font-medium flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                              Deep-Dive Path
+                            </h4>
+                            <p className="theme-text-muted text-sm mt-2">Comprehensive assessment with detailed questions. Ideal for complex workflows or ideas requiring thorough exploration.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Submission & Review */}
+                    <div className="flex items-start space-x-6">
+                      <div className="flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-white text-lg mb-2">Submit & Get Expert Assessment</h3>
+                        <p className="theme-text-muted">Once submitted, our AI Efficiency Team reviews your idea, assesses feasibility, and explores automation potential using generative AI and other technologies. We'll follow up with next steps based on our evaluation.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
         
-        {/* How It Works section (simplified) */}
-        <div className="theme-panel rounded-xl shadow-md mb-12 overflow-hidden">
-          <div className="p-6 border-b border-slate-700">
-            <h2 className="text-xl font-semibold text-white">How It Works</h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-12 h-12 bg-blue-900/50 rounded-full flex items-center justify-center mb-4">
-                  <span className="text-xl font-semibold text-blue-400">1</span>
-                </div>
-                <h3 className="font-medium text-white mb-2">Sign in with Azure AD</h3>
-                <p className="theme-text-muted text-sm">We&apos;ll use your existing corporate account to pre-fill your profile info.</p>
-              </div>
-              
-              <div className="flex flex-col items-center text-center">
-                <div className="w-12 h-12 bg-blue-900/50 rounded-full flex items-center justify-center mb-4">
-                  <span className="text-xl font-semibold text-blue-400">2</span>
-                </div>
-                <h3 className="font-medium text-white mb-2">Tell us about your task</h3>
-                <p className="theme-text-muted text-sm">Our AI assistant will have a quick chat to understand what you need.</p>
-              </div>
-              
-              <div className="flex flex-col items-center text-center">
-                <div className="w-12 h-12 bg-blue-900/50 rounded-full flex items-center justify-center mb-4">
-                  <span className="text-xl font-semibold text-blue-400">3</span>
-                </div>
-                <h3 className="font-medium text-white mb-2">Confirm and submit</h3>
-                <p className="theme-text-muted text-sm">Review the summary and we&apos;ll get back to you within one business day.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
         {/* What Can We Automate section - simplified card grid */}
-        <div className="theme-panel rounded-xl shadow-md overflow-hidden">
+        <div className="theme-panel rounded-xl shadow-md overflow-hidden mt-12">
           <div className="p-6 border-b border-slate-700">
             <h2 className="text-xl font-semibold text-white">What Can We Automate?</h2>
           </div>
@@ -305,8 +366,8 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 {
-                  title: "Data Entry & Processing",
-                  description: "Manual form filling, data extraction from documents, spreadsheet work",
+                  title: "Instrumentation Data Processing",
+                  description: "Convert raw sensor readings into clean, actionable dashboards",
                   icon: (
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -314,8 +375,8 @@ export default function Home() {
                   )
                 },
                 {
-                  title: "Report Generation",
-                  description: "Monthly reports, status updates, data visualization",
+                  title: "Environmental Reporting & Compliance",
+                  description: "Generate recurring monitoring reports and visual summaries automatically",
                   icon: (
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -323,8 +384,8 @@ export default function Home() {
                   )
                 },
                 {
-                  title: "Document Processing",
-                  description: "Contract analysis, document classification, content extraction",
+                  title: "Document Review & Summaries",
+                  description: "AI-generated highlights of lengthy reports, proposals, and specifications",
                   icon: (
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -332,8 +393,8 @@ export default function Home() {
                   )
                 },
                 {
-                  title: "Repetitive Communications",
-                  description: "Email templates, status updates, notifications",
+                  title: "Geospatial Analysis & Mapping",
+                  description: "Automate GIS workflows, contour generation, and map production",
                   icon: (
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />

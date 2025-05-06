@@ -18,11 +18,12 @@ const CHANGELOG = [
     version: 'v1.3.7',
     date: 'May 5, 2024',
     changes: [
-      'Enhanced voice input with live waveform and equalizer visualization',
-      'Fixed voice transcript rendering for improved user experience', 
-      'Added animated wave effect during recording for better feedback',
-      'Improved visual feedback while speaking with dynamic audio level bars',
-      'Fixed issues with transcript persistence after sending messages'
+      'Redesigned landing page with improved layout and visual hierarchy',
+      'Added multilingual support indicators with six language options',
+      'Enhanced sign-in experience with dark/light mode compatibility',
+      'Improved "How It Works" section with more detailed process explanation',
+      'Added file upload capability indicator for better user guidance',
+      'Streamlined login panel design to match application style'
     ]
   },
   {
@@ -226,7 +227,7 @@ export default function AppHeader() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1.5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
               </svg>
-              AIET Intake Portal
+              AIET Portal
             </Link>
             
             {/* Version tag moved near logo */}
@@ -327,9 +328,7 @@ export default function AppHeader() {
                 </button>
               </div>
             ) : (
-              <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                Sign In
-              </Link>
+              null
             )}
           </div>
         </div>
