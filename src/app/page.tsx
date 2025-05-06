@@ -323,7 +323,7 @@ export default function Home() {
                               </svg>
                               Fast Path
                             </h4>
-                            <p className="theme-text-muted text-sm mt-2">Quick submission with basic information. Perfect for simple ideas or initial concepts that don't require extensive detail.</p>
+                            <p className="theme-text-muted text-sm mt-2">Quick submission with basic information. Perfect for simple ideas or initial concepts that don&apos;t require extensive detail.</p>
                           </div>
                           <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-600">
                             <h4 className="text-white font-medium flex items-center">
@@ -347,7 +347,7 @@ export default function Home() {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-medium text-white text-lg mb-2">Submit & Get Expert Assessment</h3>
-                        <p className="theme-text-muted">Once submitted, our AI Efficiency Team reviews your idea, assesses feasibility, and explores automation potential using generative AI and other technologies. We'll follow up with next steps based on our evaluation.</p>
+                        <p className="theme-text-muted">Once submitted, our AI Efficiency Team reviews your idea, assesses feasibility, and explores automation potential using generative AI and other technologies. We&apos;ll follow up with next steps based on our evaluation.</p>
                       </div>
                     </div>
                   </div>
