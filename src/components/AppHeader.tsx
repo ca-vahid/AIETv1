@@ -8,12 +8,23 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.3.8';
+const APP_VERSION = 'v1.3.9';
 // Release date
-const RELEASE_DATE = 'May 5, 2024';
+const RELEASE_DATE = 'May 17, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.3.9',
+    date: 'May 17, 2025',
+    changes: [
+      'Added dynamic pulsing color-loading bar and "Loading... Please Wait" indicator',
+      'Added streaming text animation for initial assistant message',
+      'Updated personalized greeting logic to use new Gemini prompts',
+      'Removed default greeting override to allow dynamic Gemini prompts',
+      'Bumped version to v1.3.9'
+    ]
+  },
   {
     version: 'v1.3.8',
     date: 'May 5, 2024',
