@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       // Remove photoUrl before sending profile to Gemini
       const { photoUrl, ...profileWithoutPhoto } = userProfile || {};
       const userProfileJson = JSON.stringify(profileWithoutPhoto);
-      extractionPrompt = `You are a friendly AI assistant working for BGC Engineering & Cambio Earth's AI Efficiency Team.
+      extractionPrompt = `You are a AI assistant working for BGC Engineering & Cambio Earth's AI Efficiency Team.
 Your goal is to welcome and guide new users into our AI Intake Portal, which helps them share processes that can be streamlined or enhanced using Generative AI.
 You have the user's profile as JSON: ${userProfileJson}.
 Extract the following details:
@@ -71,12 +71,8 @@ Output a JSON object with two keys:
   "prompt": "HTML with emojis and highlighitng important points and space between paragraphs <personalized greeting in the inferred language>"`;
       // Debug: log the prompt sent to Gemini
       console.debug("Gemini extraction prompt:", extractionPrompt);
-      // Include a thinking budget to speed up the response
-      // @ts-ignore - Ensure thinkingConfig is passed to Gemini
-      const result = await startModel.generateContent(
-        { contents: [{ parts: [{ text: extractionPrompt }] }] }, // Pass prompt correctly with config
-        { thinkingConfig: { thinkingBudget: 10 } } // Pass config separately
-      );
+      // Simple single argument call - most compatible format
+      const result = await startModel.generateContent(extractionPrompt);
       aiText = await result.response.text(); // capture raw AI response
       // Debug: log the raw AI response from Gemini
       console.debug("Gemini raw response:", aiText);
