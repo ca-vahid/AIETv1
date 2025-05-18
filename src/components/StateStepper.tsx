@@ -196,7 +196,7 @@ const StateStepper: React.FC<StateStepperProps> = ({ currentStep, onStepClick })
   const { primary, primaryLight, primaryLighter, decisionIcon, submitIcon, iconMuted, decisionGlow, submitGlow } = colors;
 
   return (
-    <div className="relative h-full w-20 flex items-center justify-center px-2">
+    <div className="relative h-full w-full flex items-center justify-center px-2">
       {/* Main panel background - Enhanced glassmorphism */}
       <div 
         className="absolute inset-0 m-2 rounded-3xl transition-colors duration-200 backdrop-blur-xl"
@@ -279,6 +279,14 @@ const StateStepper: React.FC<StateStepperProps> = ({ currentStep, onStepClick })
               iconColor = iconMuted;
             }
             
+            // Calculate responsive circle sizes
+            const circleSize = isActive 
+              ? 'w-[clamp(42px,3vw,52px)] h-[clamp(42px,3vw,52px)]' 
+              : 'w-[clamp(36px,2.5vw,46px)] h-[clamp(36px,2.5vw,46px)]';
+            
+            // Calculate responsive icon sizes  
+            const iconSize = isActive ? 'scale-[1.15]' : 'scale-[1]';
+            
             return (
               <div key={step.key} className="flex items-center justify-center w-full relative py-2 group" title={step.label} data-step={step.key}>
                 {/* Circle and indicator */}
@@ -306,7 +314,7 @@ const StateStepper: React.FC<StateStepperProps> = ({ currentStep, onStepClick })
                   {/* Circle button */}
                   <motion.button
                     onClick={() => onStepClick(step.key)}
-                    className={`${isActive ? 'w-[42px] h-[42px]' : 'w-[36px] h-[36px]'} rounded-full flex items-center justify-center relative z-10 focus:outline-none transition-all`}
+                    className={`${circleSize} rounded-full flex items-center justify-center relative z-10 focus:outline-none transition-all`}
                     style={{ 
                       background: typeof circleColor === 'string' ? circleColor : circleColor,
                       boxShadow: isActive 
@@ -344,7 +352,7 @@ const StateStepper: React.FC<StateStepperProps> = ({ currentStep, onStepClick })
                       <div 
                         style={{ 
                           color: iconColor,
-                          transform: isActive ? 'scale(1.15)' : 'scale(1)',
+                          transform: iconSize,
                           transition: 'transform 0.2s ease-out'
                         }}
                       >

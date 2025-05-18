@@ -97,11 +97,16 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
           {/* Left column: Welcome and CTA */}
           <div className="lg:col-span-6 flex flex-col pt-4">
-            <h2 className="text-4xl sm:text-5xl leading-tight font-bold text-white mb-5 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-200 to-indigo-100">
-              Unlock AI &amp; Automation Opportunities at BGC Engineering&nbsp;&amp; Cambio Earth
+            <h2 className="text-4xl sm:text-3xl leading-tight font-bold text-indigo-500 mb-5 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-200 to-indigo-100">
+              Supercharge Your Workflow with Next-Gen AI systems at Cambio Earth&amp; BGC!
+
+
             </h2>
-            <p className="text-xl text-blue-100 max-w-prose mb-8">
-              We&apos;re on a mission to uncover everyday processes that can be streamlined or enhanced with the latest Generative&nbsp;AI models. Share your pain points—from spreadsheet wrangling to document review—and our AI Efficiency Team will explore how automation can help.
+            <p className="text-xl text-navy-500 max-w-prose mb-8">
+            Drowning in spreadsheet mayhem or tedious document reviews? Our AI Efficiency Team will tackle your pain points using advanced AI coding and automation systems. Share your challenges, and let&apos;s streamline the grind!
+
+
+
             </p>
             
             {/* Primary CTA */}

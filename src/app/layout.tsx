@@ -1,15 +1,20 @@
 import "./globals.css";
 import Providers from "@/components/Providers";
 import dynamic from "next/dynamic";
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
 
 // Dynamically import ThemeScript to avoid SSR errors
 const ThemeScript = dynamic(() => import("@/components/ThemeScript"), { ssr: false });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
   title: "AIET Portal - BGC Engineering & Cambio Earth",
-  description: "Unlock AI & Automation Opportunities with the AI Efficiency Team",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  description: "Revolutionize Your Workflow with AI at Cambio Earth & BGC!",
 };
 
 export default function RootLayout({

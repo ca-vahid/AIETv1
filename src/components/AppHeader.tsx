@@ -254,7 +254,7 @@ export default function AppHeader() {
 
   return (
     <>
-      <header className={`${theme === "dark" ? "theme-panel" : "theme-panel-light"} shadow-lg sticky top-0 z-10 backdrop-blur-lg bg-gradient-to-r ${theme === "dark" ? "from-slate-900 via-indigo-950 to-slate-900" : "from-white via-blue-50 to-white"}`}>
+      <header className={`${theme === "dark" ? "theme-panel" : "theme-panel-light"} shadow-lg sticky top-0 z-10 backdrop-blur-lg bg-gradient-to-r ${theme === "dark" ? "from-slate-900 via-indigo-950 to-slate-900" : "from-blue-100 via-blue-50 to-blue-100"}`}>
         <div className="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center">
           {/* Left side: Logo and optional back button */}
           <div className="flex items-center gap-3">

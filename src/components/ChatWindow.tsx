@@ -1110,7 +1110,7 @@ export default function ChatWindow({
                       : "bg-white dark:bg-gray-800 shadow-md border border-blue-200 dark:border-gray-700 text-slate-800 dark:text-gray-100"
                   }`}
                 >
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                  <div className="whitespace-pre-wrap text-fluid-base leading-relaxed">
                     {message.role === 'user' ? (
                       <div>{message.content}</div>
                     ) : streamingMessageId === message.id && !streamingComplete ? (
@@ -1128,7 +1128,7 @@ export default function ChatWindow({
                 {/* Time stamp - appears on hover */}
                 <div 
                   className={`absolute bottom-0 ${message.role === "user" ? "right-0 translate-y-5" : "left-0 translate-y-5"} 
-                    opacity-0 group-hover:opacity-100 text-xs text-slate-400 dark:text-gray-300 transition-opacity duration-200 pointer-events-none`}
+                    opacity-0 group-hover:opacity-100 text-fluid-xs text-slate-400 dark:text-gray-300 transition-opacity duration-200 pointer-events-none`}
                 >
                   {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
@@ -1204,7 +1204,7 @@ export default function ChatWindow({
           <div className="flex-1 border rounded-full border-blue-200 dark:border-gray-600 bg-white dark:bg-gray-800 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
             <textarea
               ref={inputRef}
-              className={`w-full px-4 py-2.5 focus:outline-none bg-transparent resize-none text-sm text-slate-800 dark:text-gray-100 ${
+              className={`w-full px-4 py-2.5 focus:outline-none bg-transparent resize-none text-fluid-base text-slate-800 dark:text-gray-100 ${
                 currentStep === 'decision' ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               placeholder={

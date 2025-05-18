@@ -255,7 +255,7 @@ export default function SignInWithAzureAD() {
           ${
             theme === 'dark'
               ? 'bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white border border-indigo-500/30'
-              : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border border-blue-400/30'
+              : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border border-blue-500/30'
           }
           hover:shadow-lg hover:-translate-y-0.5
         `}
