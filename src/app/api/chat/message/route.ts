@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase/firebase";
 import { Message } from "@/lib/types/conversation";
 import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
+// @ts-ignore: missing type declarations for @google/generative-ai
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
   analyseUserMessage,
@@ -21,8 +22,7 @@ import {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // Define models - use the latest ones
-// const STANDARD_MODEL = "gemini-1.5-flash";
-// const THINKING_MODEL = "gemini-1.5-pro";
+
 const STANDARD_MODEL = "gemini-2.5-flash-preview-04-17";
 const THINKING_MODEL = "gemini-2.5-pro-preview-03-25";
 
@@ -143,8 +143,9 @@ export async function POST(req: NextRequest) {
       ? conversationReducerNew(baseState, transition)
       : baseState;
 
-    // Generate prompt for the *updated* state so LLM knows context for the next step
-    const systemPrompt = promptFor(newStatePreLLM, userProfile);
+    // Generate prompt for the *updated* state so LLM knows context and preferred language
+    const language = conversationData.state.language || 'en';
+    const systemPrompt = `Please respond in ${language}. ` + promptFor(newStatePreLLM, userProfile);
     console.log("\x1b[36m%s\x1b[0m", `[API] Prompting for state: ${newStatePreLLM.currentStep} (Previous: ${baseState.currentStep})`);
 
     try {
@@ -182,7 +183,8 @@ export async function POST(req: NextRequest) {
           temperature: 0.7,
           topP: 0.8,
           topK: 40,
-          maxOutputTokens: 1000,
+          // Allow larger responses to reduce MAX_TOKENS truncation issues
+          maxOutputTokens: 2048,
         }
       });
       
@@ -223,6 +225,16 @@ export async function POST(req: NextRequest) {
             }
             
             console.log("\x1b[32m%s\x1b[0m", "[API] Gemini response streaming complete");
+            
+            // Check finish reason – if the model stopped because we hit the token limit, treat as failure
+            try {
+              const finishReason = (responseStream as any).response?.candidates?.[0]?.finishReason;
+              if (finishReason === 'MAX_TOKENS') {
+                throw new Error('LLM_MAX_TOKENS');
+              }
+            } catch (_) {
+              // best-effort – ignore if structure differs
+            }
             
             // Create assistant message for Firestore
             const newAssistantMessage: Message = {

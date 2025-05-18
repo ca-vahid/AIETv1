@@ -8,12 +8,24 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.3.9';
+const APP_VERSION = 'v1.4.0';
 // Release date
-const RELEASE_DATE = 'May 17, 2025';
+const RELEASE_DATE = 'May 18, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.4.0',
+    date: 'May 18, 2025',
+    changes: [
+      'Completely redesigned decision UI for a more compact, intuitive experience',
+      'Added ultra-compact floating action buttons for decision choices',
+      'Improved user experience by disabling chat input during decision phase',
+      'Enhanced error handling with automatic retry button for LLM token limit errors',
+      'Fixed MAX_TOKENS errors with larger output token allowance',
+      'Added distinct visual styling for decision buttons with vivid gradients'
+    ]
+  },
   {
     version: 'v1.3.9',
     date: 'May 17, 2025',

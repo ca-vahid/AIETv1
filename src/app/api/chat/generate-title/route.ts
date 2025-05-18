@@ -3,6 +3,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase/firebase';
+// @ts-ignore: missing type declarations for @google/generative-ai
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Initialize the Gemini API with the key from environment variables
@@ -11,7 +12,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use a 
 
 /**
  * POST /api/chat/generate-title
- * Generates a title for the conversation using Gemini based on provided context.
+ * Generates a title for the conversation using Gemini based on full conversation history.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -28,11 +29,10 @@ export async function POST(req: NextRequest) {
     const decodedToken = await auth.verifyIdToken(idToken);
     const userId = decodedToken.uid;
     
-    // Parse request body
-    const { conversationId, context, isDetailed } = await req.json();
-    
-    if (!conversationId || !context) {
-      return NextResponse.json({ error: "Missing conversationId or context" }, { status: 400 });
+    // Parse request body; only conversationId and isDetailed needed
+    const { conversationId, isDetailed = false } = await req.json();
+    if (!conversationId) {
+      return NextResponse.json({ error: "Missing conversationId" }, { status: 400 });
     }
 
     // Check if the conversation exists and belongs to the user
@@ -48,15 +48,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Generate title using Gemini
-    let prompt = "";
-    if (isDetailed) {
-      // Prompt for a more detailed title, perhaps incorporating more context later
-      prompt = `Generate a concise and informative title (max 15 words) for an automation request based on this key information: "${context}"`;
-    } else {
-      // Prompt for the initial, simpler title
-      prompt = `Generate a concise and informative (max 15 words) for an automation request described as: "${context}"`;
-    }
+    // Build full conversation transcript from stored messages
+    const allMessages = conversationData.messages as Array<{ role: string; content: string }>;
+    const transcript = allMessages
+      .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+      .join('\n');
+
+    // Generate title using Gemini with full conversation history
+    const prompt = isDetailed
+      ? `Generate a concise and informative (max 15 words) detailed title for this conversation:\n\n${transcript}`
+      : `Generate a concise and informative (max 15 words) title for this conversation:\n\n${transcript}`;
 
     const result = await model.generateContent(prompt);
     const response = result.response;
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
       throw new Error("Failed to generate title text from LLM");
     }
 
-    console.log(`[API TitleGen] ${isDetailed ? 'Detailed' : 'Initial'} Title: "${generatedTitle}" for context: "${context}"`);
+    console.log(`[API TitleGen] ${isDetailed ? 'Detailed' : 'Initial'} Title: "${generatedTitle}" using full conversation history`);
 
     // Update the conversation with the generated title
     await updateDoc(conversationRef, {

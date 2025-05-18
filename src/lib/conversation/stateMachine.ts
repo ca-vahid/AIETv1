@@ -96,7 +96,7 @@ export async function analyseUserMessage(
       try {
         const checkResult = await checkCriterion(
           messagesHistory,
-          'The assistant indicates enough details have been gathered by saying [DETAILS COMPLETED]'
+          'Users feels that enough information has been provided and they are ready to move on to the next step'
         );
         log('\x1b[35m%s\x1b[0m', `[StateMachine] Criterion check raw response:`, checkResult.rawResponse);
 
@@ -136,12 +136,24 @@ export async function analyseUserMessage(
     }
 
     case "summary": {
-      if (/\b(yes|confirm|looks good|submit|done|finish|send)\b/i.test(text)) {
-         log('\x1b[36m%s\x1b[0m', '[StateMachine] Transitioning: summary -> submit');
-        return { type: "NEXT", step: "submit" };
+      log('\x1b[33m%s\x1b[0m', '[StateMachine] Checking criterion for summary -> submit...');
+      try {
+        const checkResult = await checkCriterion(
+          messagesHistory,
+          'User confirmed the summary and is ready to submit'
+        );
+        log('\x1b[35m%s\x1b[0m', `[StateMachine] Criterion check raw response:`, checkResult.rawResponse);
+        if (checkResult.satisfied) {
+          log('\x1b[32m%s\x1b[0m', '[StateMachine] Criterion SATISFIED. Transitioning: summary -> submit');
+          return { type: "NEXT", step: "submit" };
+        } else {
+          log('\x1b[33m%s\x1b[0m', '[StateMachine] Criterion NOT satisfied. Staying in summary.');
+          return null;
+        }
+      } catch (error) {
+        log('\x1b[31m%s\x1b[0m', '[StateMachine] Error during criterion check for summary:', error);
+        return null;
       }
-       log('\x1b[33m%s\x1b[0m', '[StateMachine] Staying in summary (no confirmation).');
-       return null;
     }
   }
   log('\x1b[31m%s\x1b[0m', `[StateMachine] No transition found for state ${state.currentStep}`);
@@ -173,9 +185,16 @@ export function reducer(state: ConversationState, t: Transition): ConversationSt
  * should migrate.
  */
 export function promptFor(state: ConversationState, userProfile?: any): string {
-  const base = 'You are AIETv2 , a professional humorous witty assistant helping BGC employees submit ideas to be looked at by the AI team to see if we can use genAI or new AI systems to help user save time energy or be more efficient. ' +
-  'Not only that but maybe user want to do something but they couldnt because it too complicate reuquires programmnign or scripting skills ' +
-  'Important: Currently we are in this step: ';
+  // Strip out the photoURL from userProfile if present
+  const profileWithoutPhoto = userProfile ? (({ photoURL, ...rest }) => rest)(userProfile) : undefined;
+  const profileInfo = profileWithoutPhoto
+    ? `You have the following user details already: ${JSON.stringify(profileWithoutPhoto)}. `
+    : '';
+  // Build the base prompt, including any sanitized user details
+  const base = profileInfo +
+    'You are AIETv1 , a professional humorous witty assistant helping BGC employees submit ideas to be looked at by the AI team to see if we can use genAI or new AI systems to help user save time energy or be more efficient. ' +
+    'Not only that but maybe user want to do something but they couldnt because it too complicate reuquires programmnign or scripting skills ' +
+    'Important: Currently we are in this step: ';
 
   let prompt = base;
   // Personalize greeting if profile available
@@ -189,23 +208,27 @@ export function promptFor(state: ConversationState, userProfile?: any): string {
     case "lite_description":
       return prompt + "Ask the user to provide the description of the task they want to us to look into. Do not move into providing solutions or offering advice. Just ask for the description. Once you are happy say let's move on to the next step.";
     case "lite_impact":
-      return prompt + "Thank the user for providing the description and ask how would automating this help them, or team, or company  ?";
+      return prompt + "Ask how would automating this help them, or team, or company  ?";
     case "decision":
       return (
         prompt +
+        "Summarise what you have gathered so far in a beautiful highlighted HTML format, be descriptive and detailed. \n" +
+        "If the language is not English, also provide a translation in English. with the same HTML format. \n" +
         "Ask the user if they want to *Submit Now* or *Provide More Details*. Focus only on asking this choice."+
         " Wait for their decision."
       );
       case "details":
         return prompt +
           "Talk with user and drill down to the details." +
-          "Try to ask one specific questions in each prompt and then move on to the next one. \n" +
-          "Once you feel that enough information has been gathered or if you feel that the user wants to move on to the next step, provide the signal to move on to the next step which is saying [DETAILS COMPLETED]";
+          "Try to ask one or two questions in each prompt and then move on to the next batch so that you dont overwhelm the user. \n" +
+          "After you got at least two questions answered, let user know that they can go to the next step 'Attahcment' by letting oyu know. If they are willing to go deeper, guide them with more questions.";
   
     case "attachments":
       return prompt + "Would you like to attach any screenshots or files?";
     case "summary":
-      return prompt + "Summarise all collected data and ask for confirmation to submit.";
+      return prompt + "Summarise everything that have collected, write it in detailed specifics and sections in a professional HTML format. \n" +
+      "If the language is not English, also provide a translation in English. with the same HTML format. \n" +
+      " Ask user if this is good to go and if they are ready to submit or they want to make any changes. ";
     case "submit":
       return prompt + "Thank the user for their submission and sign off.";
     default:

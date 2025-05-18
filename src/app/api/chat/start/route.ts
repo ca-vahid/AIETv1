@@ -42,6 +42,8 @@ export async function POST(req: Request) {
     
     // Scaffold: Generate personalized first prompt via Gemini API
     let uiPrompt: string;
+    // Default language code
+    let detectedLanguage = 'en';
     const defaultName = userProfile?.name?.split(' ')[0] || 'there';
     const defaultGreeting = `Hi ${defaultName}! Welcome to the AIET Intake Portal. ` +
       `I'm AIET-IntakeBot, here to help you submit tasks for automation. ` +
@@ -87,6 +89,10 @@ Output a JSON object with two keys:
       const parsed = JSON.parse(jsonString);
       // Debug: log the parsed JSON object from Gemini
       console.debug("Parsed Gemini output:", parsed);
+      // Capture inferred language from extracted data
+      if (parsed.extracted?.language) {
+        detectedLanguage = parsed.extracted.language;
+      }
       uiPrompt = typeof parsed.prompt === 'string' ? parsed.prompt : defaultGreeting;
       // const extracted = parsed.extracted; // extracted details if needed
     } catch (err) {
@@ -113,7 +119,9 @@ Output a JSON object with two keys:
         missingProfileFields: [],
         collectedData: {},
         validations: {},
-        fastTrack: false
+        fastTrack: false,
+        // Initialize conversation language
+        language: detectedLanguage,
       },
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -123,10 +131,11 @@ Output a JSON object with two keys:
     const conversationsRef = collection(db, 'conversations');
     await setDoc(doc(conversationsRef, newConversation.id), newConversation);
 
-    // Return both ID and UI prompt for immediate client display
+    // Return both ID, UI prompt, and detected language for immediate client display
     return NextResponse.json({
       conversationId: newConversation.id,
-      uiPrompt
+      uiPrompt,
+      language: detectedLanguage
     });
   } catch (error) {
     console.error('Error starting conversation:', error);

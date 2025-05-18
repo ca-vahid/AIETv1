@@ -18,6 +18,10 @@ interface VoiceInputProps {
   resetKey?: number;
   language?: string;
   className?: string;
+  /**
+   * Whether the voice input is disabled
+   */
+  disabled?: boolean;
 }
 
 const VoiceInput: React.FC<VoiceInputProps> = ({
@@ -27,6 +31,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   resetKey,
   language = 'en-US',
   className = '',
+  disabled = false,
 }) => {
   const [showError, setShowError] = useState(false);
   const [equalizerBars, setEqualizerBars] = useState(Array(5).fill(0.2));
@@ -217,6 +222,8 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
 
   // Handle toggle mode
   const toggleListening = () => {
+    if (disabled) return;
+    
     if (isListening) {
       onListenStop?.();
       stopListening();
@@ -254,7 +261,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
   // Initial support check
   if (!isPolyfillLoaded) {
     return (
-      <button disabled className="opacity-50 cursor-not-allowed p-2 rounded-full bg-slate-600 text-white">
+      <button disabled className="opacity-50 cursor-not-allowed p-2.5 rounded-full bg-slate-600 text-white h-11 w-11 flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
         </svg>
@@ -267,7 +274,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
     return (
       <button 
         disabled 
-        className="opacity-50 cursor-not-allowed p-2 rounded-full bg-slate-600 text-white"
+        className="opacity-50 cursor-not-allowed p-2.5 rounded-full bg-slate-600 text-white h-11 w-11 flex items-center justify-center"
         title="Microphone access is required"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -277,24 +284,34 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
     );
   }
 
+  // Extract language code for display (e.g., "en-US" → "EN")
+  const displayLang = language.split('-')[0].toUpperCase();
+
   return (
-    <div className={`relative flex justify-center ${className}`} ref={ref}>
-      {/* Pill-shaped wave button */}
-      <motion.div
+    <div className={`relative ${className}`} ref={ref}>
+      {/* Circular button matching other UI elements */}
+      <motion.button
         onClick={toggleListening}
-        className={`relative flex items-center cursor-pointer select-none
-          ${isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}
-          rounded-full px-4 py-2 overflow-visible`}
+        className={`relative shadow-md hover:shadow-lg p-2.5 h-11 w-11 flex items-center justify-center
+          ${isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} 
+          dark:${isListening ? 'bg-red-700 hover:bg-red-800' : 'bg-blue-700 hover:bg-blue-800'}
+          text-white rounded-full ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         initial={{ scale: 1 }}
         whileTap={{ scale: 0.95 }}
+        title={isListening ? "Stop listening" : "Start voice input"}
+        disabled={disabled}
       >
-        {/* Wave as button background */}
-        <Wave
-          fill={isListening ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.12)'}
-          paused={!isListening}
-          options={{ height: 20, amplitude: waveAmplitude, speed: waveSpeed, points: 3 }}
-          className="absolute inset-0 w-full h-full"
-        />
+        {/* Wave background when active */}
+        {isListening && (
+          <div className="absolute inset-0 overflow-hidden rounded-full">
+            <Wave
+              fill="rgba(255,255,255,0.2)"
+              paused={false}
+              options={{ height: waveHeight, amplitude: waveAmplitude, speed: waveSpeed, points: 3 }}
+              className="w-full h-full"
+            />
+          </div>
+        )}
 
         {/* Particle Burst Emitter */}
         <AnimatePresence>
@@ -310,20 +327,29 @@ const VoiceInput: React.FC<VoiceInputProps> = ({
           ))}
         </AnimatePresence>
 
-        {/* Content overlay */}
-        <div className="relative z-10 flex items-center space-x-2 text-white font-medium">
+        {/* Content overlay - icon and language when active */}
+        <div className="relative z-10 flex items-center justify-center text-white">
           {isListening ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-2-11a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2a1 1 0 01-1-1V7z" clipRule="evenodd" />
-            </svg>
+            <div className="relative">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-2-11a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2a1 1 0 01-1-1V7z" clipRule="evenodd" />
+              </svg>
+              {/* Language tag - moved outside the button overflow */}
+            </div>
           ) : (
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7 7 0 003 10a1 1 0 012 0 5 5 0 0010 0 1 1 0 112 0 7 7 0 01-7 7.93V17h-2v-2.07z" clipRule="evenodd" />
             </svg>
           )}
-          <span>{isListening ? 'Stop' : 'Speak'}</span>
         </div>
-      </motion.div>
+      </motion.button>
+
+      {/* Language indicator - moved outside button for visibility */}
+      {isListening && (
+        <div className="absolute -top-2 -right-2 bg-white text-red-600 text-[9px] font-bold px-1 rounded-sm shadow-sm z-20 border border-red-200">
+          {displayLang}
+        </div>
+      )}
 
       {/* Error Message */}
       {showError && (

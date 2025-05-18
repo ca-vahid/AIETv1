@@ -53,6 +53,11 @@ export interface ConversationState {
    * Indicates whether the user chose the fast-track path (submitted after the lite steps)
    */
   fastTrack?: boolean;
+
+  /**
+   * ISO language code for conversation (e.g., 'en', 'fr').
+   */
+  language?: string;
 }
 
 export interface DraftConversation {

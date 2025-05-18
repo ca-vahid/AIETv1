@@ -1,3 +1,4 @@
+// @ts-ignore: missing type declarations for @google/generative-ai
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Message } from "@/lib/types/conversation";
 
@@ -53,8 +54,18 @@ ${JSON.stringify(messages, null, 2)}
 Criterion:
 "${criterion}"`;
 
-  // Call the LLM
-  const result = await model.generateContent(prompt);
+  // Call the LLM with error handling for max tokens or throttling errors
+  let result;
+  try {
+    result = await model.generateContent(prompt);
+  } catch (error) {
+    console.error("\x1b[31m%s\x1b[0m", "[LogicChecker] Error generating content:", error);
+    return {
+      satisfied: false,
+      reasoning: `LLM error: ${error instanceof Error ? error.message : error}`,
+      rawResponse: error
+    };
+  }
   const response = result.response;
 
   // Log the full response object for detailed debugging
