@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSessionProfile } from "@/lib/contexts/SessionProfileContext";
 import { getIdToken } from "firebase/auth";
 import dynamic from 'next/dynamic';
@@ -154,6 +154,229 @@ const TypingIndicator = () => {
   );
 };
 
+// Add a text streaming component
+/**
+ * Simulates text streaming/typing animation effect for messages
+ */
+const StreamingText = ({ content, speed = 15, onComplete }: { content: string, speed?: number, onComplete?: () => void }) => {
+  const [displayedContent, setDisplayedContent] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
+  
+  useEffect(() => {
+    let currentLength = 0;
+    const contentLength = content.length;
+    
+    if (!content) {
+      setIsComplete(true);
+      onComplete?.();
+      return;
+    }
+    
+    // Reset state when content changes
+    setDisplayedContent('');
+    setIsComplete(false);
+    
+    // Use a faster reveal for longer messages
+    const adjustedSpeed = Math.max(5, speed - Math.floor(content.length / 100));
+    
+    const intervalId = setInterval(() => {
+      if (currentLength < contentLength) {
+        currentLength += 3; // Add more chars at once for faster effect
+        setDisplayedContent(content.substring(0, currentLength));
+      } else {
+        clearInterval(intervalId);
+        setIsComplete(true);
+        onComplete?.();
+      }
+    }, adjustedSpeed);
+    
+    return () => clearInterval(intervalId);
+  }, [content, speed, onComplete]);
+  
+  return (
+    <div dangerouslySetInnerHTML={{ __html: formatMessageText(displayedContent) }} />
+  );
+};
+
+/**
+ * Animated loading progress bar
+ */
+const LoadingProgress = () => {
+  // Fun facts about AI and AIET
+  const funFacts = useMemo(() => [
+    "✉️ AI can draft emails & reports in seconds!",
+    "⏱️ Automate repetitive tasks & reclaim your time!",
+    "🔍 Unlock insights from complex data with AI.",
+    "💡 AI: Your assistant for summaries, ideas & more!",
+    "🚀 AIET: Supercharge your workflow with AI!",
+  ], []);
+
+  const [currentFactIndex, setCurrentFactIndex] = useState(0);
+
+  // Cycle through fun facts
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentFactIndex((prevIndex) => (prevIndex + 1) % funFacts.length);
+    }, 3000); // Change fact every 3 seconds
+
+    return () => clearInterval(intervalId);
+  }, [funFacts.length]);
+  
+  // Main progress animation
+  const progressProps = useSpring({
+    from: { width: '0%' },
+    to: { width: '97%' }, // Stop just short of 100% to indicate waiting
+    config: { duration: 8000 },
+  });
+
+  // Enhanced pulse effect animation
+  const pulseProps = useSpring({
+    from: { opacity: 0.6, scale: 1 },
+    to: async (next) => {
+      while (true) {
+        await next({ opacity: 1, scale: 1.05 });
+        await next({ opacity: 0.7, scale: 1 });
+      }
+    },
+    config: { tension: 200, friction: 12 },
+  });
+
+  // Color shift animation for gradient
+  const colorProps = useSpring({
+    from: { position: '0%' },
+    to: async (next) => {
+      while (true) {
+        await next({ position: '100%', config: { duration: 2000 } });
+        await next({ position: '0%', config: { duration: 2000 } });
+      }
+    }
+  });
+  
+  // Animated background for the fun facts container
+  const bgAnimation = useSpring({
+    from: { backgroundPosition: '0% 50%' },
+    to: async (next) => {
+      while (true) {
+        await next({ 
+          backgroundPosition: '100% 50%', 
+          config: { duration: 8000 }
+        });
+        await next({ 
+          backgroundPosition: '0% 50%', 
+          config: { duration: 8000 }
+        });
+      }
+    },
+  });
+  
+  // Border glow animation
+  const glowAnimation = useSpring({
+    from: { boxShadow: '0 0 5px rgba(59, 130, 246, 0.5), 0 0 15px rgba(59, 130, 246, 0.3)' },
+    to: async (next) => {
+      while (true) {
+        await next({ 
+          boxShadow: '0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.5)',
+          config: { duration: 1500 }
+        });
+        await next({ 
+          boxShadow: '0 0 5px rgba(59, 130, 246, 0.5), 0 0 15px rgba(59, 130, 246, 0.3)',
+          config: { duration: 1500 }
+        });
+      }
+    },
+  });
+
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[999] flex flex-col items-center">
+      {/* Background track */}
+      <div className="h-2 w-full bg-slate-800"></div>
+      
+      {/* Animated progress bar with pulsing effect */}
+      <animated.div
+        style={{ 
+          ...progressProps,
+          ...pulseProps, 
+        }}
+        className="h-2 absolute top-0 left-0 shadow-lg shadow-blue-500/50"
+      >
+        <animated.div 
+          style={{
+            background: colorProps.position.to(
+              pos => `linear-gradient(90deg, 
+                rgba(59, 130, 246, 0.9) ${pos}, 
+                rgba(124, 58, 237, 0.9) ${pos})`
+            ),
+            width: '100%',
+            height: '100%'
+          }}
+        />
+      </animated.div>
+      
+      {/* Fun Fact Rotator Box with enhanced animations */}
+      <animated.div 
+        style={{
+          ...bgAnimation,
+          ...glowAnimation,
+          background: 'linear-gradient(-45deg, #1e40af, #3b82f6, #4f46e5, #7c3aed)',
+          backgroundSize: '400% 400%',
+        }}
+        className="mt-3 px-5 py-3 rounded-lg text-white font-medium text-center min-h-[4.5em] flex items-center justify-center backdrop-blur-sm relative w-auto min-w-[80%] sm:min-w-[500px] max-w-[90%] border border-blue-400/30"
+      >
+        {/* Particle effects */}
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(5)].map((_, i) => (
+            <animated.div
+              key={i}
+              className="absolute rounded-full bg-white/20"
+              style={useSpring({
+                from: {
+                  width: `${Math.random() * 10 + 5}px`,
+                  height: `${Math.random() * 10 + 5}px`,
+                  opacity: 0,
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                },
+                to: async (next) => {
+                  while (true) {
+                    const size = Math.random() * 10 + 5;
+                    await next({
+                      width: `${size}px`,
+                      height: `${size}px`,
+                      opacity: 0.7,
+                      top: `${Math.random() * 100}%`,
+                      left: `${Math.random() * 100}%`,
+                      config: { duration: 3000 + i * 500 }
+                    });
+                    await next({
+                      opacity: 0,
+                      config: { duration: 1500 }
+                    });
+                  }
+                },
+              })}
+            />
+          ))}
+        </div>
+        
+        {/* Animated fact text */}
+        <div className="relative z-10">
+          <animated.div 
+            style={useSpring({
+              key: currentFactIndex,
+              from: { opacity: 0, transform: 'translateY(20px)' },
+              to: { opacity: 1, transform: 'translateY(0px)' },
+              config: { tension: 280, friction: 18 },
+            })}
+            className="text-base sm:text-lg font-medium"
+          >
+            {funFacts[currentFactIndex]}
+          </animated.div>
+        </div>
+      </animated.div>
+    </div>
+  );
+};
+
 /**
  * ChatWindow component - Handles the display and interaction with the chat interface
  */
@@ -167,8 +390,10 @@ export default function ChatWindow({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [chatId, setChatId] = useState<string | undefined>(conversationId);
   const [internalChatId, setInternalChatId] = useState<string | undefined>(conversationId); // Internal tracking
+  const [extractedProfile, setExtractedProfile] = useState<any>(null); // Store extracted user details
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const baseTextRef = useRef<string>(""); // Ref to store text before listening starts
@@ -183,6 +408,10 @@ export default function ChatWindow({
   const router = useRouter();
   // Key to signal voice input to reset its transcript when a message is sent
   const [voiceResetKey, setVoiceResetKey] = useState(0);
+  
+  // Streaming text animation state
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+  const [streamingComplete, setStreamingComplete] = useState(false);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -217,6 +446,10 @@ export default function ChatWindow({
   };
 
   const startNewChat = async () => {
+    // Show typing indicator while creating new conversation
+    setIsLoading(true);
+    // Set initial loading to true during chat start
+    setIsInitialLoading(true);
     try {
       if (!profile || !firebaseUser) {
         throw new Error("Not authenticated");
@@ -227,9 +460,7 @@ export default function ChatWindow({
       
       const response = await fetch("/api/chat/start", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${idToken}`
-        }
+        headers: { "Authorization": `Bearer ${idToken}` }
       });
 
       if (!response.ok) {
@@ -237,11 +468,19 @@ export default function ChatWindow({
       }
 
       const data = await response.json();
+      // Capture extracted profile details but only show greeting to user
+      if (data.extracted) {
+        setExtractedProfile(data.extracted);
+        console.debug("Extracted user details:", data.extracted);
+      }
       setChatId(data.conversationId);
       setInternalChatId(data.conversationId); // Update internal state too
       // initial load will be triggered by useEffect on chatId change
     } catch (error) {
       console.error("Error starting chat:", error);
+      // Hide loading indicators on failure
+      setIsLoading(false);
+      setIsInitialLoading(false);
     }
   };
 
@@ -251,6 +490,8 @@ export default function ChatWindow({
   const loadExistingConversation = async (id: string) => {
     try {
       setIsLoading(true);
+      // Set initial loading to true during conversation load
+      setIsInitialLoading(true);
       
       if (!firebaseUser) {
         throw new Error("Not authenticated");
@@ -276,16 +517,8 @@ export default function ChatWindow({
 
       const data = await response.json();
       
-      // Ensure old drafts still show a friendly init greeting
-      let serverMessages = data.conversation.messages;
-      if (data.conversation.state.currentStep === 'init' && serverMessages.length > 0) {
-        const firstName = profile?.name?.split(' ')[0] || 'there';
-        const greeting =
-          `Hi ${firstName}! Welcome to the AIET Intake Portal. ` +
-          `I'm AIET-IntakeBot, here to help you submit tasks for automation. ` +
-          `What task would you like to automate today?`;
-        serverMessages[0] = { ...serverMessages[0], content: greeting };
-      }
+      // Use the server-sent messages directly (allow custom Gemini prompt to show)
+      const serverMessages = data.conversation.messages;
       // Convert Firebase messages to our format
       const loadedMessages = serverMessages.map((message: any) => ({
         id: `${message.role}-${message.timestamp}`,
@@ -296,6 +529,12 @@ export default function ChatWindow({
       
       // Set the messages in state
       setMessages(loadedMessages);
+      
+      // Enable streaming effect for first assistant message if it exists
+      if (loadedMessages.length > 0 && loadedMessages[0].role === 'assistant') {
+        setStreamingMessageId(loadedMessages[0].id);
+        setStreamingComplete(false);
+      }
       
       // Set model if a thinking model was used
       if (data.conversation.state.useThinkingModel) {
@@ -345,6 +584,7 @@ export default function ChatWindow({
       ]);
     } finally {
       setIsLoading(false);
+      setIsInitialLoading(false);
     }
   };
 
@@ -413,6 +653,7 @@ export default function ChatWindow({
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    // Do NOT set isInitialLoading to true here - this is just a message send
     // Signal voice input to clear transcript after sending
     setVoiceResetKey((k) => k + 1);
 
@@ -745,8 +986,19 @@ export default function ChatWindow({
 
   return (
     <div className="flex flex-col bg-slate-800/40 backdrop-blur-sm h-full rounded-xl shadow-xl overflow-hidden">
-      {/* Messages container */}
-      <div className="flex-1 overflow-y-auto py-6 px-6 space-y-6 bg-slate-800/30">
+      {/* Loading progress bar - only show during INITIAL loading phase */}
+      {isInitialLoading && <LoadingProgress />}
+
+      {/* Messages container - fixed scrollbar styling with proper top positioning */}
+      <div className="flex-1 overflow-y-auto pt-6 pb-6 pr-4 pl-6 space-y-6 bg-slate-800/30 relative
+        [&::-webkit-scrollbar]:w-2.5 
+        [&::-webkit-scrollbar]:absolute
+        [&::-webkit-scrollbar-track]:bg-slate-700/30
+        [&::-webkit-scrollbar-track]:rounded-full
+        [&::-webkit-scrollbar-thumb]:bg-blue-600/80
+        [&::-webkit-scrollbar-thumb]:rounded-full
+        [&::-webkit-scrollbar-thumb:hover]:bg-blue-500
+        [&::-webkit-scrollbar-corner]:transparent">
         {visibleMessages.map((message) => (
           <div key={message.id} className="flex items-end">
             <div className={`flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -772,14 +1024,19 @@ export default function ChatWindow({
                       : "bg-slate-800/60 shadow-md border border-slate-600 text-white"
                   }`}
                 >
-                  <div 
-                    className="whitespace-pre-wrap text-sm leading-relaxed"
-                    dangerouslySetInnerHTML={{ 
-                      __html: message.role === 'user' 
-                        ? message.content 
-                        : formatMessageText(message.content) 
-                    }}
-                  />
+                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                    {message.role === 'user' ? (
+                      <div>{message.content}</div>
+                    ) : streamingMessageId === message.id && !streamingComplete ? (
+                      <StreamingText 
+                        content={message.content}
+                        speed={10}
+                        onComplete={() => setStreamingComplete(true)}
+                      />
+                    ) : (
+                      <div dangerouslySetInnerHTML={{ __html: formatMessageText(message.content) }} />
+                    )}
+                  </div>
                 </div>
                 
                 {/* Time stamp - appears on hover */}
@@ -812,8 +1069,8 @@ export default function ChatWindow({
           </div>
         ))}
 
-        {/* Loading indicator */}
-        {isLoading && (
+        {/* Loading indicator for subsequent messages when assistant is "typing" */}
+        {isLoading && messages.length > 0 && (
           <div className="flex w-full justify-start">
             <div className="flex items-end">
               <div className="flex-shrink-0 mr-2 mb-1">
