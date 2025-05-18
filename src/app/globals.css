@@ -8,6 +8,16 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
+  
+  /* New vibrant colors */
+  --primary-blue: #2563eb;
+  --primary-indigo: #4f46e5;
+  --primary-purple: #7e22ce;
+  --primary-cyan: #06b6d4;
+  --accent-pink: #ec4899;
+  --accent-orange: #f97316;
+  --accent-yellow: #eab308;
+  --success-green: #10b981;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -27,32 +37,56 @@ html, body {
 /* ---------- Background & Overlay ---------- */
 body {
   color: rgb(var(--foreground-rgb));
-  background-image: url('/background/bg-light.png'); /* Default light background */
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #0891b2 100%); /* Vibrant dark blue gradient */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
   position: relative;
-  transition: background-image 0.3s ease;
+  transition: all 0.3s ease;
 }
 
-/* Light overlay (subtle) */
+/* Add animated background elements */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: url('/background/bg.png');
+  background-size: cover;
+  opacity: 0.15;
+  z-index: -1;
+  animation: pulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.1;
+  }
+  100% {
+    opacity: 0.25;
+  }
+}
+
+/* Dark overlay (more vibrant) */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.35);
+  background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.2) 0%, rgba(30, 58, 138, 0.6) 100%);
   z-index: -1;
-  transition: background 0.3s ease;
 }
 
-/* Dark mode background & overlay */
-html.dark body {
-  background-image: url('/background/bg.png');
+/* Light mode background & overlay */
+html.light body {
+  background: linear-gradient(135deg, #bfdbfe 0%, #3b82f6 100%);
 }
 
-html.dark body::before {
-  background: rgba(20, 30, 50, 0.6);
+html.light body::before {
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.8) 0%, rgba(191, 219, 254, 0.3) 100%);
+}
+
+html.light body::after {
+  opacity: 0.05;
 }
 
 /* ---------- Utility Layer ---------- */
@@ -60,51 +94,80 @@ html.dark body::before {
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Add shimmer effect */
+  .shimmer {
+    background: linear-gradient(90deg, 
+      rgba(255,255,255,0) 0%, 
+      rgba(255,255,255,0.2) 50%, 
+      rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% {background-position: -200% 0;}
+    100% {background-position: 200% 0;}
+  }
 }
 
 /* Custom theme colors for components */
 .theme-panel {
-  @apply bg-slate-800/70 backdrop-blur-md border border-slate-700 ring-1 ring-white/5 text-white;
+  @apply bg-slate-800/80 backdrop-blur-lg border border-indigo-900/50 ring-1 ring-white/10 text-white shadow-lg;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2), 0 0 15px rgba(79, 70, 229, 0.3);
+  transition: all 0.3s ease;
+}
+
+.theme-panel:hover {
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.3), 0 10px 15px -6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(79, 70, 229, 0.4);
 }
 
 .theme-panel-light {
-  @apply bg-slate-700/60 backdrop-blur-md border border-slate-600 ring-1 ring-white/5 text-white;
+  @apply bg-slate-800/70 backdrop-blur-lg border border-indigo-800/40 ring-1 ring-white/10 text-white shadow-lg;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.2), 0 0 10px rgba(79, 70, 229, 0.2);
 }
 
 /* Light mode variants */
-html.light .theme-panel,
-.theme-panel-light { /* light variant uses same as panel-light maybe adjust later */
-  @apply bg-white/60 backdrop-blur-md border border-slate-200 ring-1 ring-black/5 text-slate-900;
+html.light .theme-panel {
+  @apply bg-white/85 backdrop-blur-lg border border-blue-200 ring-1 ring-blue-500/20 text-slate-900 shadow-xl;
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1), 0 8px 10px -6px rgba(59, 130, 246, 0.1), 0 0 15px rgba(59, 130, 246, 0.2);
 }
 
 html.light .theme-panel-light {
-  @apply bg-white/40 backdrop-blur-md border border-slate-200 ring-1 ring-black/5 text-slate-900;
-}
-
-html.dark .theme-panel,
-html.dark .theme-panel-light {
-  /* Use original dark styles (already applied above) */
+  @apply bg-white/70 backdrop-blur-md border border-blue-200 ring-1 ring-blue-500/10 text-slate-900;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -2px rgba(59, 130, 246, 0.1);
 }
 
 /* Fix for darker theme-panel-light in dark mode */
 html.dark .theme-panel-light {
-  @apply bg-slate-800/80 backdrop-blur-md border border-slate-700 ring-1 ring-white/5 text-white;
+  @apply bg-slate-800/80 backdrop-blur-md border border-indigo-900/30 ring-1 ring-white/5 text-white;
 }
 
 .theme-input {
-  @apply bg-slate-700/80 border-slate-600 text-white placeholder:text-slate-400;
+  @apply bg-slate-700/80 border-indigo-700 text-white placeholder:text-slate-400;
 }
 
 html.light .theme-input {
-  @apply bg-white/80 border-slate-300 text-slate-900 placeholder:text-slate-500;
+  @apply bg-white/80 border-blue-300 text-slate-900 placeholder:text-slate-500;
 }
 
 .theme-button-primary {
-  @apply bg-blue-600 hover:bg-blue-700 text-white transition-shadow hover:shadow-lg hover:shadow-cyan-300/30;
+  @apply bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:via-indigo-700 hover:to-indigo-800 text-white font-medium transition-all duration-300 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-600/40 hover:-translate-y-0.5;
+  animation: subtle-glow 3s infinite alternate;
+}
+
+@keyframes subtle-glow {
+  0% {
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  }
+  100% {
+    box-shadow: 0 4px 18px rgba(79, 70, 229, 0.5);
+  }
 }
 
 html.light .theme-button-primary {
-  @apply bg-blue-600 hover:bg-blue-700 text-white;
+  @apply bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:via-indigo-700 hover:to-indigo-800 text-white font-medium;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
 }
 
 .theme-text-light {
@@ -116,11 +179,50 @@ html.light .theme-text-light {
 }
 
 .theme-text-muted {
-  @apply text-slate-400;
+  @apply text-slate-300;
 }
 
 html.light .theme-text-muted {
   @apply text-slate-500;
+}
+
+/* New style for sign-in panel */
+.sign-in-panel {
+  @apply bg-gradient-to-br from-slate-900/90 via-slate-800/90 to-indigo-900/90 backdrop-blur-xl border border-indigo-500/30 shadow-2xl;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2), 0 0 15px rgba(79, 70, 229, 0.3);
+  transition: all 0.4s ease;
+}
+
+html.light .sign-in-panel {
+  @apply bg-gradient-to-br from-white/90 via-white/85 to-blue-50/90 backdrop-blur-xl border border-blue-200 shadow-2xl;
+}
+
+/* Style for the "How It Works" cards */
+.feature-card {
+  @apply bg-gradient-to-br from-slate-800/50 to-indigo-900/50 backdrop-blur-md border border-indigo-500/20 rounded-xl transition-all duration-300 hover:scale-[1.02];
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.feature-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 15px rgba(79, 70, 229, 0.2);
+}
+
+html.light .feature-card {
+  @apply bg-gradient-to-br from-white/80 to-blue-50/80 backdrop-blur-md border border-blue-200;
+}
+
+/* Animated icon for the feature cards */
+.animated-icon {
+  animation: float 3s ease-in-out infinite alternate;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(-8px);
+  }
 }
 
 /* ---------------------------------------------------------- */
@@ -220,52 +322,46 @@ html.light [class*="bg-blue-900"][class*="text-blue-300"] {
 
 /* Start Chat with AI Assistant button in light mode */
 html.light .theme-button-primary {
-  background-color: #1e3a8a !important; /* Navy blue */
-  color: white !important; /* Keep text white for readability */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4) !important;
 }
 
 /* New Request button in light mode */
 html.light [class*="bg-slate-700"][class*="hover:bg-slate-600"] {
-  background-color: #1e40af !important; /* Darker blue instead of medium blue */
+  background: linear-gradient(to right, #2563eb, #4f46e5) !important;
   color: white !important;
 }
 html.light [class*="bg-slate-700"][class*="hover:bg-slate-600"]:hover {
-  background-color: #1e3a8a !important; /* Navy blue on hover */
+  background: linear-gradient(to right, #1e40af, #4338ca) !important;
 }
 
-/* Make the AIET Intake Portal title navy blue in both modes */
-/* Light mode version (existing) */
+/* Make the AIET Intake Portal title more vibrant */
+/* Light mode version */
 html.light [class*="text-blue-400"] {
-  color: #0f2563 !important; /* Very dark navy blue */
+  color: #4f46e5 !important; /* Indigo blue */
 }
 
-/* Dark mode version (new) */
+/* Dark mode version */
 html.dark [class*="text-blue-400"] {
-  color:  #afb3b9 !important; /* A more vibrant navy shade for dark mode title that still has contrast */
+  color: #93c5fd !important; /* Light blue that pops on dark background */
 }
 
-/* But keep svg icons blue in light mode (existing) */
+/* But keep svg icons blue in light mode */
 html.light svg[class*="text-blue-400"] {
-  color: #3b82f6 !important; /* Restore regular blue for svg icons */
+  color: #4f46e5 !important; /* Indigo for icons */
 }
 
 /* Dark mode styling for version badge and Start Chat button */
 /* Version badge in dark mode */
 [class*="bg-blue-900"][class*="text-blue-300"] {
-  background-color: rgba(15, 23, 42, 0.8) !important; /* Darker navy background */
-  color: #93c5fd !important; /* Light blue text for readability in dark mode */
-  border: 1px solid #1e40af !important; /* Medium blue border */
+  @apply bg-gradient-to-r from-indigo-900 to-blue-900 text-blue-200 border border-indigo-700/50;
+  animation: subtle-pulse 4s infinite alternate;
 }
 
-/* Start Chat button in dark mode - make it navy */
-.theme-button-primary {
-  background-color: #1e40af !important; /* Navy blue rather than standard blue */
-  color: white !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
-  border-color: #2563eb !important; /* Add a subtle border */
-}
-
-.theme-button-primary:hover {
-  background-color: #1e3a8a !important; /* Darker navy on hover */
+@keyframes subtle-pulse {
+  0% {
+    box-shadow: 0 0 5px rgba(79, 70, 229, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(79, 70, 229, 0.6);
+  }
 }

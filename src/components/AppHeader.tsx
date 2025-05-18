@@ -254,21 +254,21 @@ export default function AppHeader() {
 
   return (
     <>
-      <header className={`${theme === "dark" ? "theme-panel" : "theme-panel-light"} shadow-md sticky top-0 z-10`}>
+      <header className={`${theme === "dark" ? "theme-panel" : "theme-panel-light"} shadow-lg sticky top-0 z-10 backdrop-blur-lg`}>
         <div className="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center">
           {/* Left side: Logo and optional back button */}
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-xl font-bold text-blue-400 flex items-center">
+            <Link href="/" className="text-xl font-bold text-blue-400 flex items-center transition-transform hover:scale-105">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1.5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
               </svg>
-              AIET Portal
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500 dark:from-blue-300 dark:to-indigo-400">AIET Portal</span>
             </Link>
             
-            {/* Version tag moved near logo */}
+            {/* Version tag updated with animation */}
             <button 
               onClick={() => setChangelogOpen(true)}
-              className="text-xs px-2 py-0.5 bg-blue-900 text-blue-300 rounded hover:bg-blue-800 transition"
+              className="text-xs px-2 py-0.5 bg-blue-900 text-blue-300 rounded-full hover:bg-blue-800 transition-all shimmer"
             >
               {APP_VERSION}
             </button>

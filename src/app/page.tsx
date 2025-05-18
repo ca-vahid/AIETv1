@@ -97,18 +97,18 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
           {/* Left column: Welcome and CTA */}
           <div className="lg:col-span-6 flex flex-col pt-4">
-            <h2 className="text-3xl leading-tight font-bold text-white mb-3">
+            <h2 className="text-4xl sm:text-5xl leading-tight font-bold text-white mb-5 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-200 to-indigo-100">
               Unlock AI &amp; Automation Opportunities at BGC Engineering&nbsp;&amp; Cambio Earth
             </h2>
-            <p className="text-lg text-[#d1e4f1] max-w-prose mb-6">
+            <p className="text-xl text-blue-100 max-w-prose mb-8">
               We&apos;re on a mission to uncover everyday processes that can be streamlined or enhanced with the latest Generative&nbsp;AI models. Share your pain points—from spreadsheet wrangling to document review—and our AI Efficiency Team will explore how automation can help.
             </p>
             
             {/* Primary CTA */}
             <div className="flex flex-col sm:flex-row gap-4">
               {!isLoggedIn && (
-                <div className="theme-panel rounded-xl shadow-md overflow-hidden w-full max-w-lg mx-auto flex flex-col items-center relative">
-                  <div className="p-6 border-b border-slate-700 w-full">
+                <div className="sign-in-panel rounded-xl overflow-hidden w-full max-w-lg mx-auto flex flex-col items-center relative">
+                  <div className="p-6 border-b border-indigo-500/30 w-full">
                     <h2 className="text-xl font-semibold text-white text-center">Sign in to get started</h2>
                   </div>
                   <div className="p-8 flex flex-col items-center">
@@ -255,8 +255,8 @@ export default function Home() {
               <ProfileCard onEditClick={() => window.location.href = "/profile/edit"} />
             ) : (
               <div className="theme-panel rounded-xl shadow-md overflow-hidden w-full flex flex-col">
-                <div className="p-6 border-b border-slate-700">
-                  <h2 className="text-xl font-semibold text-white">How Our Intake System Works</h2>
+                <div className="p-6 border-b border-indigo-500/30">
+                  <h2 className="text-2xl font-semibold text-white">How Our Intake System Works</h2>
                 </div>
                 <div className="p-8">
                   {/* AI Chatbot Intake Process */}
@@ -265,12 +265,12 @@ export default function Home() {
                     {/* AI Assistant Section */}
                     <div className="flex items-start space-x-6">
                       <div className="flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-blue-400 animated-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-white text-lg mb-2">AI-Guided Intake Process</h3>
+                        <h3 className="font-medium text-white text-lg mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">AI-Guided Intake Process</h3>
                         <p className="theme-text-muted mb-3">Our AI assistant chatbot will guide you through sharing your automation idea. It asks targeted questions to help you articulate needs and pain points in your workflow.</p>
                         
                         {/* Multilingual Support & Features */}
@@ -309,14 +309,14 @@ export default function Home() {
                     {/* Pathway Choice Section */}
                     <div className="flex items-start space-x-6">
                       <div className="flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-purple-400 animated-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-white text-lg mb-2">Choose Your Path</h3>
+                        <h3 className="font-medium text-white text-lg mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-purple-200">Choose Your Path</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                          <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-600">
+                          <div className="feature-card p-4">
                             <h4 className="text-white font-medium flex items-center">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
@@ -325,7 +325,7 @@ export default function Home() {
                             </h4>
                             <p className="theme-text-muted text-sm mt-2">Quick submission with basic information. Perfect for simple ideas or initial concepts that don&apos;t require extensive detail.</p>
                           </div>
-                          <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-600">
+                          <div className="feature-card p-4">
                             <h4 className="text-white font-medium flex items-center">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -341,12 +341,12 @@ export default function Home() {
                     {/* Submission & Review */}
                     <div className="flex items-start space-x-6">
                       <div className="flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-green-400 animated-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-white text-lg mb-2">Submit & Get Expert Assessment</h3>
+                        <h3 className="font-medium text-white text-lg mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-green-200">Submit & Get Expert Assessment</h3>
                         <p className="theme-text-muted">Once submitted, our AI Efficiency Team reviews your idea, assesses feasibility, and explores automation potential using generative AI and other technologies. We&apos;ll follow up with next steps based on our evaluation.</p>
                       </div>
                     </div>
@@ -359,8 +359,8 @@ export default function Home() {
         
         {/* What Can We Automate section - simplified card grid */}
         <div className="theme-panel rounded-xl shadow-md overflow-hidden mt-12">
-          <div className="p-6 border-b border-slate-700">
-            <h2 className="text-xl font-semibold text-white">What Can We Automate?</h2>
+          <div className="p-6 border-b border-indigo-500/30">
+            <h2 className="text-2xl font-semibold text-white">What Can We Automate?</h2>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -402,7 +402,7 @@ export default function Home() {
                   )
                 }
               ].map((item, index) => (
-                <div key={index} className="theme-panel-light flex space-x-4 p-4 rounded-lg border hover:shadow-md transition-shadow">
+                <div key={index} className="feature-card flex space-x-4 p-4">
                   <div className="flex-shrink-0">
                     {item.icon}
                   </div>
