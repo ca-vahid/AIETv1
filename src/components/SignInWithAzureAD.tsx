@@ -207,7 +207,7 @@ export default function SignInWithAzureAD() {
   if (loading || isProcessingRedirect || isUpdatingProfile) {
     return (
       <button
-        className="bg-blue-600 text-white px-4 py-2 rounded opacity-70 cursor-not-allowed"
+        className="bg-gradient-to-r from-indigo-600/50 to-purple-700/50 text-white px-4 py-3 rounded-lg opacity-70 cursor-not-allowed shadow-md"
         disabled
       >
         {isUpdatingProfile ? 'Updating Profile...' : 'Loading...'}
@@ -250,11 +250,15 @@ export default function SignInWithAzureAD() {
     <div className="flex flex-col items-center text-center space-y-2">
       <button
         onClick={handleSignIn}
-        className={`${
-          theme === 'dark'
-            ? 'bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 text-white border border-slate-600'
-            : 'bg-white hover:bg-gray-100 text-gray-800 border border-gray-300'
-        } font-medium text-sm py-2.5 px-5 rounded shadow-sm flex items-center justify-center w-full transition-colors`}
+        className={`
+          font-medium text-sm py-3 px-5 rounded-lg shadow-md flex items-center justify-center w-full transition-all duration-300
+          ${
+            theme === 'dark'
+              ? 'bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white border border-indigo-500/30'
+              : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border border-blue-400/30'
+          }
+          hover:shadow-lg hover:-translate-y-0.5
+        `}
       >
         <svg 
           width="20" 

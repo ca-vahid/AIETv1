@@ -97,17 +97,36 @@ html.light body::after {
   
   /* Add shimmer effect */
   .shimmer {
-    background: linear-gradient(90deg, 
-      rgba(255,255,255,0) 0%, 
-      rgba(255,255,255,0.2) 50%, 
-      rgba(255,255,255,0) 100%);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
+    position: relative;
+    overflow: hidden;
   }
   
-  @keyframes shimmer {
-    0% {background-position: -200% 0;}
-    100% {background-position: 200% 0;}
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmerAnimation 2s infinite linear;
+    z-index: 1;
+    pointer-events: none;
+  }
+  
+  @keyframes shimmerAnimation {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
   }
 }
 
@@ -363,5 +382,44 @@ html.light svg[class*="text-blue-400"] {
   }
   100% {
     box-shadow: 0 0 12px rgba(79, 70, 229, 0.6);
+  }
+}
+
+/* Add specific styles for the version badge in dark mode */
+.version-badge {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to right, #4338ca, #7e22ce);
+  color: white;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2), 0 0 5px rgba(99, 102, 241, 0.4);
+  border: 1px solid rgba(129, 140, 248, 0.3);
+}
+
+.version-badge::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: badgeShimmer 1.5s infinite;
+  z-index: 1;
+}
+
+@keyframes badgeShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }

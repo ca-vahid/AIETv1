@@ -254,7 +254,7 @@ export default function AppHeader() {
 
   return (
     <>
-      <header className={`${theme === "dark" ? "theme-panel" : "theme-panel-light"} shadow-lg sticky top-0 z-10 backdrop-blur-lg`}>
+      <header className={`${theme === "dark" ? "theme-panel" : "theme-panel-light"} shadow-lg sticky top-0 z-10 backdrop-blur-lg bg-gradient-to-r ${theme === "dark" ? "from-slate-900 via-indigo-950 to-slate-900" : "from-white via-blue-50 to-white"}`}>
         <div className="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center">
           {/* Left side: Logo and optional back button */}
           <div className="flex items-center gap-3">
@@ -268,7 +268,7 @@ export default function AppHeader() {
             {/* Version tag updated with animation */}
             <button 
               onClick={() => setChangelogOpen(true)}
-              className="text-xs px-2 py-0.5 bg-blue-900 text-blue-300 rounded-full hover:bg-blue-800 transition-all shimmer"
+              className="version-badge text-xs"
             >
               {APP_VERSION}
             </button>
@@ -342,7 +342,7 @@ export default function AppHeader() {
             {/* User info and sign out */}
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-slate-300 hidden sm:inline">
+                <span className="text-sm font-medium text-white hidden sm:inline">
                   Hello, {profile.name.split(' ')[0]}
                 </span>
                 {profile.photoUrl && (
@@ -354,7 +354,7 @@ export default function AppHeader() {
                 )}
                 <button
                   onClick={handleSignOut}
-                  className="text-sm text-red-400 hover:text-red-300 transition flex items-center gap-1"
+                  className="text-sm bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-3 py-1.5 rounded-full shadow-sm transition flex items-center gap-1"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
