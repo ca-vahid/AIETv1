@@ -22,7 +22,7 @@ const steps: { key: string; label: string; icon: React.ReactNode }[] = [
     )
   },
   { 
-    key: 'lite_description', 
+    key: 'description', 
     label: 'Description',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -36,31 +36,8 @@ const steps: { key: string; label: string; icon: React.ReactNode }[] = [
     )
   },
   { 
-    key: 'lite_impact', 
-    label: 'Impact',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M21 21H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M3 10H7V21H3V10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M10 3H14V21H10V3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M17 14H21V21H17V14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    )
-  },
-  { 
-    key: 'decision', 
-    label: 'Submit Brief',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 22C17.523 22 22 17.523 22 12C22 6.477 17.523 2 12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M12 8V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    )
-  },
-  { 
     key: 'details', 
-    label: 'Deep Dive',
+    label: 'Details',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -126,9 +103,7 @@ const getColors = (isDarkMode: boolean) => ({
   panelInnerGlow: isDarkMode ? 'rgba(66, 132, 255, 0.05)' : 'rgba(255, 255, 255, 0.3)', // Inner glow
 
   // Special icon highlights
-  decisionIcon: '#f59e0b',    // amber-500 for decision (brighter)
   submitIcon: '#10b981',      // emerald-500 for submit (brighter)
-  decisionGlow: 'rgba(245, 158, 11, 0.5)', // Glow for decision icon
   submitGlow: 'rgba(16, 185, 129, 0.5)',   // Glow for submit icon
 
   // Line
@@ -193,7 +168,7 @@ const StateStepper: React.FC<StateStepperProps> = ({ currentStep, onStepClick })
 
   // Get colors based on detected dark/light mode
   const colors = useMemo(() => getColors(isDarkMode), [isDarkMode]);
-  const { primary, primaryLight, primaryLighter, decisionIcon, submitIcon, iconMuted, decisionGlow, submitGlow } = colors;
+  const { primary, primaryLight, primaryLighter, submitIcon, iconMuted, submitGlow } = colors;
 
   return (
     <div className="relative h-full w-full flex items-center justify-center px-2">
@@ -246,7 +221,6 @@ const StateStepper: React.FC<StateStepperProps> = ({ currentStep, onStepClick })
             const isFuture = idx > currentIndex;
             
             // Special flags
-            const isDecision = step.key === 'decision';
             const isSubmit = step.key === 'submit';
             
             // Compute circle colors - add subtle gradient for active and completed
@@ -259,18 +233,14 @@ const StateStepper: React.FC<StateStepperProps> = ({ currentStep, onStepClick })
             // Special glow for active step
             const glowEffect = isActive 
               ? `0 0 15px ${colors.primaryGlow}, 0 0 5px ${colors.primaryGlow}`
-              : isDecision 
-                ? `0 0 8px ${decisionGlow}`
-                : isSubmit
-                  ? `0 0 8px ${submitGlow}`
-                  : 'none';
+              : isSubmit
+                ? `0 0 8px ${submitGlow}`
+                : 'none';
                 
             // Icon color with special highlights
             let iconColor: string;
-            // Always color decision and submit icons specially
-            if (isDecision) {
-              iconColor = decisionIcon;
-            } else if (isSubmit) {
+            // Check for special submit icon
+            if (isSubmit) {
               iconColor = submitIcon;
             } else if (isActive || isCompleted) {
               // other completed or active steps stay white

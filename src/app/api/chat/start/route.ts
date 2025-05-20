@@ -70,7 +70,7 @@ Then generate a personalized greeting in the user's preferred language. The gree
 - Briefly explain our AI Intake Portal purpose and invite them to describe a task to automate
 Output a JSON object with two keys:
   "extracted": { "location": { "country": string, "city": string }, "firstName": string, "job": string, "title": string, "language": string },
-  "prompt": "HTML with emojis and highlighitng important points and space between paragraphs <personalized greeting in the inferred language>"`;
+  "prompt": "HTML with emojis and highlighitng important points <personalized greeting in the inferred language>"`;
       // Debug: log the prompt sent to Gemini
       console.debug("Gemini extraction prompt:", extractionPrompt);
       // Simple single argument call - most compatible format
@@ -119,7 +119,6 @@ Output a JSON object with two keys:
         missingProfileFields: [],
         collectedData: {},
         validations: {},
-        fastTrack: false,
         // Initialize conversation language
         language: detectedLanguage,
       },

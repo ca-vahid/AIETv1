@@ -4,6 +4,53 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap');
 
+/* Custom scrollbar styles for all scrollable elements */
+@layer utilities {
+  /* Thin scrollbar with rounded corners */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  /* Scrollbar thumb styling */
+  .scrollbar-thumb-blue-500 {
+    scrollbar-color: #3b82f6 transparent;
+  }
+  
+  .dark .scrollbar-thumb-blue-700 {
+    scrollbar-color: #1d4ed8 transparent;
+  }
+  
+  /* For WebKit browsers */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .scrollbar-thumb-rounded-full::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+  }
+  
+  .scrollbar-thumb-blue-500::-webkit-scrollbar-thumb {
+    background-color: #3b82f6;
+  }
+  
+  .dark .scrollbar-thumb-blue-700::-webkit-scrollbar-thumb {
+    background-color: #1d4ed8;
+  }
+  
+  .scrollbar-track-blue-100::-webkit-scrollbar-track {
+    background-color: #dbeafe;
+  }
+  
+  .dark .scrollbar-track-gray-800::-webkit-scrollbar-track {
+    background-color: #1f2937;
+  }
+  
+  .scrollbar-track-rounded-full::-webkit-scrollbar-track {
+    border-radius: 9999px;
+  }
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;

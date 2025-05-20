@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
 
     // Generate title using Gemini with full conversation history
     const prompt = isDetailed
-      ? `Generate a concise and informative (max 15 words) detailed title for this conversation:\n\n${transcript}`
-      : `Generate a concise and informative (max 15 words) title for this conversation:\n\n${transcript}`;
+      ? `You have access to a user's request and the assistant's response for creating an automation using new AI methods and system  Generate a title for their request. Make it engaging and intersting (max 15 words) \n\n${transcript}`
+      : `You have access to a user's request and the assistant's response for creating an automation using new AI methods and system  Generate a title for their request. Make it engaging and intersting (max 15 words) \n\n${transcript}`;
 
     const result = await model.generateContent(prompt);
     const response = result.response;

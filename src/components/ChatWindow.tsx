@@ -7,6 +7,12 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useSpring, animated, config } from '@react-spring/web';
 import { useEffect as useReactEffect } from 'react'; // Rename to avoid conflict
+import AttachmentItem from './AttachmentItem';
+import AttachmentPanel from './AttachmentPanel';
+import FileUploader from './FileUploader';
+import { collection, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/firebase';
+import SubmittingModal from './SubmittingModal';
 
 // Dynamic import for VoiceInput
 const VoiceInput = dynamic(() => import('./VoiceInput'), {
@@ -27,6 +33,17 @@ interface ChatWindowProps {
   hideHeader?: boolean;
   currentStep: string;
   onStepChange: (step: string) => void;
+}
+
+// Define Attachment interface at the top near other interfaces
+interface Attachment {
+  name: string;
+  url: string;
+  path: string;
+  type: string;
+  size: number;
+  thumbnailUrl: string | null;
+  uploadedAt: number;
 }
 
 // Add a helper function to convert markdown-like formatting to HTML
@@ -260,8 +277,9 @@ export default function ChatWindow({
   const { profile, firebaseUser } = useSessionProfile();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // For general message sending, file uploads
+  const [isInitialLoading, setIsInitialLoading] = useState(false); // For initial chat load
+  const [isFinalizing, setIsFinalizing] = useState(false); // Specific for the complete/extraction step
   const [chatId, setChatId] = useState<string | undefined>(conversationId);
   const [internalChatId, setInternalChatId] = useState<string | undefined>(conversationId); // Internal tracking
   const [extractedProfile, setExtractedProfile] = useState<any>(null); // Store extracted user details
@@ -270,9 +288,7 @@ export default function ChatWindow({
   const baseTextRef = useRef<string>(""); // Ref to store text before listening starts
   const [currentModel, setCurrentModel] = useState<string>("");
   const [useThinkingModel, setUseThinkingModel] = useState<boolean>(false);
-  const [initialTitleGenerated, setInitialTitleGenerated] = useState(false);
-  const [detailedTitleGenerated, setDetailedTitleGenerated] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [titleGenerated, setTitleGenerated] = useState(false);
   const [lastFailedContent, setLastFailedContent] = useState<string | null>(null);
   const [sendError, setSendError] = useState(false);
   const router = useRouter();
@@ -295,7 +311,37 @@ export default function ChatWindow({
     uk: 'uk-UA', zh: 'zh-CN', hi: 'hi-IN', ar: 'ar-SA', bn: 'bn-BD',
     pt: 'pt-PT', ru: 'ru-RU', ja: 'ja-JP', fa: 'fa-IR'
   };
-  const speechLocale = localeMap[language] || `${language}-${language.toUpperCase()}`;
+  // Resolve the speech locale to a value accepted by Azure Speech.
+  // 1. Check explicit mapping (e.g., "en" -> "en-US").
+  // 2. If the value already looks like a BCP-47 tag (contains a dash) use it as-is.
+  // 3. Fall back to English.
+  const speechLocale = (() => {
+    // Direct mapping for common two-letter codes
+    if (localeMap[language]) return localeMap[language];
+
+    // If the value is already a valid locale string like "en-US" return it unchanged
+    if (language.includes('-')) return language;
+
+    // Handle full language names coming back from the server, e.g. "English", "French"
+    const lower = language.toLowerCase();
+    const nameMap: Record<string, string> = {
+      english: 'en-US',
+      french: 'fr-FR',
+      spanish: 'es-ES',
+      italian: 'it-IT',
+      slovak: 'sk-SK',
+      ukrainian: 'uk-UA',
+      chinese: 'zh-CN',
+      hindi: 'hi-IN',
+      arabic: 'ar-SA',
+      bengali: 'bn-BD',
+      portuguese: 'pt-PT',
+      russian: 'ru-RU',
+      japanese: 'ja-JP',
+      persian: 'fa-IR'
+    };
+    return nameMap[lower] || 'en-US';
+  })();
 
   // Pre-define all animations outside of JSX to avoid "hooks in conditionals" errors
   const languageMenuAnimation = useSpring({
@@ -500,11 +546,19 @@ export default function ChatWindow({
       
       onStepChange(data.conversation.state.currentStep);
       
-      // Restore flags based on saved state
-      setInitialTitleGenerated(data.conversation.state.initialTitleGenerated || false);
-      setDetailedTitleGenerated(data.conversation.state.detailedTitleGenerated || false);
       // Restore language
       setLanguage(data.conversation.state.language || 'en');
+      
+      // Restore attachments if present
+      if (data.conversation.state.collectedData?.attachments) {
+        setAttachments(data.conversation.state.collectedData.attachments);
+      }
+      
+      // Check if this is a completed submission
+      if (data.conversation.state.isSubmitted && data.conversation.state.submittedRequestId) {
+        setIsSubmissionComplete(true);
+        setRequestId(data.conversation.state.submittedRequestId);
+      }
       
     } catch (error) {
       console.error("Error loading conversation:", error);
@@ -585,107 +639,20 @@ export default function ChatWindow({
     setInternalChatId(conversationId);
   }, [conversationId]);
 
-  // Move the sendQuickCommand function definition up before the useEffect that uses it
-  const sendQuickCommand = useCallback(async (command: string) => {
-    if (isLoading || isSubmitting || !internalChatId) return;
-    
-    if (command === 'submit') {
-      setInput('');
-      setIsSubmitting(true); // No title generation here
-      await handleCompleteChat();
-    } else if (command === 'go deeper' || command.toLowerCase().includes('deep')) {
-      setDetailedTitleGenerated(false); // Reset detailed flag only
-      const previousStep = currentStep; // Track step before command
-      
-      try {
-        if (!firebaseUser) return;
-        setIsLoading(true);
-        const idToken = await getIdToken(firebaseUser);
-        const res = await fetch('/api/chat/message', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({ conversationId: internalChatId, command: 'GO_DEEPER', useThinkingModel }),
-        });
-
-        const headerStep = res.headers.get('X-Conversation-State');
-        let newStep = currentStep;
-        if (headerStep) {
-          newStep = headerStep;
-          onStepChange(headerStep);
-        }
-        if (!res.ok) throw new Error('Failed command');
-        if (!res.body) throw new Error('No body');
-
-        // --- Streaming for Go Deeper --- 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let assistantMsg = '';
-        const botId = `assistant-${Date.now()}`;
-        setMessages(prev => [...prev, { id: botId, role:'assistant', content:'', timestamp:Date.now() }]);
-        while(true){
-          const {done, value} = await reader.read();
-          if(done) break;
-          assistantMsg += decoder.decode(value, {stream:true});
-          setMessages(prev=> prev.map(m=> m.id===botId?{...m,content:assistantMsg}:m));
-        }
-        // --- End Streaming --- 
-
-        // Detect backend streaming error sentinel
-        if (/Error processing stream/i.test(assistantMsg)) {
-          throw new Error('STREAM_ERROR');
-        }
-
-      } catch(err){
-        console.error(err);
-      } finally{
-        setIsLoading(false);
-      }
-    } else {
-      setInput(command);
-      // In the callback we avoid circular reference 
-      // by just calling the function directly without the dependency
-      if (command.trim() && internalChatId) {
-        // Implement logic similar to handleSendMessage but simplified
-        const userMessage = {
-          id: `user-${Date.now()}`,
-          role: "user" as const,
-          content: command,
-          timestamp: Date.now(),
-        };
-        setMessages(prev => [...prev, userMessage]);
-        setInput("");
-        setIsLoading(true);
-        setVoiceResetKey(k => k + 1);
-        
-        try {
-          // Rest of send message logic would go here
-          // For simplicity, we're not duplicating the full logic
-          console.log("Command sent:", command);
-        } catch (error) {
-          console.error("Error with command:", error);
-        }
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, isSubmitting, internalChatId, currentStep, firebaseUser, useThinkingModel, onStepChange]);
-
-  // Auto-submit quick commands: when decisionMode is on and user types 'submit' or 'deeper', send automatically
-  useEffect(() => {
-    if (currentStep !== 'decision') return;
-    
-    // Only consider this when user has entered something
-    if (!input.trim()) return;
-    
-    const trimmed = input.trim().toLowerCase();
-    if (/(submit|done|finish|send)/i.test(trimmed)) {
-      sendQuickCommand('submit');
-    } else if (/(deep(er)?|more|details)/i.test(trimmed)) {
-      sendQuickCommand('go deeper');
-    }
-  }, [input, currentStep, sendQuickCommand]);
+  // Define steps and progress calculation
+  const steps = ['init', 'description', 'details', 'attachments', 'summary', 'submit'] as const;
+  type StepKey = typeof steps[number];
+  const labels: Record<StepKey, string> = {
+    init: 'Welcome',
+    description: 'Description',
+    details: 'Details',
+    attachments: 'Attachments',
+    summary: 'Summary',
+    submit: 'Submit',
+  };
+  const stepKey = (steps.includes(currentStep as StepKey) ? currentStep : 'init') as StepKey;
+  const currentIndex = steps.indexOf(stepKey);
+  const progressPercent = (currentIndex >= 0 ? (currentIndex / (steps.length - 1)) * 100 : 0);
 
   // Remove filtering: display all messages by default
   const visibleMessages = messages;
@@ -702,17 +669,30 @@ export default function ChatWindow({
   const autoResizeTextarea = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = e.target;
     textarea.style.height = "auto"; // Reset height
-    // Set height based on scroll height, capped at 150px
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`; 
+    // Set height based on scroll height, capped at 300px (increased from 150px)
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 300)}px`; 
   };
+
+  // Add a state for tracking if submission is complete
+  const [isSubmissionComplete, setIsSubmissionComplete] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  // Live logs coming from /api/chat/complete/stream
+  const [submissionLogs, setSubmissionLogs] = useState('');
+  // Flag to prevent multiple streaming submissions
+  const [hasStartedSubmission, setHasStartedSubmission] = useState(false);
 
   // Handle completion of chat draft into final request
   const handleCompleteChat = useCallback(async () => {
-    if (!firebaseUser || !internalChatId) return;
+    if (!firebaseUser || !internalChatId || hasStartedSubmission) return; // Prevent re-entry
+    setHasStartedSubmission(true);
+
+    console.log("[ChatWindow] handleCompleteChat: Starting streaming submission");
+    setIsFinalizing(true);
+    setSubmissionLogs('');
+
     try {
       setIsLoading(true);
-      setIsSubmitting(true);
-      
+
       // Add a system message indicating we're submitting
       setMessages(prev => [
         ...prev,
@@ -723,9 +703,12 @@ export default function ChatWindow({
           timestamp: Date.now(),
         }
       ]);
-      
+
+      // Small delay to ensure the UI updates before we start the fetch
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       const idToken = await getIdToken(firebaseUser);
-      const response = await fetch('/api/chat/complete', {
+      const response = await fetch('/api/chat/complete/stream', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${idToken}`,
@@ -733,26 +716,55 @@ export default function ChatWindow({
         },
         body: JSON.stringify({ conversationId: internalChatId })
       });
-      
-      if (!response.ok) {
+
+      if (!response.ok || !response.body) {
         throw new Error('Failed to submit request');
       }
-      
-      const data = await response.json();
-      
-      // Update the system message instead of adding a new one
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.role === 'system' && msg.id.startsWith('submitting-') 
-            ? {
-                ...msg,
-                content: `Your request has been submitted! Request ID: ${data.requestId}`,
-                timestamp: Date.now()
-              }
-            : msg
-        )
-      );
-      
+
+      // Stream response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let reqId: string | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunkText = decoder.decode(value, { stream: true });
+        console.log("[ChatWindow] Received chunk:", chunkText); // Debug log
+
+        // Capture requestId sentinel
+        if (chunkText.includes('REQUEST_ID:')) {
+          const match = chunkText.match(/REQUEST_ID:(\S+)/);
+          if (match) {
+            reqId = match[1];
+            setRequestId(reqId);
+          }
+        }
+
+        setSubmissionLogs(prev => prev + chunkText);
+      }
+
+      // Mark submission complete if we got an ID
+      if (reqId) {
+        // Wait a bit to ensure user sees the completion message
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        setIsSubmissionComplete(true);
+
+        // Attempt to mark conversation as submitted in Firestore (best-effort)
+        try {
+          const conversationsRef = collection(db, 'conversations');
+          await updateDoc(doc(conversationsRef, internalChatId), {
+            'state.isSubmitted': true,
+            'state.submittedRequestId': reqId,
+            updatedAt: Date.now()
+          });
+        } catch (updateErr) {
+          console.error('Failed to flag conversation as submitted:', updateErr);
+        }
+      }
+
     } catch (error) {
       console.error('Error completing chat:', error);
       setMessages(prev => [
@@ -765,10 +777,41 @@ export default function ChatWindow({
         }
       ]);
     } finally {
-      setIsLoading(false);
-      setIsSubmitting(false);
+      // Delay clearing isLoading state to ensure UI remains consistent
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
+      
+      // Don't immediately hide the modal - let SubmittingModal's internal timer handle it
+      // setIsFinalizing(false); - removed to ensure modal stays visible
+      setTimeout(() => {
+        setIsFinalizing(false);
+      }, 3000);
     }
-  }, [firebaseUser, internalChatId]);
+  }, [firebaseUser, internalChatId, hasStartedSubmission]);
+
+  // Create a function to handle starting a new submission
+  const handleStartNewSubmission = useCallback(() => {
+    // Reset input text and textarea height
+    setInput("");
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
+    // Reset states
+    setMessages([]);
+    setIsSubmissionComplete(false);
+    setRequestId(null);
+    setChatId(undefined);
+    setInternalChatId(undefined);
+    setTitleGenerated(false);
+    setAttachments([]);
+    setHasStartedSubmission(false);
+    
+    // Start a new chat
+    hasStartedConversation.current = false;
+    hasLoadedConversation.current = false;
+    startNewChat();
+  }, [startNewChat]);
 
   // Generate title function updated
   const generateTitle = async (context: string, isDetailed: boolean) => {
@@ -808,8 +851,7 @@ export default function ChatWindow({
     } catch (error) {
       console.error('Error generating title:', error);
       // Silently fail for now, but mark as generated to prevent retries
-      if (isDetailed) setDetailedTitleGenerated(true);
-      else setInitialTitleGenerated(true);
+      if (isDetailed) setTitleGenerated(true);
     }
   };
 
@@ -827,6 +869,15 @@ export default function ChatWindow({
 
   const handleSendMessage = async () => {
     const content = input.trim();
+
+    console.log(`[ChatWindow] handleSendMessage entered. isFinalizing: ${isFinalizing}, isLoading: ${isLoading}`); // Debug log
+
+    // Prevent sending new messages if finalization is in progress.
+    if (isFinalizing) {
+      console.log("[ChatWindow] handleSendMessage: Aborting, finalization in progress.");
+      return;
+    }
+
     if (!content || !internalChatId) return;
 
     // Add user message to the UI
@@ -883,6 +934,12 @@ export default function ChatWindow({
       if (newState) {
         newStep = newState;
         onStepChange(newState);
+        if (newStep === 'submit') {
+          // Immediately start submission to show progress modal
+          console.log("[ChatWindow] submit step detected, launching submission early");
+          handleCompleteChat();
+          return;
+        }
       }
 
       if (!response.body) {
@@ -931,27 +988,18 @@ export default function ChatWindow({
         );
       }
 
-      // --- Title Generation Logic --- 
-      // 1. Initial Title: Trigger after moving *to* lite_impact
-      if (newStep === 'lite_impact' && previousStep === 'lite_description' && !initialTitleGenerated) {
-        console.log("[ChatWindow] Generating initial title with full conversation history");
-        await generateTitle("", false); // false = not detailed
-        setInitialTitleGenerated(true);
+      // Single title-generation after description step
+      if (newStep === 'details' && !titleGenerated) {
+        console.log("[ChatWindow] Generating title based on description step");
+        await generateTitle(userMessage.content, false);
+        setTitleGenerated(true);
       }
 
-      // 2. Detailed Title: Trigger after moving *to* attachments (from details)
-      if ((newStep === 'attachments' || newStep === 'summary') && previousStep === 'details' && !detailedTitleGenerated) {
-        console.log("[ChatWindow] Generating detailed title with full conversation history");
-        await generateTitle("", true); // true = detailed
-        setDetailedTitleGenerated(true);
-      }
-      // --- End Title Generation --- 
-
-      // After receiving assistant response, generate title if it's the first message
-      if (!initialTitleGenerated && !detailedTitleGenerated && messages.length >= 3) {
-        console.log("[ChatWindow] Generating fallback titles with full conversation history");
-        await generateTitle("", false);
-        setInitialTitleGenerated(true);
+      // Auto-submit once we reach the submit step
+      if (newStep === 'submit') {
+        console.log("[ChatWindow] Auto-submitting on submit step");
+        // Trigger submission asynchronously so UI can update immediately
+        handleCompleteChat();
       }
 
       // Detect backend streaming error sentinel
@@ -1056,10 +1104,191 @@ export default function ChatWindow({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Add a state for storing attachments
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+
+  // Handle file upload
+  const handleFileUpload = useCallback(async (file: File) => {
+    if (!firebaseUser || !internalChatId) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Get ID token for authentication
+      const idToken = await getIdToken(firebaseUser);
+      
+      // Create form data with the file
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('conversationId', internalChatId);
+      
+      const response = await fetch('/api/chat/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload file');
+      }
+      
+      const attachment = await response.json();
+      
+      // Add the attachment to state
+      setAttachments(prev => [...prev, attachment]);
+      
+      // Add a message to the chat indicating the file was uploaded
+      const userMessage: Message = {
+        id: `user-upload-${Date.now()}`,
+        role: 'user',
+        content: `I've attached a file: ${attachment.name}`,
+        timestamp: Date.now(),
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+      
+      // Auto-send a bot response about the file
+      const botMessageId = `assistant-upload-${Date.now()}`;
+      setMessages(prev => [
+        ...prev,
+        {
+          id: botMessageId,
+          role: 'assistant',
+          content: `Thanks for sharing ${attachment.name}. I'll include this with your submission.`,
+          timestamp: Date.now()
+        }
+      ]);
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `error-upload-${Date.now()}`,
+          role: 'system',
+          content: 'Sorry, there was an error uploading your file. Please try again.',
+          timestamp: Date.now()
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [firebaseUser, internalChatId]);
+
+  // Handle manually transitioning to the next step from attachments
+  const handleContinueFromAttachments = useCallback(async () => {
+    if (!internalChatId || !firebaseUser) return;
+    // Immediately hide attachments panel by transitioning to summary
+    onStepChange('summary');
+
+    try {
+      setIsLoading(true);
+      
+      // Get the ID token
+      const idToken = await getIdToken(firebaseUser);
+      
+      // Send a special command to advance to summary
+      const response = await fetch("/api/chat/message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          conversationId: internalChatId,
+          message: "continue_to_summary",
+          useThinkingModel: useThinkingModel,
+          isCommand: true
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to continue to summary");
+      }
+      
+      // Update current step from response header
+      const newState = response.headers.get('X-Conversation-State');
+      if (newState) {
+        onStepChange(newState);
+      }
+      
+      // Check if response body exists
+      if (!response.body) {
+        throw new Error("Response body is null");
+      }
+      
+      // Add empty assistant message that will be filled with streamed content
+      const botMessageId = `assistant-continue-${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: botMessageId,
+          role: "assistant",
+          content: "",
+          timestamp: Date.now(),
+        },
+      ]);
+      
+      // Handle streaming response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = "";
+      
+      // Read the stream directly as plain text
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        // Decode the chunk as plain text
+        const chunkText = decoder.decode(value, { stream: true });
+        assistantMessage += chunkText;
+        
+        // Update the assistant's message with streamed content
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botMessageId
+              ? { ...msg, content: assistantMessage }
+              : msg
+          )
+        );
+      }
+      
+    } catch (error) {
+      console.error("Error continuing to summary:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [firebaseUser, internalChatId, onStepChange, useThinkingModel]);
+
+  // Handle paste in the chat input area
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    if (!items) return;
+    
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      
+      // Handle images
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        e.preventDefault(); // Prevent the default paste
+        const file = item.getAsFile();
+        if (file) {
+          handleFileUpload(file);
+        }
+        break;
+      }
+    }
+  }, [handleFileUpload]);
+
   return (
     <div className="flex flex-col bg-white dark:bg-gray-900 h-full rounded-xl shadow-xl overflow-hidden border border-blue-100 dark:border-gray-700">
       {/* Loading progress bar - only show during INITIAL loading phase */}
       {isInitialLoading && <LoadingProgress />}
+
+      {/* Submission modal with live progress */}
+      <SubmittingModal show={isFinalizing} logs={submissionLogs} />
 
       {/* Language feedback notification */}
       <animated.div 
@@ -1075,262 +1304,337 @@ export default function ChatWindow({
         </div>
       </animated.div>
 
+      {/* Progress Bar Indicator */}
+      <div className="px-6 py-2 bg-slate-100 dark:bg-gray-800 flex items-center space-x-4">
+        <div className="flex-1">
+          <div className="h-1 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden">
+            <div className="h-1 bg-blue-600 dark:bg-indigo-500 transition-all" style={{ width: `${progressPercent}%` }} />
+          </div>
+        </div>
+        <div className="text-sm text-gray-700 dark:text-gray-300">
+          Step {currentIndex + 1} of {steps.length}: {labels[stepKey]}
+        </div>
+      </div>
+
       {/* Messages container */}
-      <div className="flex-1 overflow-y-auto pt-6 pb-6 pr-4 pl-6 space-y-6 bg-blue-50 dark:bg-gray-900 relative
-        [&::-webkit-scrollbar]:w-2.5 
-        [&::-webkit-scrollbar]:absolute
-        [&::-webkit-scrollbar-track]:bg-blue-100 dark:[&::-webkit-scrollbar-track]:bg-gray-800
-        [&::-webkit-scrollbar-track]:rounded-full
-        [&::-webkit-scrollbar-thumb]:bg-blue-500 dark:[&::-webkit-scrollbar-thumb]:bg-blue-700
-        [&::-webkit-scrollbar-thumb]:rounded-full
-        [&::-webkit-scrollbar-thumb:hover]:bg-blue-600 dark:[&::-webkit-scrollbar-thumb:hover]:bg-blue-800
-        [&::-webkit-scrollbar-corner]:transparent">
-        {visibleMessages.map((message) => (
-          <div key={message.id} className="flex items-end">
-            <div className={`flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-              {message.role !== "user" && (
-                <div className="flex-shrink-0 mr-2 mb-1">
-                  <div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center shadow-md dark:border dark:border-blue-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                      <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-        
-              {/* Message content */}
-              <div className="group relative max-w-[80%]">
-                <div 
-                  className={`px-4 py-3 rounded-2xl ${
-                    message.role === "user" 
-                      ? "bg-blue-600 text-white dark:bg-blue-700 dark:text-white shadow-md dark:border dark:border-blue-600" 
-                      : message.role === "system"
-                      ? "bg-amber-600 border border-amber-700 dark:bg-amber-800 dark:border-amber-700 text-white shadow-md"
-                      : "bg-white dark:bg-gray-800 shadow-md border border-blue-200 dark:border-gray-700 text-slate-800 dark:text-gray-100"
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap text-fluid-base leading-relaxed">
-                    {message.role === 'user' ? (
-                      <div>{message.content}</div>
-                    ) : streamingMessageId === message.id && !streamingComplete ? (
-                      <StreamingText 
-                        content={message.content}
-                        speed={10}
-                        onComplete={() => setStreamingComplete(true)}
+      <div className="flex-1 overflow-hidden bg-white/5 dark:bg-gray-950/10 backdrop-blur-sm rounded-lg border border-blue-200/30 dark:border-gray-700/30 shadow-inner">
+        <div className="flex-1 overflow-y-auto pt-6 pb-6 pr-4 pl-6 space-y-6 bg-blue-50/90 dark:bg-gray-900/90 h-full
+          scrollbar-thin 
+          scrollbar-thumb-blue-500 dark:scrollbar-thumb-blue-700
+          scrollbar-track-blue-100 dark:scrollbar-track-gray-800
+          scrollbar-thumb-rounded-full 
+          scrollbar-track-rounded-full">
+          {visibleMessages.map((message, index) => (
+            <div key={message.id} className="flex items-end">
+              <div className={`flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                {message.role !== "user" && (
+                  <div className="flex-shrink-0 mr-2 mb-1">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-md bg-transparent">
+                      <img 
+                        src="/images/bot-avatar.png" 
+                        alt="AI Assistant" 
+                        className="w-full h-full object-contain rounded-full"
                       />
-                    ) : (
-                      <div dangerouslySetInnerHTML={{ __html: formatMessageText(message.content) }} />
-                    )}
+                    </div>
                   </div>
-                </div>
-                
-                {/* Time stamp - appears on hover */}
-                <div 
-                  className={`absolute bottom-0 ${message.role === "user" ? "right-0 translate-y-5" : "left-0 translate-y-5"} 
-                    opacity-0 group-hover:opacity-100 text-fluid-xs text-slate-400 dark:text-gray-300 transition-opacity duration-200 pointer-events-none`}
-                >
-                  {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-        
-              {message.role === "user" && (
-                <div className="flex-shrink-0 ml-2 mb-1">
-                  {profile?.photoUrl ? (
-                    <img 
-                      src={profile.photoUrl} 
-                      alt={profile.name || "User"}
-                      className="w-8 h-8 rounded-full border border-slate-600 dark:border-slate-300 shadow-md object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-900 dark:bg-blue-700 flex items-center justify-center shadow-md">
-                      <span className="text-sm font-semibold text-blue-300">
-                        {profile?.name?.charAt(0).toUpperCase() || "U"}
-                      </span>
+                )}
+          
+                {/* Message content */}
+                <div className="group relative max-w-[80%]">
+                  <div 
+                    className={`px-4 py-3 rounded-2xl ${
+                      message.role === "user" 
+                        ? "bg-blue-600 text-white dark:bg-blue-700 dark:text-white shadow-md dark:border dark:border-blue-600" 
+                        : message.role === "system"
+                        ? "bg-amber-600 border border-amber-700 dark:bg-amber-800 dark:border-amber-700 text-white shadow-md"
+                        : "bg-white dark:bg-gray-800 shadow-md border border-blue-200 dark:border-gray-700 text-slate-800 dark:text-gray-100"
+                    }`}
+                  >
+                    <div 
+                      className={`${message.role === 'user' ? 'whitespace-pre-wrap' : 'whitespace-normal'} text-fluid-base leading-relaxed`}
+                    >
+                      {message.role === 'user' ? (
+                        <div>{message.content}</div>
+                      ) : streamingMessageId === message.id && !streamingComplete ? (
+                        <StreamingText 
+                          content={message.content}
+                          speed={10}
+                          onComplete={() => setStreamingComplete(true)}
+                        />
+                      ) : (
+                        <div dangerouslySetInnerHTML={{ __html: formatMessageText(message.content) }} />
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Time stamp - appears on hover */}
+                  <div 
+                    className={`absolute bottom-0 ${message.role === "user" ? "right-0 translate-y-5" : "left-0 translate-y-5"} 
+                      opacity-0 group-hover:opacity-100 text-fluid-xs text-slate-400 dark:text-gray-300 transition-opacity duration-200 pointer-events-none`}
+                  >
+                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  
+                  {/* Attachments below user messages */}
+                  {message.role === 'user' && attachments.some(a => 
+                    a.uploadedAt > (messages[index-1]?.timestamp || 0) && 
+                    a.uploadedAt < (messages[index+1]?.timestamp || Date.now() + 1000)
+                  ) && (
+                    <div className="mt-2 space-y-2">
+                      {attachments
+                        .filter(a => 
+                          a.uploadedAt > (messages[index-1]?.timestamp || 0) && 
+                          a.uploadedAt < (messages[index+1]?.timestamp || Date.now() + 1000)
+                        )
+                        .map(attachment => (
+                          <AttachmentItem 
+                            key={attachment.path}
+                            attachment={attachment}
+                            inChat={true}
+                          />
+                        ))
+                      }
                     </div>
                   )}
                 </div>
-              )}
+          
+                {message.role === "user" && (
+                  <div className="flex-shrink-0 ml-2 mb-1">
+                    {profile?.photoUrl ? (
+                      <img 
+                        src={profile.photoUrl} 
+                        alt={profile.name || "User"}
+                        className="w-8 h-8 rounded-full border border-slate-600 dark:border-slate-300 shadow-md object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-blue-900 dark:bg-blue-700 flex items-center justify-center shadow-md">
+                        <span className="text-sm font-semibold text-blue-300">
+                          {profile?.name?.charAt(0).toUpperCase() || "U"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        {/* Scroll anchor */}
-        <div ref={messagesEndRef} />
+          {/* Scroll anchor */}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      {/* Ultra Compact Decision UI - Fixed to input area */}
-      {currentStep === 'decision' && (
-        <div className="fixed bottom-[95px] left-0 right-0 z-10 px-4 pointer-events-none">
-          <div className="max-w-xl mx-auto pointer-events-auto">
-            <div className="flex gap-2 justify-center">
-              {/* Submit Button */}
-              <button
-                onClick={() => !isSubmitting && !isLoading && sendQuickCommand("submit")}
-                className={`bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-800 text-white text-xs py-1.5 px-3 rounded-full shadow-lg hover:shadow-emerald-200 dark:hover:shadow-emerald-900/30 hover:-translate-y-0.5 transition-all duration-150 font-medium
-                  ${isSubmitting || isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
-                disabled={isSubmitting || isLoading}
+      {/* Input area - updated with better styling for textarea */}
+      {isSubmissionComplete ? (
+        <div className="border-t border-blue-100 dark:border-gray-700 p-4 bg-blue-50/90 dark:bg-gray-900/90 flex-shrink-0">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-gray-700 p-4 shadow-md">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Submission Complete
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Your idea has been successfully submitted to the AI Efficiency Team. What would you like to do next?
+              </p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a
+                href={`/requests/${requestId}`}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition-colors duration-200 font-medium"
               >
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Submit Now
-                </div>
-              </button>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                View Submitted Idea
+              </a>
               
-              {/* Go Deeper Button */}
               <button
-                onClick={() => !isSubmitting && !isLoading && sendQuickCommand("go deeper")}
-                className={`bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-800 text-white text-xs py-1.5 px-3 rounded-full shadow-lg hover:shadow-blue-200 dark:hover:shadow-blue-900/30 hover:-translate-y-0.5 transition-all duration-150 font-medium
-                  ${isSubmitting || isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
-                disabled={isSubmitting || isLoading}
+                onClick={handleStartNewSubmission}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-sm transition-colors duration-200 font-medium"
               >
-                <div className="flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                  </svg>
-                  More Details
-                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Start New Submission
               </button>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Input area */}
-      <div className="border-t border-blue-100 dark:border-gray-700 p-4 bg-blue-50 dark:bg-gray-900 flex-shrink-0">
-        <div className="flex items-center space-x-2">
-          <div className="flex-1 border rounded-full border-blue-200 dark:border-gray-600 bg-white dark:bg-gray-800 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
-            <textarea
-              ref={inputRef}
-              className={`w-full px-4 py-2.5 focus:outline-none bg-transparent resize-none text-fluid-base text-slate-800 dark:text-gray-100 ${
-                currentStep === 'decision' ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-              placeholder={
-                currentStep === 'decision' 
-                  ? "Please select an option above to continue..." 
-                  : isSubmitting 
-                    ? "Request is being submitted..." 
-                    : "Type your message or use the mic..."
-              }
-              value={input}
+      ) : (
+        <div className="border-t border-blue-100 dark:border-gray-700 p-4 bg-blue-50/90 dark:bg-gray-900/90 flex-shrink-0">
+          <div className="flex items-center space-x-2">
+            <div className="flex-1 border rounded-lg border-blue-200 dark:border-gray-600 bg-white dark:bg-gray-800 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+              <textarea
+                ref={inputRef}
+                className="w-full px-4 py-3 focus:outline-none bg-transparent resize-none text-fluid-base text-slate-800 dark:text-gray-100 
+                  scrollbar-thin 
+                  scrollbar-thumb-blue-500 dark:scrollbar-thumb-blue-700
+                  scrollbar-track-transparent
+                  scrollbar-thumb-rounded-full"
+                placeholder={isFinalizing ? "Request is being submitted..." : "Type your message or use the mic..."}
+                value={input}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                  handleInputChange(e); 
+                  autoResizeTextarea(e);
+                }}
+                onKeyDown={handleKeyDown}
+                onPaste={handlePaste}
+                rows={1}
+                style={{ minHeight: "42px", maxHeight: "300px" }}
+                disabled={isFinalizing || isLoading}
+              />
+            </div>
+            
+            {/* Add file upload button */}
+            <input 
+              type="file" 
+              id="file-upload" 
+              className="hidden" 
               onChange={(e) => {
-                handleInputChange(e); 
-                autoResizeTextarea(e);
+                const file = e.target.files?.[0];
+                if (file) {
+                  handleFileUpload(file);
+                }
+                // Reset input
+                e.target.value = '';
               }}
-              onKeyDown={handleKeyDown}
-              rows={1}
-              style={{ minHeight: "42px", maxHeight: "150px" }} 
-              disabled={isSubmitting || currentStep === 'decision'}
+              disabled={isFinalizing || isLoading}
             />
-          </div>
-          
-          {/* Language Selector Button */}
-          <div className="relative" ref={langMenuRef}>
-            <button 
-              type="button"
-              onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
-              className={`p-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 hover:dark:bg-indigo-800 text-white h-11 w-11 flex items-center justify-center flex-shrink-0 shadow-md hover:shadow-lg transition-all ${
-                currentStep === 'decision' ? 'opacity-50 cursor-not-allowed' : ''
+            <button
+              onClick={() => document.getElementById('file-upload')?.click()}
+              className={`p-2.5 rounded-full bg-green-600 hover:bg-green-700 dark:bg-green-700 hover:dark:bg-green-800 text-white h-11 w-11 flex items-center justify-center flex-shrink-0 shadow-md hover:shadow-lg transition-all ${
+                isFinalizing || isLoading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
-              title="Change language"
-              disabled={currentStep === 'decision'}
+              title="Attach a file"
+              disabled={isFinalizing || isLoading}
             >
-              {/* Globe Icon */}
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
               </svg>
             </button>
             
-            {/* Language Menu Popover - this already has good dark mode support */}
-            <animated.div
-              style={menuDisplayStyle as any}
-              className="absolute bottom-full mb-2 right-0 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-blue-200 dark:border-gray-700 p-0.5 min-w-max z-10 text-sm"
-            >
-              <div className="p-0.5 space-y-0.5">
-                {languageOptions.map((option, index) => (
-                  <animated.button
-                    key={option.code}
-                    style={optionAnimations[index]}
-                    onClick={() => handleLanguageChange(option.code)}
-                    className={`flex items-center w-full px-3 py-1.5 text-left rounded-md transition-all font-medium text-xs ${
-                      language === option.code 
-                        ? 'bg-indigo-600 text-white shadow-inner dark:bg-indigo-700' 
-                        : 'text-gray-800 hover:bg-blue-50 dark:text-white dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    <span className="mr-1.5 text-sm">{option.flag}</span>
-                    <span className="ml-0.5">{option.label}</span>
-                    {language === option.code && (
-                      <svg className="ml-auto h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </animated.button>
-                ))}
-              </div>
-              {/* Arrow pointer */}
-              <animated.div 
-                style={arrowAnimation}
-                className="absolute bottom-0 right-4 transform translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-white dark:bg-gray-900 border-r border-b border-blue-200 dark:border-gray-700"
-              ></animated.div>
-            </animated.div>
-          </div>
-          
-          {/* Voice Input Button */}
-          <VoiceInput 
-            onTranscriptUpdate={handleVoiceInputUpdate}
-            onListenStart={handleListenStart}
-            onListenStop={handleListenStop}
-            resetKey={voiceResetKey}
-            language={speechLocale}
-            className={`flex-shrink-0 ${currentStep === 'decision' ? 'opacity-50' : ''}`}
-            disabled={currentStep === 'decision'}
-          />
-          
-          <button
-            className={`bg-blue-600 text-white rounded-full p-2.5 h-11 w-11 flex items-center justify-center flex-shrink-0 shadow-md hover:shadow-lg hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-all ${
-              !input.trim() || !chatId || isSubmitting || isLoading || currentStep === 'decision'
-                ? "opacity-50 cursor-not-allowed"
-                : ""
-            }`}
-            disabled={!input.trim() || !chatId || isSubmitting || isLoading || currentStep === 'decision'}
-            onClick={handleSendMessage}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
-        </div>
-        
-        {/* Model Selection toggle - only show if model is already set */}
-        {(currentModel || useThinkingModel) && (
-          <div className="flex items-center justify-end mt-2 text-xs text-slate-500 dark:text-gray-400">
-            <span className="mr-2">Using:</span>
+            {/* Language Selector Button */}
+            <div className="relative" ref={langMenuRef}>
+              <button 
+                type="button"
+                onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
+                className={`p-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 hover:dark:bg-indigo-800 text-white h-11 w-11 flex items-center justify-center flex-shrink-0 shadow-md hover:shadow-lg transition-all ${
+                  isFinalizing || isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                title="Change language"
+                disabled={isFinalizing || isLoading}
+              >
+                {/* Globe Icon */}
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" y1="12" x2="22" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </button>
+              
+              {/* Language Menu Popover - this already has good dark mode support */}
+              <animated.div
+                style={menuDisplayStyle as any}
+                className="absolute bottom-full mb-2 right-0 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-blue-200 dark:border-gray-700 p-0.5 min-w-max z-10 text-sm"
+              >
+                <div className="p-0.5 space-y-0.5">
+                  {languageOptions.map((option, index) => (
+                    <animated.button
+                      key={option.code}
+                      style={optionAnimations[index]}
+                      onClick={() => handleLanguageChange(option.code)}
+                      className={`flex items-center w-full px-3 py-1.5 text-left rounded-md transition-all font-medium text-xs ${
+                        language === option.code 
+                          ? 'bg-indigo-600 text-white shadow-inner dark:bg-indigo-700' 
+                          : 'text-gray-800 hover:bg-blue-50 dark:text-white dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      <span className="mr-1.5 text-sm">{option.flag}</span>
+                      <span className="ml-0.5">{option.label}</span>
+                      {language === option.code && (
+                        <svg className="ml-auto h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </animated.button>
+                  ))}
+                </div>
+                {/* Arrow pointer */}
+                <animated.div 
+                  style={arrowAnimation}
+                  className="absolute bottom-0 right-4 transform translate-y-1/2 rotate-45 w-1.5 h-1.5 bg-white dark:bg-gray-900 border-r border-b border-blue-200 dark:border-gray-700"
+                ></animated.div>
+              </animated.div>
+            </div>
+            
+            {/* Voice Input Button */}
+            <VoiceInput 
+              onTranscriptUpdate={handleVoiceInputUpdate}
+              onListenStart={handleListenStart}
+              onListenStop={handleListenStop}
+              resetKey={voiceResetKey}
+              language={speechLocale}
+              className={`flex-shrink-0 ${isFinalizing || isLoading ? 'opacity-50' : ''}`}
+              disabled={isFinalizing || isLoading}
+            />
+            
             <button
-              onClick={() => setUseThinkingModel(!useThinkingModel)}
-              className={`px-2 py-1 rounded-md ${
-                useThinkingModel 
-                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300" 
-                  : "bg-blue-50 text-blue-700 dark:bg-gray-700 dark:text-gray-300"
+              className={`bg-blue-600 text-white rounded-full p-2.5 h-11 w-11 flex items-center justify-center flex-shrink-0 shadow-md hover:shadow-lg hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-all ${
+                !input.trim() || !chatId || isFinalizing || isLoading
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
               }`}
+              disabled={!input.trim() || !chatId || isFinalizing || isLoading}
+              onClick={handleSendMessage}
             >
-              {useThinkingModel ? "Thinking Mode" : "Standard Mode"}
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
             </button>
           </div>
-        )}
-        {sendError && (
-          <div className="mt-2 flex justify-center">
-            <button onClick={handleRetry} className="text-blue-600 hover:underline">
-              Retry
-            </button>
-          </div>
-        )}
-      </div>
+          
+          {/* Model Selection toggle - only show if model is already set */}
+          {(currentModel || useThinkingModel) && (
+            <div className="flex items-center justify-end mt-2 text-xs text-slate-500 dark:text-gray-400">
+              <span className="mr-2">Using:</span>
+              <button
+                onClick={() => setUseThinkingModel(!useThinkingModel)}
+                className={`px-2 py-1 rounded-md ${
+                  useThinkingModel 
+                    ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300" 
+                    : "bg-blue-50 text-blue-700 dark:bg-gray-700 dark:text-gray-300"
+                }`}
+              >
+                {useThinkingModel ? "Thinking Mode" : "Standard Mode"}
+              </button>
+            </div>
+          )}
+          {sendError && (
+            <div className="mt-2 flex justify-center">
+              <button onClick={handleRetry} className="text-blue-600 hover:underline">
+                Retry
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add attachment panel in the attachments step */}
+      {currentStep === 'attachments' && (
+        <div className="px-4 py-4">
+          <AttachmentPanel
+            conversationId={internalChatId || ''}
+            attachments={attachments}
+            onAttachmentAdded={(attachment) => setAttachments(prev => [...prev, attachment])}
+            onAttachmentRemoved={(path) => setAttachments(prev => prev.filter(a => a.path !== path))}
+            onContinue={handleContinueFromAttachments}
+          />
+        </div>
+      )}
     </div>
   );
 } 

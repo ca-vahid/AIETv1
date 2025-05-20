@@ -8,12 +8,24 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.4.0';
+const APP_VERSION = 'v1.4.5';
 // Release date
-const RELEASE_DATE = 'May 18, 2025';
+const RELEASE_DATE = 'May 25, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.4.5',
+    date: 'May 25, 2025',
+    changes: [
+      'Redesigned landing page with three clear primary options: Submit Idea, View Submissions, and Browse Gallery',
+      'Streamlined profile card with compact view option and removed edit button',
+      'Improved layout with card-based design for better user experience',
+      'Enhanced visual hierarchy with dedicated action cards for main user flows',
+      'Optimized profile information display for better readability',
+      'Added hover effects to navigation cards for improved interactivity'
+    ]
+  },
   {
     version: 'v1.4.0',
     date: 'May 18, 2025',

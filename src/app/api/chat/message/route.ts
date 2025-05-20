@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     // Parse request body
     const requestBody = await req.json();
-    const { conversationId, message, command } = requestBody;
+    const { conversationId, message, command, isCommand } = requestBody;
     // Explicitly check if useThinkingModel is defined to distinguish between undefined and false
     const useThinkingModel = requestBody.useThinkingModel;
     
@@ -127,6 +127,16 @@ export async function POST(req: NextRequest) {
       transition = { type: 'NEXT', step: 'details' };
     } else if (cmd === 'SUBMIT') {
       transition = { type: 'NEXT', step: 'submit' };
+    } else if (isCommand && message === 'continue_to_summary' && baseState.currentStep === 'attachments') {
+      // Handle special command to continue from attachments to summary
+      console.log("\x1b[36m%s\x1b[0m", "[API] Processing continue_to_summary command");
+      transition = { type: 'NEXT', step: 'summary' };
+      // Create a synthetic user message to show in chat
+      userMessage = { 
+        role: 'user', 
+        content: "I'm done adding attachments. Let's continue to the summary.", 
+        timestamp: Date.now() 
+      };
     } else if (message) {
       // Need full history for the logic checker
       const fullHistory = conversationData.messages.concat([

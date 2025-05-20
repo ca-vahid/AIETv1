@@ -124,7 +124,19 @@ export async function GET(req: NextRequest) {
           timestamp: data.updatedAt,
           impactScore: data.request.impactScore,
           assignedTo: data.assignedTo,
-          complexity: data.classification?.complexity || "unknown",
+          complexity: data.complexity || data.classification?.complexity || "unknown",
+          category: data.request.category,
+          frequencyType: data.request.frequency,
+          durationMinutes: data.request.durationMinutes,
+          peopleInvolved: data.request.peopleInvolved,
+          hoursSavedPerWeek: data.request.hoursSavedPerWeek,
+          request: {
+            painPoints: data.request.painPoints,
+            processSummary: data.request.processSummary,
+            roles: data.request.roles,
+            tools: data.request.tools,
+            impactNarrative: data.request.impactNarrative,
+          },
         });
       });
       

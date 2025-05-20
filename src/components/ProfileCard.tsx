@@ -8,9 +8,10 @@ import Link from 'next/link';
 
 interface ProfileCardProps {
   onEditClick?: () => void;
+  compact?: boolean;
 }
 
-export default function ProfileCard({ onEditClick }: ProfileCardProps) {
+export default function ProfileCard({ onEditClick, compact = false }: ProfileCardProps) {
   const { profile, isLoading } = useSessionProfile();
 
   if (isLoading) {
@@ -39,14 +40,7 @@ export default function ProfileCard({ onEditClick }: ProfileCardProps) {
     <div className="theme-panel rounded-lg shadow-lg overflow-hidden max-w-lg">
       {/* Slimmer header with photo and name */}
       <div className="relative bg-gradient-to-r from-slate-800 to-blue-900 p-4 h-20">
-        <div className="flex justify-end items-start">
-          <button 
-            onClick={onEditClick}
-            className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-md text-sm transition"
-          >
-            Edit
-          </button>
-        </div>
+        {/* Removed Edit button */}
         
         {/* Positioned avatar that overlaps */}
         <div className="absolute left-6 -bottom-14">
@@ -161,8 +155,8 @@ export default function ProfileCard({ onEditClick }: ProfileCardProps) {
         </div>
       </div>
       
-      {/* Additional info accordion (optional) */}
-      {(profile.aboutMe || profile.skills || profile.interests) && (
+      {/* Additional info accordion (only shown in non-compact mode) */}
+      {!compact && (profile.aboutMe || profile.skills || profile.interests) && (
         <div className="px-6 pb-6 border-t border-slate-700 space-y-4">
           {profile.aboutMe && (
             <div className="pt-4">

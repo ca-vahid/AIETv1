@@ -13,23 +13,12 @@ export interface Message {
 export interface ConversationState {
   currentStep:
     | 'init'
-    | 'lite_description'   // Fast-track Q1 – brief task description
-    | 'lite_impact'        // Fast-track Q2 – quick benefit / impact statement
-    | 'decision'           // Decision point: submit vs. details
-    | 'details'            // Condensed deep info collection
+    | 'description'
+    | 'details'
     | 'attachments'
     | 'summary'
-    | 'submit'
-    // legacy deep flow (no longer auto-driven, but retained for compatibility)
-    | 'profile'
-    | 'task_description'
-    | 'pain'
-    | 'frequency'
-    | 'tools'
-    | 'impact'
-    | 'summary_lite'
-    | 'full_details'
-    missingProfileFields: string[];
+    | 'submit';
+  missingProfileFields: string[];
   collectedData: {
     processDescription?: string;
     painType?: string[];
@@ -48,11 +37,6 @@ export interface ConversationState {
     }[];
   };
   validations: Record<string, boolean>;
-
-  /**
-   * Indicates whether the user chose the fast-track path (submitted after the lite steps)
-   */
-  fastTrack?: boolean;
 
   /**
    * ISO language code for conversation (e.g., 'en', 'fr').
@@ -92,12 +76,22 @@ export interface FinalRequest {
     attachments: {
       url: string;
       name: string;
+      type?: string;
+      thumbnailUrl?: string;
     }[];
+    category?: string;
+    painPoints?: string[];
+    processSummary?: string;
+    impactNarrative?: string;
   };
   classification?: {
     complexity: 'low' | 'medium' | 'high';
     tags: string[];
   };
+  complexity?: 'low' | 'medium' | 'high';
+  commentsCount?: number;
+  upVotes?: number;
+  attachmentsSummary?: { count: number; firstThumbUrl?: string };
   conversation: Message[];
   comments: {
     userId: string;

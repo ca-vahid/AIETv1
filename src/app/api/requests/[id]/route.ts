@@ -4,6 +4,7 @@ import { db } from "@/lib/firebase/firebase";
 import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
 import { FinalRequest } from "@/lib/types/conversation";
+import { getRequestStatusLabel } from '@/lib/utils/statusUtils';
 
 /**
  * GET /api/requests/[id] - Fetches details for a specific submitted automation request
@@ -35,6 +36,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     
     const requestData = requestDoc.data() as FinalRequest;
     
+    console.log('[API /requests/:id] Returning requestData:', JSON.stringify(requestData, null, 2)); // Debug log
+    
     // Check if the user is authorized to access this request
     // Either they created it or they're part of the AIET team
     const isOwner = requestData.userId === userId;
@@ -45,46 +48,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Not authorized to view this request' }, { status: 403 });
     }
     
-    // Prepare the response data
-    const requestDetail = {
-      id: requestData.id,
-      status: getRequestStatusLabel(requestData.status),
-      statusCode: requestData.status,
-      impactScore: requestData.request.impactScore,
-      hoursSavedPerWeek: requestData.request.hoursSavedPerWeek,
-      processDescription: requestData.request.processDescription,
-      painNarrative: requestData.request.painNarrative,
-      frequency: requestData.request.frequency,
-      durationMinutes: requestData.request.durationMinutes,
-      peopleInvolved: requestData.request.peopleInvolved,
-      tools: requestData.request.tools,
-      roles: requestData.request.roles,
-      complexity: requestData.classification?.complexity,
-      tags: requestData.classification?.tags,
-      assignedTo: requestData.assignedTo,
-      comments: requestData.comments || [],
-      createdAt: requestData.createdAt,
-      updatedAt: requestData.updatedAt,
-    };
-    
-    return NextResponse.json({ request: requestDetail });
+    // Simply return the fetched requestData, which conforms to FinalRequest
+    // The client-side RequestDetailPage will handle mapping this to its local state type if needed,
+    // or can directly use the FinalRequest structure.
+    return NextResponse.json({ request: requestData });
   } catch (error) {
     console.error('Error fetching request details:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
-
-/**
- * Maps request status to user-friendly labels
- */
-function getRequestStatusLabel(status: string): string {
-  const statusLabels: Record<string, string> = {
-    'new': 'Submitted - Awaiting Review',
-    'in_review': 'Under Review',
-    'pilot': 'Pilot Implementation',
-    'completed': 'Completed',
-    'rejected': 'Not Feasible'
-  };
-  
-  return statusLabels[status] || 'Unknown Status';
 } 

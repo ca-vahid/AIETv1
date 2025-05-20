@@ -150,11 +150,18 @@ const useSpeechToText = ({
   // Stop listening
   const stopListening = useCallback(() => {
     if (!isPolyfillInitialized) return; // Don't try to stop if not initialized
+
     try {
-      // Use abortListening for immediate stop and potential better resource release
-      SpeechRecognition.abortListening();
+      // Try graceful shutdown first.
+      SpeechRecognition.stopListening();
       setLocalIsListening(false);
-      
+
+      // Always schedule an abort as a safety-net to ensure the underlying
+      // WebSocket is closed even if stopListening hangs in the SDK.
+      setTimeout(() => {
+        SpeechRecognition.abortListening();
+      }, 300);
+
       // Call the onFinalTranscript callback with the final transcript
       const currentText = finalTranscript || transcript;
       if (currentText && currentText.trim() !== '' && onFinalTranscript && !finalTranscriptHandled) {
@@ -166,6 +173,18 @@ const useSpeechToText = ({
       setError("Failed to stop speech recognition");
     }
   }, [isPolyfillInitialized, transcript, finalTranscript, onFinalTranscript, finalTranscriptHandled]);
+
+  // Abort listening when the hook unmounts to guarantee we leave no open
+  // sockets behind (Azure limits concurrent connections per key).
+  useEffect(() => {
+    return () => {
+      try {
+        SpeechRecognition.abortListening();
+      } catch {
+        /* noop */
+      }
+    };
+  }, []);
 
   // Clear the transcript
   const clearTranscript = useCallback(() => {

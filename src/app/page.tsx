@@ -93,276 +93,104 @@ export default function Home() {
       <AppHeader />
 
       <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero section with main CTA and profile card */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
-          {/* Left column: Welcome and CTA */}
-          <div className="lg:col-span-6 flex flex-col pt-4">
-            <h2 className="text-4xl sm:text-3xl leading-tight font-bold text-indigo-500 mb-5 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-200 to-indigo-100">
-              Supercharge Your Workflow with Next-Gen AI systems at Cambio Earth&amp; BGC!
-
-
-            </h2>
-            <p className="text-xl text-navy-500 max-w-prose mb-8">
-            Drowning in spreadsheet mayhem or tedious document reviews? Our AI Efficiency Team will tackle your pain points using advanced AI coding and automation systems. Share your challenges, and let&apos;s streamline the grind!
-
-
-
-            </p>
-            
-            {/* Primary CTA */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              {!isLoggedIn && (
-                <div className="sign-in-panel rounded-xl overflow-hidden w-full max-w-lg mx-auto flex flex-col items-center relative">
-                  <div className="p-6 border-b border-indigo-500/30 w-full">
-                    <h2 className="text-xl font-semibold text-white text-center">Sign in to get started</h2>
-                  </div>
-                  <div className="p-8 flex flex-col items-center">
-                    <p className="theme-text-muted mb-6 text-center">Log in with your BGC Engineering or Cambio Earth account</p>
-                    <div className="w-full max-w-xs">
-                      <SignInWithAzureAD />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {isLoggedIn && (
-                <Link
-                  href="/chat"
-                  className="theme-button-primary inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 mr-2"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  Start Chat with AI Assistant
-                </Link>
-              )}
+        {!isLoggedIn && (
+          <div className="sign-in-panel rounded-xl overflow-hidden w-full max-w-lg mx-auto flex flex-col items-center relative mb-12">
+            <div className="p-6 border-b border-indigo-500/30 w-full">
+              <h2 className="text-xl font-semibold text-white text-center">Sign in to get started</h2>
             </div>
-            
-            {/* My Requests Section (Only shown when logged in) */}
-            {isLoggedIn && (
-              <div className="theme-panel p-5 rounded-lg shadow-md mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-white">My Requests</h3>
-                  <Link 
-                    href="/chats" 
-                    className="text-sm text-blue-400 hover:text-blue-300 transition flex items-center"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    View All
-                  </Link>
-                </div>
-                
-                {stats.loading ? (
-                  <div className="flex justify-center py-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: "300ms" }}></div>
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: "600ms" }}></div>
-                    </div>
-                  </div>
-                ) : stats.error ? (
-                  <p className="text-sm text-red-400 py-2">{stats.error}</p>
-                ) : (
-                  <div className="space-y-4">
-                    {/* Summary stats */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-800/60 rounded-lg p-3 text-center">
-                        <div className="text-2xl font-semibold text-blue-400">{stats.totalDrafts}</div>
-                        <div className="text-xs text-slate-300">Drafts</div>
-                      </div>
-                      <div className="bg-slate-800/60 rounded-lg p-3 text-center">
-                        <div className="text-2xl font-semibold text-blue-400">{stats.totalSubmitted}</div>
-                        <div className="text-xs text-slate-300">Submitted</div>
-                      </div>
-                    </div>
-                    
-                    {/* Status breakdown */}
-                    {stats.totalSubmitted > 0 && (
-                      <div>
-                        <div className="text-xs font-medium text-slate-400 mb-2">Status Breakdown</div>
-                        <div className="space-y-2">
-                          {/* New requests */}
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-yellow-600 mr-2"></div>
-                            <div className="text-xs text-slate-300 flex-1">Awaiting Review</div>
-                            <div className="text-xs font-medium text-white">{stats.statusCounts.new}</div>
-                          </div>
-                          
-                          {/* In review */}
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-purple-600 mr-2"></div>
-                            <div className="text-xs text-slate-300 flex-1">Under Review</div>
-                            <div className="text-xs font-medium text-white">{stats.statusCounts.in_review}</div>
-                          </div>
-                          
-                          {/* Pilot */}
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-green-600 mr-2"></div>
-                            <div className="text-xs text-slate-300 flex-1">Pilot Implementation</div>
-                            <div className="text-xs font-medium text-white">{stats.statusCounts.pilot}</div>
-                          </div>
-                          
-                          {/* Completed */}
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-emerald-600 mr-2"></div>
-                            <div className="text-xs text-slate-300 flex-1">Completed</div>
-                            <div className="text-xs font-medium text-white">{stats.statusCounts.completed}</div>
-                          </div>
-                          
-                          {/* Rejected */}
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-red-600 mr-2"></div>
-                            <div className="text-xs text-slate-300 flex-1">Not Feasible</div>
-                            <div className="text-xs font-medium text-white">{stats.statusCounts.rejected}</div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {stats.totalDrafts === 0 && stats.totalSubmitted === 0 && (
-                      <p className="text-sm text-slate-400 text-center py-1">
-                        No requests yet. Start a chat to create one!
-                      </p>
-                    )}
-                    
-                    {/* Create new request button */}
-                    <div className="pt-2">
-                      <Link
-                        href="/chat"
-                        className="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-2 rounded flex items-center justify-center transition"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                        </svg>
-                        New Request
-                      </Link>
-                    </div>
-                  </div>
-                )}
+            <div className="p-8 flex flex-col items-center">
+              <p className="theme-text-muted mb-6 text-center">Log in with your BGC Engineering or Cambio Earth account</p>
+              <div className="w-full max-w-xs">
+                <SignInWithAzureAD />
               </div>
-            )}
+            </div>
           </div>
-          
-          {/* Right column: Profile card */}
-          <div className="lg:col-span-6 flex justify-end">
-            {isLoggedIn ? (
-              <ProfileCard onEditClick={() => window.location.href = "/profile/edit"} />
-            ) : (
-              <div className="theme-panel rounded-xl shadow-md overflow-hidden w-full flex flex-col">
-                <div className="p-6 border-b border-indigo-500/30">
-                  <h2 className="text-2xl font-semibold text-white">How Our Intake System Works</h2>
-                </div>
-                <div className="p-8">
-                  {/* AI Chatbot Intake Process */}
-                  <div className="flex flex-col space-y-8">
-                    
-                    {/* AI Assistant Section */}
-                    <div className="flex items-start space-x-6">
-                      <div className="flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-blue-400 animated-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-white text-lg mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">AI-Guided Intake Process</h3>
-                        <p className="theme-text-muted mb-3">Our AI assistant chatbot will guide you through sharing your automation idea. It asks targeted questions to help you articulate needs and pain points in your workflow.</p>
-                        
-                        {/* Multilingual Support & Features */}
-                        <div className="mt-4">
-                          {/* Combined Multilingual & Attachment Row */}
-                          <div className="flex flex-wrap items-center text-gray-300 mb-3 gap-x-4 gap-y-2">
-                            <div className="flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                              </svg>
-                              <span className="text-sm font-medium mr-2">Multilingual:</span>
-                            </div>
-                            
-                            {/* Compact Language List */}
-                            <div className="flex flex-wrap gap-2">
-                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">English</span>
-                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">Français</span>
-                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">Español</span>
-                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">فارسی</span>
-                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">हिंदी</span>
-                              <span className="text-sm bg-slate-700/50 px-2 py-0.5 rounded">中文</span>
-                            </div>
-                            
-                            {/* Attachment Info - Integrated inline */}
-                            <div className="flex items-center text-amber-300">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-1.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                              </svg>
-                              <span className="text-sm font-medium">File Uploads Supported</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+        )}
 
-                    {/* Pathway Choice Section */}
-                    <div className="flex items-start space-x-6">
-                      <div className="flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-purple-400 animated-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-white text-lg mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-purple-200">Choose Your Path</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                          <div className="feature-card p-4">
-                            <h4 className="text-white font-medium flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                              </svg>
-                              Fast Path
-                            </h4>
-                            <p className="theme-text-muted text-sm mt-2">Quick submission with basic information. Perfect for simple ideas or initial concepts that don&apos;t require extensive detail.</p>
-                          </div>
-                          <div className="feature-card p-4">
-                            <h4 className="text-white font-medium flex items-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                              </svg>
-                              Deep-Dive Path
-                            </h4>
-                            <p className="theme-text-muted text-sm mt-2">Comprehensive assessment with detailed questions. Ideal for complex workflows or ideas requiring thorough exploration.</p>
-                          </div>
-                        </div>
-                      </div>
+        {isLoggedIn && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+            {/* Compact Profile Card */}
+            <div className="lg:col-span-4">
+              <ProfileCard compact={true} />
+            </div>
+
+            {/* Main options section */}
+            <div className="lg:col-span-8">
+              <h2 className="text-3xl font-bold text-indigo-400 mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-200 to-indigo-100">
+                Supercharge Your Workflow with AI
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Option 1: Submit an Idea */}
+                <div className="theme-panel rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:ring-2 hover:ring-blue-500/50">
+                  <div className="p-6 bg-gradient-to-r from-blue-900/50 to-indigo-900/50 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-xl font-bold text-white mb-2">Submit an Idea</h3>
+                    <p className="theme-text-muted mb-4">Start a conversation with our AI assistant to share your automation idea and challenges.</p>
+                    <Link
+                      href="/chat"
+                      className="theme-button-primary w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md"
+                    >
+                      Start Chat
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Option 2: My Submissions */}
+                <div className="theme-panel rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:ring-2 hover:ring-purple-500/50">
+                  <div className="p-6 bg-gradient-to-r from-purple-900/50 to-blue-900/50 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-xl font-bold text-white mb-2">My Submissions</h3>
+                    <p className="theme-text-muted mb-4">View all your submitted ideas and track their progress through the workflow.</p>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm text-slate-400">Drafts</span>
+                      <span className="text-lg font-semibold text-blue-400">{stats.totalDrafts}</span>
                     </div>
-                    
-                    {/* Submission & Review */}
-                    <div className="flex items-start space-x-6">
-                      <div className="flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14 text-green-400 animated-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-white text-lg mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-green-200">Submit & Get Expert Assessment</h3>
-                        <p className="theme-text-muted">Once submitted, our AI Efficiency Team reviews your idea, assesses feasibility, and explores automation potential using generative AI and other technologies. We&apos;ll follow up with next steps based on our evaluation.</p>
-                      </div>
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-sm text-slate-400">Submitted</span>
+                      <span className="text-lg font-semibold text-blue-400">{stats.totalSubmitted}</span>
                     </div>
+                    <Link
+                      href="/chats"
+                      className="theme-button-secondary w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md"
+                    >
+                      View Ideas
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Option 3: Gallery */}
+                <div className="theme-panel rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:ring-2 hover:ring-teal-500/50">
+                  <div className="p-6 bg-gradient-to-r from-teal-900/50 to-blue-900/50 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-xl font-bold text-white mb-2">Ideas Gallery</h3>
+                    <p className="theme-text-muted mb-4">Explore all submitted ideas and innovations from across the organization.</p>
+                    <Link
+                      href="/requests"
+                      className="theme-button-secondary w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md"
+                    >
+                      Browse Gallery
+                    </Link>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
         
-        {/* What Can We Automate section - simplified card grid */}
+        {/* What Can We Automate section */}
         <div className="theme-panel rounded-xl shadow-md overflow-hidden mt-12">
           <div className="p-6 border-b border-indigo-500/30">
             <h2 className="text-2xl font-semibold text-white">What Can We Automate?</h2>
