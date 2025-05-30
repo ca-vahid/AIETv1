@@ -91,7 +91,7 @@ function ConfirmationDialog({
   
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
-      <div className="bgc-panel rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+      <div className="bgc-panel confirmation-dialog-3d rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
         <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-2">{title}</h3>
         <p className="text-slate-600 dark:text-slate-300 mb-6">{message}</p>
         <div className="flex justify-end space-x-3">
@@ -146,7 +146,7 @@ function SortableItem({
       style={style}
       {...attributes}
       {...listeners}
-      className={`select-none bg-white dark:bg-[#0f1f3d] border-4 border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:border-[#0066cc] dark:hover:border-[#3399ff] hover:shadow-lg ${isDragging ? 'opacity-50' : ''}`}
+      className={`chat-card-3d ${isDragging ? 'dragging' : ''}`}
       onClick={() => handleChatClick(item)}
     >
       <div className="p-6 flex flex-col h-full">
@@ -651,7 +651,7 @@ export default function ChatsPage() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V8a4 4 0 00-4 4H4z"></path>
             </svg>
-            <p className={`text-lg font-medium text-slate-700 dark:text-slate-300`}>Loading your excavation site...</p>
+            <p className={`text-lg font-medium text-slate-700 dark:text-slate-300`}>Loading your ideas...</p>
           </div>
         </div>
       </div>
@@ -670,16 +670,18 @@ export default function ChatsPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
-              <h1 className="text-4xl font-black mb-2 text-slate-800 dark:text-white">Your Excavation Site</h1>
+              <h1 className="text-4xl font-black mb-2 text-slate-800 dark:text-white">Your Ideas Portal</h1>
               <p className="text-lg text-slate-600 dark:text-slate-400">
                 Explore your submitted ideas and track their journey through the automation pipeline.
               </p>
             </div>
             <Link href="/chat" className="bgc-button-primary whitespace-nowrap mt-4 sm:mt-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Start New Excavation
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Start New Idea</span>
+              </div>
             </Link>
           </div>
 
