@@ -7,7 +7,7 @@ import { DraftConversation, FinalRequest } from '@/lib/types/conversation';
 // @ts-ignore
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const THINKING_MODEL = 'gemini-2.5-pro-preview-05-06';
+const THINKING_MODEL = 'gemini-2.0-flash-thinking-exp';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 /**
@@ -76,10 +76,10 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode('Processing your request...\n'));
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        controller.enqueue(encoder.encode('Calling Gemini to extract idea card...\n'));
+        controller.enqueue(encoder.encode('🧠 Calling AI to analyze and extract idea details...\n'));
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        /* 5. Gemini extraction (stream) */
+        /* 5. Gemini extraction (stream with thinking) */
         const model = genAI.getGenerativeModel({ model: THINKING_MODEL });
         const contents = [
           {
@@ -113,9 +113,11 @@ export async function POST(req: NextRequest) {
           `Return ONLY the JSON. Do NOT wrap in markdown or commentary.`;
 
         let rawJson = '';
+        let thinkingBegan = false;
+        
         // Add a short delay to simulate thinking time before we actually start the LLM request
-        controller.enqueue(encoder.encode('Analyzing conversation to extract submission details...\n'));
-        //await new Promise(resolve => setTimeout(resolve, 700));
+        controller.enqueue(encoder.encode('\n🤔 AI is thinking...\n'));
+        controller.enqueue(encoder.encode('───────────────────────\n'));
 
         const llmStream = await model.generateContentStream({
           contents,
@@ -124,14 +126,36 @@ export async function POST(req: NextRequest) {
 
         for await (const chunk of llmStream.stream) {
           const text = chunk.text();
-          rawJson += text;
-          controller.enqueue(encoder.encode(text)); // Stream LLM output directly
+          
+          // Check if this is a thinking part (for models that support it)
+          // Since thinking mode is experimental, we'll handle both cases
+          const isThinking = chunk.candidates?.[0]?.content?.parts?.some((part: any) => part.thought === true);
+          
+          if (isThinking && text) {
+            if (!thinkingBegan) {
+              thinkingBegan = true;
+              controller.enqueue(encoder.encode('💭 AI Thinking Process:\n'));
+            }
+            // Format thinking text with indentation
+            const thoughtLines = text.split('\n').map(line => `   │ ${line}`).join('\n');
+            controller.enqueue(encoder.encode(thoughtLines + '\n'));
+          } else if (text) {
+            // This is the actual output
+            if (thinkingBegan) {
+              controller.enqueue(encoder.encode('───────────────────────\n'));
+              controller.enqueue(encoder.encode('📝 Extracting submission details:\n\n'));
+              thinkingBegan = false;
+            }
+            rawJson += text;
+            // Show the JSON being built but formatted nicely
+            controller.enqueue(encoder.encode(text));
+          }
         }
 
-        controller.enqueue(encoder.encode('\nExtraction complete!\n'));
+        controller.enqueue(encoder.encode('\n\n✅ Extraction complete!\n'));
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        controller.enqueue(encoder.encode('Parsing response & saving...\n'));
+        controller.enqueue(encoder.encode('🔍 Parsing response & validating...\n'));
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Clean fences and parse
@@ -142,17 +166,17 @@ export async function POST(req: NextRequest) {
         let extract: any = {};
         try {
           extract = JSON.parse(cleaned);
-          controller.enqueue(encoder.encode('Successfully parsed submission details.\n'));
+          controller.enqueue(encoder.encode('✅ Successfully parsed submission details.\n'));
           await new Promise(resolve => setTimeout(resolve, 300));
         } catch (err) {
           // JSON parse failed, continue with empty extract
           console.error('Failed to parse Gemini extract:', err);
-          controller.enqueue(encoder.encode('Warning: Encountered issues parsing the output, but continuing with available data...\n'));
+          controller.enqueue(encoder.encode('⚠️ Warning: Encountered issues parsing the output, but continuing with available data...\n'));
           await new Promise(resolve => setTimeout(resolve, 300));
         }
 
         /* 6. Build payload */
-        controller.enqueue(encoder.encode('Building final request from collected data...\n'));
+        controller.enqueue(encoder.encode('\n🏗️ Building final request from collected data...\n'));
         await new Promise(resolve => setTimeout(resolve, 400));
         
         const attachmentsArr = draft.state.collectedData.attachments || [];
@@ -195,25 +219,25 @@ export async function POST(req: NextRequest) {
         };
 
         /* 7. Save & cleanup */
-        controller.enqueue(encoder.encode('Saving final request to database...\n'));
+        controller.enqueue(encoder.encode('💾 Saving final request to database...\n'));
         await new Promise(resolve => setTimeout(resolve, 400));
         
         const reqRef = collection(db, 'requests');
         await setDoc(doc(reqRef, draft.id), requestPayload);
         
-        controller.enqueue(encoder.encode('Cleaning up draft conversation...\n'));
+        controller.enqueue(encoder.encode('🧹 Cleaning up draft conversation...\n'));
         await new Promise(resolve => setTimeout(resolve, 300));
         
         await deleteDoc(draftRef);
 
-        controller.enqueue(encoder.encode('Done! Your idea has been successfully submitted.\n'));
+        controller.enqueue(encoder.encode('\n🎉 Done! Your idea has been successfully submitted.\n'));
         await new Promise(resolve => setTimeout(resolve, 500));
         
         controller.enqueue(encoder.encode(`REQUEST_ID:${draft.id}`));
         controller.close();
       } catch (err) {
         console.error('Error in streaming complete:', err);
-        controller.enqueue(encoder.encode('ERROR:Internal error processing your request. Please try again.\n'));
+        controller.enqueue(encoder.encode('❌ ERROR: Internal error processing your request. Please try again.\n'));
         controller.close();
       }
     }
