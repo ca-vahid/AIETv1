@@ -1321,7 +1321,7 @@ export default function ChatWindow({
   const tourTips = [
     {
       icon: '🌐',
-      text: 'Click here to switch languages instantly and chat in your preferred language!',
+      text: 'Click on the globe to switch languages instantly and chat in your preferred language!',
       ref: langBtnRef,
     },
     {
@@ -1330,7 +1330,7 @@ export default function ChatWindow({
       ref: attachmentBtnRef,
     },
     {
-      icon: '🚀',
+      icon: '➡️',
       text: 'Tap to send your message and let AIET Assistant get to work!',
       ref: sendBtnRef,
     },
@@ -1443,7 +1443,7 @@ export default function ChatWindow({
                         ? "bg-blue-600 text-white dark:bg-blue-700 dark:text-white shadow-md dark:border dark:border-blue-600" 
                         : message.role === "system"
                         ? "bg-amber-600 border border-amber-700 dark:bg-amber-800 dark:border-amber-700 text-white shadow-md"
-                        : "bg-white dark:bg-gray-800 shadow-md border border-blue-200 dark:border-gray-700 text-slate-800 dark:text-gray-100"
+                        : "bg-white dark:bg-gray-800 shadow-md border border-blue-200 dark:border-gray-700 text-slate-900 dark:text-gray-100"
                     }`}
                   >
                     <div 
@@ -1580,7 +1580,7 @@ export default function ChatWindow({
             <div className="flex-1 border rounded-lg border-blue-200 dark:border-gray-600 bg-white dark:bg-gray-800 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
               <textarea
                 ref={inputRef}
-                className="w-full px-4 py-3 focus:outline-none bg-transparent resize-none text-fluid-base text-slate-800 dark:text-gray-100 
+                className="w-full px-4 py-3 focus:outline-none bg-transparent resize-none text-fluid-base text-slate-900 dark:text-gray-100 
                   scrollbar-thin 
                   scrollbar-thumb-blue-500 dark:scrollbar-thumb-blue-700
                   scrollbar-track-transparent
@@ -1750,12 +1750,12 @@ export default function ChatWindow({
       {/* Feature Tour Overlay */}
       {tourIndex >= 0 && tourIndex < tourTips.length && (
         <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50">
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-xl rounded-full px-5 py-3 flex items-center gap-3 text-white max-w-[90vw]">
+          <div className="bg-slate-800/95 dark:bg-slate-100/95 backdrop-blur-lg border border-slate-600 dark:border-slate-300 shadow-xl rounded-full px-5 py-3 flex items-center gap-3 text-slate-100 dark:text-slate-900 max-w-[90vw]">
             <span className="text-xl">{tourTips[tourIndex].icon}</span>
             <span className="text-sm md:text-base font-medium">{tourTips[tourIndex].text}</span>
             <button
               onClick={() => (tourIndex + 1 < tourTips.length ? setTourIndex(tourIndex + 1) : closeTour())}
-              className="ml-4 text-blue-300 hover:text-blue-200 font-bold text-sm whitespace-nowrap"
+              className="ml-4 text-blue-400 hover:text-blue-300 dark:text-blue-600 dark:hover:text-blue-700 font-bold text-sm whitespace-nowrap"
             >
               {tourIndex + 1 < tourTips.length ? 'Next →' : 'Got it'}
             </button>
