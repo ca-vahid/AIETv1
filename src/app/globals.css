@@ -204,27 +204,46 @@ html.light body::after {
   backdrop-filter: blur(20px) saturate(150%);
   border: 1px solid rgba(0, 102, 204, 0.2);
   box-shadow: 
-    0 10px 40px rgba(10, 22, 40, 0.4),
+    0 2px 4px rgba(0, 102, 204, 0.1),
+    0 8px 16px rgba(10, 22, 40, 0.2),
+    0 16px 32px rgba(10, 22, 40, 0.15),
+    0 32px 64px rgba(10, 22, 40, 0.1),
     0 0 0 1px rgba(0, 102, 204, 0.1) inset,
     0 0 60px rgba(0, 102, 204, 0.05) inset;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: translateZ(0);
 }
 
 .bgc-panel:hover {
   border-color: rgba(0, 102, 204, 0.4);
   box-shadow: 
-    0 15px 50px rgba(10, 22, 40, 0.5),
+    0 4px 8px rgba(0, 102, 204, 0.15),
+    0 12px 24px rgba(10, 22, 40, 0.25),
+    0 24px 48px rgba(10, 22, 40, 0.2),
+    0 48px 96px rgba(10, 22, 40, 0.15),
     0 0 0 1px rgba(0, 102, 204, 0.2) inset,
     0 0 80px rgba(0, 102, 204, 0.08) inset;
-  transform: translateY(-2px);
+  transform: translateY(-8px) translateZ(0) scale(1.02);
 }
 
 html.light .bgc-panel {
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(0, 102, 204, 0.15);
   box-shadow: 
-    0 10px 40px rgba(0, 102, 204, 0.08),
+    0 2px 4px rgba(0, 102, 204, 0.08),
+    0 8px 16px rgba(0, 102, 204, 0.06),
+    0 16px 32px rgba(0, 102, 204, 0.04),
+    0 32px 64px rgba(0, 102, 204, 0.02),
     0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+}
+
+html.light .bgc-panel:hover {
+  box-shadow: 
+    0 4px 8px rgba(0, 102, 204, 0.12),
+    0 12px 24px rgba(0, 102, 204, 0.08),
+    0 24px 48px rgba(0, 102, 204, 0.06),
+    0 48px 96px rgba(0, 102, 204, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset;
 }
 
 /* BGC Button Styles */
@@ -288,7 +307,13 @@ html.light .bgc-button-primary:hover {
   background: linear-gradient(135deg, rgba(15, 31, 61, 0.8) 0%, rgba(30, 53, 86, 0.7) 100%);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(0, 102, 204, 0.2);
-  box-shadow: 0 8px 32px rgba(10, 22, 40, 0.3);
+  box-shadow: 
+    0 4px 8px rgba(10, 22, 40, 0.2),
+    0 8px 16px rgba(10, 22, 40, 0.15),
+    0 16px 32px rgba(10, 22, 40, 0.1),
+    0 32px 64px rgba(10, 22, 40, 0.05);
+  transform-style: preserve-3d;
+  perspective: 1000px;
 }
 
 .geo-card::before {
@@ -305,19 +330,61 @@ html.light .bgc-button-primary:hover {
   z-index: -1;
 }
 
+.geo-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 20%,
+    transparent 80%,
+    rgba(0, 102, 204, 0.1) 100%
+  );
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
 .geo-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 48px rgba(10, 22, 40, 0.4);
+  transform: translateY(-12px) rotateX(8deg) rotateY(3deg) scale(1.03);
+  box-shadow: 
+    0 8px 16px rgba(10, 22, 40, 0.25),
+    0 16px 32px rgba(10, 22, 40, 0.2),
+    0 32px 64px rgba(10, 22, 40, 0.15),
+    0 64px 128px rgba(10, 22, 40, 0.1),
+    0 0 40px rgba(0, 102, 204, 0.15);
 }
 
 .geo-card:hover::before {
-  opacity: 0.2;
+  opacity: 0.3;
+}
+
+.geo-card:hover::after {
+  opacity: 1;
 }
 
 html.light .geo-card {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.85) 100%);
   border: 1px solid rgba(0, 102, 204, 0.12);
-  box-shadow: 0 8px 32px rgba(0, 102, 204, 0.06);
+  box-shadow: 
+    0 4px 8px rgba(0, 102, 204, 0.08),
+    0 8px 16px rgba(0, 102, 204, 0.06),
+    0 16px 32px rgba(0, 102, 204, 0.04),
+    0 32px 64px rgba(0, 102, 204, 0.02);
+}
+
+html.light .geo-card:hover {
+  box-shadow: 
+    0 8px 16px rgba(0, 102, 204, 0.12),
+    0 16px 32px rgba(0, 102, 204, 0.08),
+    0 32px 64px rgba(0, 102, 204, 0.06),
+    0 64px 128px rgba(0, 102, 204, 0.04),
+    0 0 40px rgba(0, 102, 204, 0.1);
 }
 
 html.light .geo-card h3 {
@@ -348,6 +415,13 @@ html.light .text-slate-700 {
   backdrop-filter: blur(20px);
   border: 1px solid rgba(0, 102, 204, 0.3);
   min-height: 280px;
+  transform-style: preserve-3d;
+  perspective: 1200px;
+  box-shadow: 
+    0 6px 12px rgba(10, 22, 40, 0.2),
+    0 12px 24px rgba(10, 22, 40, 0.15),
+    0 24px 48px rgba(10, 22, 40, 0.1),
+    0 48px 96px rgba(10, 22, 40, 0.05);
 }
 
 .action-card-bgc::before {
@@ -369,8 +443,42 @@ html.light .text-slate-700 {
   transition: opacity 0.5s ease;
 }
 
+.action-card-bgc::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: all 0.6s ease;
+  pointer-events: none;
+  transform: rotate(-45deg);
+}
+
+.action-card-bgc:hover {
+  transform: translateY(-20px) rotateX(10deg) rotateY(5deg) scale(1.05);
+  box-shadow: 
+    0 12px 24px rgba(10, 22, 40, 0.25),
+    0 24px 48px rgba(10, 22, 40, 0.2),
+    0 48px 96px rgba(10, 22, 40, 0.15),
+    0 96px 192px rgba(10, 22, 40, 0.1),
+    0 0 60px rgba(0, 102, 204, 0.2);
+}
+
 .action-card-bgc:hover::before {
   opacity: 1;
+}
+
+.action-card-bgc:hover::after {
+  opacity: 1;
+  transform: rotate(-45deg) translate(50%, 50%);
 }
 
 /* Light mode styling for action cards */
@@ -378,20 +486,20 @@ html.light .action-card-bgc {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
   border: 1px solid rgba(0, 102, 204, 0.2);
   box-shadow: 
-    0 8px 32px rgba(0, 102, 204, 0.08),
+    0 6px 12px rgba(0, 102, 204, 0.1),
+    0 12px 24px rgba(0, 102, 204, 0.08),
+    0 24px 48px rgba(0, 102, 204, 0.06),
+    0 48px 96px rgba(0, 102, 204, 0.04),
     0 0 0 1px rgba(255, 255, 255, 0.8) inset;
 }
 
-html.light .action-card-bgc h3 {
-  color: var(--bgc-blue-700) !important;
-}
-
-html.light .action-card-bgc p {
-  color: var(--bgc-blue-600) !important;
-}
-
-html.light .action-card-bgc .text-slate-200 {
-  color: var(--bgc-blue-600) !important;
+html.light .action-card-bgc:hover {
+  box-shadow: 
+    0 12px 24px rgba(0, 102, 204, 0.15),
+    0 24px 48px rgba(0, 102, 204, 0.12),
+    0 48px 96px rgba(0, 102, 204, 0.08),
+    0 96px 192px rgba(0, 102, 204, 0.06),
+    0 0 60px rgba(0, 102, 204, 0.15);
 }
 
 html.light .action-card-bgc::before {
@@ -476,12 +584,18 @@ html.light .action-card-bgc::before {
 
 /* Hover State for Interactive Elements */
 .hover-lift {
-  @apply transition-all duration-300;
+  @apply transition-all duration-500;
+  transform-style: preserve-3d;
+  perspective: 1000px;
 }
 
 .hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 102, 204, 0.15);
+  transform: translateY(-8px) rotateX(3deg) scale(1.02);
+  box-shadow: 
+    0 8px 16px rgba(0, 102, 204, 0.1),
+    0 16px 32px rgba(0, 102, 204, 0.08),
+    0 32px 64px rgba(0, 102, 204, 0.06),
+    0 0 40px rgba(0, 102, 204, 0.1);
 }
 
 /* Smooth Scroll Indicator */
@@ -515,34 +629,40 @@ html.light .theme-panel {
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 
     0 4px 8px rgba(0, 0, 0, 0.1),
-    0 8px 16px rgba(0, 0, 0, 0.1),
-    0 16px 32px rgba(0, 0, 0, 0.1);
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    0 16px 32px rgba(0, 0, 0, 0.06),
+    0 32px 64px rgba(0, 0, 0, 0.04);
+  perspective: 1000px;
 }
 
 .card-3d:hover {
-  transform: translateY(-12px) rotateX(5deg) rotateY(2deg);
+  transform: translateY(-16px) rotateX(8deg) rotateY(4deg) scale(1.03);
   box-shadow: 
     0 8px 16px rgba(0, 0, 0, 0.15),
-    0 16px 32px rgba(0, 0, 0, 0.15),
-    0 32px 64px rgba(0, 0, 0, 0.15),
+    0 16px 32px rgba(0, 0, 0, 0.12),
+    0 32px 64px rgba(0, 0, 0, 0.08),
+    0 64px 128px rgba(0, 0, 0, 0.06),
     0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .card-3d-subtle {
   transform-style: preserve-3d;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.1),
-    0 4px 8px rgba(0, 0, 0, 0.1),
-    0 8px 16px rgba(0, 0, 0, 0.05);
+    0 2px 4px rgba(0, 0, 0, 0.08),
+    0 4px 8px rgba(0, 0, 0, 0.06),
+    0 8px 16px rgba(0, 0, 0, 0.04),
+    0 16px 32px rgba(0, 0, 0, 0.02);
+  perspective: 800px;
 }
 
 .card-3d-subtle:hover {
-  transform: translateY(-6px) rotateX(2deg);
+  transform: translateY(-10px) rotateX(5deg) rotateY(2deg) scale(1.02);
   box-shadow: 
     0 4px 8px rgba(0, 0, 0, 0.12),
-    0 8px 16px rgba(0, 0, 0, 0.12),
-    0 16px 32px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(0, 0, 0, 0.1),
+    0 16px 32px rgba(0, 0, 0, 0.08),
+    0 32px 64px rgba(0, 0, 0, 0.06),
     0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
@@ -551,7 +671,8 @@ html.light .theme-panel {
   box-shadow: 
     0 4px 8px rgba(0, 0, 0, 0.3),
     0 8px 16px rgba(0, 0, 0, 0.25),
-    0 16px 32px rgba(0, 0, 0, 0.2);
+    0 16px 32px rgba(0, 0, 0, 0.2),
+    0 32px 64px rgba(0, 0, 0, 0.15);
 }
 
 .dark .card-3d:hover {
@@ -559,6 +680,7 @@ html.light .theme-panel {
     0 8px 16px rgba(0, 0, 0, 0.4),
     0 16px 32px rgba(0, 0, 0, 0.35),
     0 32px 64px rgba(0, 0, 0, 0.3),
+    0 64px 128px rgba(0, 0, 0, 0.25),
     0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -566,49 +688,147 @@ html.light .theme-panel {
   box-shadow: 
     0 2px 4px rgba(0, 0, 0, 0.25),
     0 4px 8px rgba(0, 0, 0, 0.2),
-    0 8px 16px rgba(0, 0, 0, 0.15);
+    0 8px 16px rgba(0, 0, 0, 0.15),
+    0 16px 32px rgba(0, 0, 0, 0.1);
 }
 
 .dark .card-3d-subtle:hover {
   box-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.3),
-    0 8px 16px rgba(0, 0, 0, 0.25),
-    0 16px 32px rgba(0, 0, 0, 0.2),
+    0 4px 8px rgba(0, 0, 0, 0.35),
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    0 16px 32px rgba(0, 0, 0, 0.25),
+    0 32px 64px rgba(0, 0, 0, 0.2),
     0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 /* Enhanced action cards with 3D effects */
 .action-card-3d {
   transform-style: preserve-3d;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 
     0 6px 12px rgba(0, 102, 204, 0.15),
-    0 12px 24px rgba(0, 102, 204, 0.1),
-    0 24px 48px rgba(0, 102, 204, 0.05);
+    0 12px 24px rgba(0, 102, 204, 0.12),
+    0 24px 48px rgba(0, 102, 204, 0.08),
+    0 48px 96px rgba(0, 102, 204, 0.06);
+  perspective: 1200px;
 }
 
 .action-card-3d:hover {
-  transform: translateY(-16px) rotateX(8deg) rotateY(3deg) scale(1.02);
+  transform: translateY(-24px) rotateX(12deg) rotateY(6deg) scale(1.06);
   box-shadow: 
-    0 12px 24px rgba(0, 102, 204, 0.2),
-    0 24px 48px rgba(0, 102, 204, 0.15),
-    0 48px 96px rgba(0, 102, 204, 0.1),
-    0 4px 8px rgba(0, 102, 204, 0.1);
+    0 12px 24px rgba(0, 102, 204, 0.25),
+    0 24px 48px rgba(0, 102, 204, 0.2),
+    0 48px 96px rgba(0, 102, 204, 0.15),
+    0 96px 192px rgba(0, 102, 204, 0.1),
+    0 4px 8px rgba(0, 102, 204, 0.15),
+    0 0 80px rgba(0, 102, 204, 0.2);
 }
 
 .dark .action-card-3d {
   box-shadow: 
     0 6px 12px rgba(51, 153, 255, 0.2),
     0 12px 24px rgba(51, 153, 255, 0.15),
-    0 24px 48px rgba(51, 153, 255, 0.1);
+    0 24px 48px rgba(51, 153, 255, 0.12),
+    0 48px 96px rgba(51, 153, 255, 0.08);
 }
 
 .dark .action-card-3d:hover {
   box-shadow: 
-    0 12px 24px rgba(51, 153, 255, 0.25),
-    0 24px 48px rgba(51, 153, 255, 0.2),
-    0 48px 96px rgba(51, 153, 255, 0.15),
-    0 4px 8px rgba(51, 153, 255, 0.15);
+    0 12px 24px rgba(51, 153, 255, 0.3),
+    0 24px 48px rgba(51, 153, 255, 0.25),
+    0 48px 96px rgba(51, 153, 255, 0.2),
+    0 96px 192px rgba(51, 153, 255, 0.15),
+    0 4px 8px rgba(51, 153, 255, 0.2),
+    0 0 80px rgba(51, 153, 255, 0.25);
 }
 
-/* ... existing code ... */
+/* Light mode text overrides for status boxes and other components */
+html.light .text-slate-800 {
+  color: var(--bgc-blue-700) !important;
+}
+
+html.light .text-slate-600 {
+  color: var(--bgc-blue-600) !important;
+}
+
+html.light .text-slate-700 {
+  color: var(--bgc-blue-700) !important;
+}
+
+html.light .action-card-bgc h3 {
+  color: var(--bgc-blue-700) !important;
+}
+
+html.light .action-card-bgc p {
+  color: var(--bgc-blue-600) !important;
+}
+
+html.light .action-card-bgc .text-slate-200 {
+  color: var(--bgc-blue-600) !important;
+}
+
+html.light .geo-card h3 {
+  color: var(--bgc-blue-700) !important;
+}
+
+html.light .geo-card p {
+  color: var(--bgc-blue-600) !important;
+}
+
+/* Enhanced floating particles for cards */
+@keyframes float1 {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+  33% { transform: translateY(-20px) rotate(120deg); opacity: 1; }
+  66% { transform: translateY(10px) rotate(240deg); opacity: 0.8; }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.4; }
+  50% { transform: translateY(-15px) rotate(180deg); opacity: 0.8; }
+}
+
+@keyframes float3 {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+  25% { transform: translateY(-25px) rotate(90deg); opacity: 1; }
+  75% { transform: translateY(15px) rotate(270deg); opacity: 0.5; }
+}
+
+@keyframes float4 {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
+  40% { transform: translateY(-30px) rotate(144deg); opacity: 0.9; }
+  80% { transform: translateY(5px) rotate(288deg); opacity: 0.6; }
+}
+
+@keyframes float5 {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.8; }
+  60% { transform: translateY(-18px) rotate(216deg); opacity: 1; }
+}
+
+/* Card glow effects on hover */
+.geo-card:hover,
+.action-card-bgc:hover,
+.bgc-panel:hover {
+  position: relative;
+}
+
+.geo-card:hover::before,
+.action-card-bgc:hover::before {
+  filter: blur(20px);
+}
+
+/* Enhanced button glow effect */
+.bgc-button-primary:hover {
+  filter: drop-shadow(0 0 20px rgba(0, 102, 204, 0.4));
+}
+
+/* Magnetic hover effect for action cards */
+.action-card-3d:hover {
+  animation: magneticPull 0.6s ease-out;
+}
+
+@keyframes magneticPull {
+  0% { transform: translateY(0) rotateX(0) rotateY(0) scale(1); }
+  30% { transform: translateY(-8px) rotateX(2deg) rotateY(1deg) scale(1.01); }
+  60% { transform: translateY(-16px) rotateX(6deg) rotateY(3deg) scale(1.03); }
+  100% { transform: translateY(-24px) rotateX(12deg) rotateY(6deg) scale(1.06); }
+}
