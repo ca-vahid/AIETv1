@@ -123,6 +123,7 @@ export async function GET(req: NextRequest) {
           preview: data.title || data.request.processDescription || "No description available",
           timestamp: data.updatedAt,
           impactScore: data.request.impactScore,
+          shared: data.shared ?? false,
           assignedTo: data.assignedTo,
           complexity: data.complexity || data.classification?.complexity || "unknown",
           category: data.request.category,

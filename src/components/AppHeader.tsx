@@ -8,12 +8,25 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.4.5';
+const APP_VERSION = 'v1.5.0';
 // Release date
-const RELEASE_DATE = 'May 19, 2025';
+const RELEASE_DATE = 'May 30, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.5.0',
+    date: 'May 30, 2025',
+    changes: [
+      'Added password-protected admin portal for managing submissions',
+      'Implemented search and filter functionality in admin dashboard',
+      'Updated admin page layout to 40/60 split for better alignment',
+      'Clamped chat card previews and ensured delete button visibility',
+      'Refined 3D card effects and removed excessive lift',
+      'Standardized header and footer logos for BGC consistency',
+      'Multiple bug fixes and performance improvements'
+    ]
+  },
   {
     version: 'v1.4.5',
     date: 'May 19, 2025',
@@ -184,14 +197,24 @@ const CHANGELOG = [
 
 // Changelog Modal Component
 function ChangelogModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { theme } = useTheme();
+  
   if (!isOpen) return null;
   
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div className="theme-panel rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-        <div className="p-4 border-b border-slate-700 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">Changelog</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+      <div className={`rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col ${
+        theme === 'dark' 
+          ? 'bg-slate-800 border border-slate-700' 
+          : 'bg-white border border-slate-200'
+      }`}>
+        <div className={`p-4 flex items-center justify-between ${
+          theme === 'dark' 
+            ? 'border-b border-slate-700 bg-slate-800' 
+            : 'border-b border-slate-200 bg-slate-50'
+        }`}>
+          <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>Changelog</h2>
+          <button onClick={onClose} className={`${theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-700'}`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -202,10 +225,10 @@ function ChangelogModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           {CHANGELOG.map((release, index) => (
             <div key={index} className={index > 0 ? "mt-6" : ""}>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-blue-400">{release.version}</h3>
-                <span className="text-sm text-slate-400">({release.date})</span>
+                <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{release.version}</h3>
+                <span className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>({release.date})</span>
               </div>
-              <ul className="mt-2 space-y-1 list-disc list-inside text-slate-300">
+              <ul className={`mt-2 space-y-1 list-disc list-inside ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
                 {release.changes.map((change, idx) => (
                   <li key={idx} className="text-sm">{change}</li>
                 ))}
@@ -214,10 +237,18 @@ function ChangelogModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           ))}
         </div>
         
-        <div className="p-4 border-t border-slate-700">
+        <div className={`p-4 ${
+          theme === 'dark' 
+            ? 'border-t border-slate-700 bg-slate-800' 
+            : 'border-t border-slate-200 bg-slate-50'
+        }`}>
           <button 
             onClick={onClose}
-            className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            className={`w-full py-2 rounded transition ${
+              theme === 'dark' 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
           >
             Close
           </button>
@@ -266,32 +297,39 @@ export default function AppHeader() {
 
   return (
     <>
-      <header className="bg-white/5 backdrop-blur-xl shadow-2xl sticky top-0 z-10 border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex justify-between items-center">
+      <header className={`sticky top-0 z-50 backdrop-blur-xl ${ 
+        theme === 'dark'
+          ? 'bg-gradient-to-r from-[#0a1628]/95 via-[#0f1f3d]/95 to-[#0a1628]/95 shadow-2xl border-b border-[#0066cc]/20'
+          : 'bg-gradient-to-r from-[#e6f0ff]/90 via-[#f0f6ff]/95 to-[#e6f0ff]/90 shadow-lg border-b border-[#0066cc]/15'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 py-1.5 sm:px-6 lg:px-8 flex justify-between items-center">
           {/* Left side: Logo and optional back button */}
           <div className="flex items-center gap-4">
             <Link href="/" className="text-xl font-bold flex items-center transition-all transform hover:scale-105 group">
-              <div className="relative p-2 rounded-xl bg-white/10 border border-white/20 shadow-lg group-hover:shadow-blue-500/25 transition-all backdrop-blur-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-400 group-hover:text-blue-300 transition-colors" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
-                </svg>
+              <div className={`relative p-1.5 rounded-xl border border-[#0066cc]/30 shadow-lg group-hover:shadow-[#0066cc]/25 transition-all backdrop-blur-sm ${
+                theme === 'dark' 
+                  ? 'bg-white/90' 
+                  : 'bg-gradient-to-br from-[#0066cc]/20 to-[#004080]/20'
+              }`}>
+                <img 
+                  src="/images/bgc-logo.png" 
+                  alt="BGC Engineering Logo" 
+                  className="h-8 w-8 object-contain group-hover:scale-105 transition-transform duration-300"
+                />
               </div>
               <div className="ml-3">
-                <span className="text-2xl font-bold" style={{
-                  background: 'linear-gradient(135deg, var(--blue-400) 0%, var(--accent-purple) 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}>AIET</span>
-                <div className="text-xs text-slate-400 font-medium -mt-1">AI Efficiency Portal</div>
+                <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#0066cc] to-[#0080ff]">AI Idea Portal</span>
+                <div className={`text-xs font-medium -mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-[#0066cc]/70'}`}>BGC Engineering</div>
               </div>
             </Link>
             
             {/* Version tag updated with animation */}
             <button 
               onClick={() => setChangelogOpen(true)}
-              className="version-badge text-xs font-bold"
+              className="relative px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-[#0066cc] to-[#004080] text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border border-[#0066cc]/30"
             >
-              {APP_VERSION}
+              <span className="relative z-10">{APP_VERSION}</span>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#0066cc] to-[#004080] opacity-70 blur-sm"></div>
             </button>
           </div>
           
@@ -301,44 +339,31 @@ export default function AppHeader() {
               <div className="flex items-center gap-6">
                 <Link 
                   href="/chats"
-                  className="text-slate-200 hover:text-white text-sm font-semibold flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all transform hover:scale-105 shadow-lg border border-white/20 backdrop-blur-sm"
+                  className={`text-sm font-semibold flex items-center px-3 py-1.5 rounded-xl transition-all transform hover:scale-105 shadow-lg border backdrop-blur-sm ${
+                    theme === 'dark'
+                      ? 'text-slate-200 hover:text-white bg-[#0066cc]/20 hover:bg-[#0066cc]/30 border-[#0066cc]/30'
+                      : 'text-[#0066cc] hover:text-[#004080] bg-white/70 hover:bg-white/90 border-[#0066cc]/20'
+                  }`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
                   </svg>
-                  Back to Home
+                  Back to Excavation Site
                 </Link>
                 
-                <div className="text-white text-sm font-semibold flex items-center bg-white/10 px-4 py-2 rounded-xl border border-white/20 shadow-lg backdrop-blur-sm">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mr-3 shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                      <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-                    </svg>
-                  </div>
-                  <span className="text-white">AIET Intake Chat</span>
-                </div>
-                
-                <div className="flex items-center bg-white/10 py-2 px-4 rounded-xl border border-white/20 shadow-lg backdrop-blur-sm">
-                  <span className="text-sm mr-3 whitespace-nowrap text-white font-semibold">
-                    Standard
-                  </span>
-                  <button 
-                    onClick={toggleModel}
-                    className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      useThinkingModel ? 'bg-gradient-to-r from-blue-500 to-purple-500' : 'bg-slate-600'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 rounded-full bg-white shadow-lg transition-transform ${
-                        useThinkingModel ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                  <span className="text-sm ml-3 whitespace-nowrap text-white font-semibold">
-                    Advanced
-                  </span>
-                </div>
+                <Link 
+                  href="/requests"
+                  className={`text-sm font-semibold flex items-center px-3 py-1.5 rounded-xl transition-all transform hover:scale-105 shadow-lg border backdrop-blur-sm ${
+                    theme === 'dark'
+                      ? 'text-slate-200 hover:text-white bg-[#0066cc]/20 hover:bg-[#0066cc]/30 border-[#0066cc]/30'
+                      : 'text-[#0066cc] hover:text-[#004080] bg-white/70 hover:bg-white/90 border-[#0066cc]/20'
+                  }`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Innovation Gallery
+                </Link>
               </div>
             )}
           </div>
@@ -349,47 +374,62 @@ export default function AppHeader() {
             <button
               aria-label="Toggle dark mode"
               onClick={toggleTheme}
-              className="p-3 rounded-xl hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all transform hover:scale-105 bg-white/10 border border-white/20 backdrop-blur-sm"
+              className={`p-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0066cc] transition-all transform hover:scale-105 backdrop-blur-sm ${
+                theme === 'light' ? 'bg-white/70 hover:bg-white/90 border border-[#0066cc]/20' : 'bg-[#0066cc]/10 hover:bg-[#0066cc]/20 border border-[#0066cc]/30'
+              }`}
             >
-              {theme === "dark" ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 3.75A.75.75 0 0 1 12.75 3h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5A.75.75 0 0 1 12 4.25v-.5zM6.22 5.03a.75.75 0 0 1 1.06 0l.35.35a.75.75 0 0 1-1.06 1.06l-.35-.35a.75.75 0 0 1 0-1.06zM3 11.25A.75.75 0 0 1 3.75 10.5h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5A.75.75 0 0 1 3 12.25v-.5zM6.22 18.97a.75.75 0 0 1 1.06 0l.35-.35a.75.75 0 0 1 1.06 1.06l-.35.35a.75.75 0 0 1-1.06-1.06zM11.25 21a.75.75 0 0 1-.75-.75v-.5a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5zM17.43 18.62a.75.75 0 0 1 0-1.06l.35-.35a.75.75 0 0 1 1.06 1.06l-.35.35a.75.75 0 0 1-1.06 0zM20.25 11.25A.75.75 0 0 1 21 10.5h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1-.75-.75v-.5zM17.43 5.38a.75.75 0 0 1 1.06 0l.35.35a.75.75 0 0 1-1.06 1.06l-.35-.35a.75.75 0 0 1 0-1.06z" />
-                  <path d="M12 6.75a5.25 5.25 0 1 0 5.25 5.25A5.26 5.26 0 0 0 12 6.75Z" />
+              {theme === 'light' ? (
+                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-200" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M21.752 15.002a9 9 0 0 1-11.807-11.8a.75.75 0 0 0-1.071-.858A10.501 10.501 0 1 0 22.61 16.073a.75.75 0 0 0-.858-1.071Z" />
+                <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
               )}
             </button>
+            <span className={`ml-2 text-sm font-medium ${theme === 'dark' ? 'text-slate-200' : 'text-[#0066cc]'}`}>
+              {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+            </span>
             
             {/* User info and sign out */}
             {isLoggedIn ? (
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-xl border border-white/20 backdrop-blur-sm">
-                  <span className="text-sm font-bold text-white hidden sm:inline">
-                    Hello, {profile.name.split(' ')[0]}
-                  </span>
-                  {profile.photoUrl && (
-                    <img 
-                      src={profile.photoUrl} 
-                      alt={profile.name}
-                      className="w-8 h-8 rounded-full border-2 border-blue-500/30 shadow-lg object-cover hidden sm:block"
-                    />
-                  )}
+                <div className={`flex items-center gap-3 px-3 py-1.5 rounded-xl border backdrop-blur-sm ${
+                  theme === 'dark' 
+                    ? 'bg-[#0066cc]/20 border-[#0066cc]/30'
+                    : 'bg-white/70 border-[#0066cc]/20'
+                }`}>
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0066cc] to-[#004080] flex items-center justify-center text-white font-bold text-xs">
+                      {profile.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border border-white ${theme === 'dark' ? 'border-[#0a1628]' : 'border-white'}`}></div>
+                  </div>
+                  <div className="hidden md:block">
+                    <p className={`text-xs font-semibold ${theme === 'dark' ? 'text-slate-200' : 'text-[#0066cc]'}`}>{profile.name}</p>
+                    <p className={`text-[10px] ${theme === 'dark' ? 'text-slate-400' : 'text-[#0066cc]/70'}`}>{profile.email}</p>
+                  </div>
                 </div>
+                
                 <button
                   onClick={handleSignOut}
-                  className="text-sm font-bold bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2 rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 border border-red-500/30"
+                  className={`text-sm font-semibold flex items-center px-3 py-1.5 rounded-xl transition-all transform hover:scale-105 shadow-lg border backdrop-blur-sm ${
+                    theme === 'dark'
+                      ? 'text-slate-200 hover:text-white bg-red-600/20 hover:bg-red-600/30 border-red-600/30'
+                      : 'text-red-600 hover:text-red-700 bg-white/70 hover:bg-white/90 border-red-600/20'
+                  }`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
                   </svg>
-                  <span className="hidden sm:inline">Sign Out</span>
+                  Sign Out
                 </button>
               </div>
             ) : (
-              null
+              <div className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-[#0066cc]/70'}`}>
+                Welcome to AIET Portal
+              </div>
             )}
           </div>
         </div>

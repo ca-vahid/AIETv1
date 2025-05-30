@@ -46,6 +46,7 @@ interface HistoryItem {
   hoursSavedPerWeek?: number;
   durationMinutes?: number;
   peopleInvolved?: number;
+  shared?: boolean;
   request?: {
     painPoints?: string[];
     processSummary?: string;
@@ -69,6 +70,7 @@ interface SortableItemProps {
   getComplexityBadge: (complexity?: string) => React.ReactNode | null;
   renderImpactScore: (score?: number) => React.ReactNode | null;
   formatDate: (timestamp: number) => string;
+  theme: string;
 }
 
 // Confirmation dialog component
@@ -89,13 +91,13 @@ function ConfirmationDialog({
   
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
-      <div className="geological-panel rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
-        <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-        <p className="text-slate-300 mb-6">{message}</p>
+      <div className="bgc-panel rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+        <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-2">{title}</h3>
+        <p className="text-slate-600 dark:text-slate-300 mb-6">{message}</p>
         <div className="flex justify-end space-x-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-700/80 text-white rounded hover:bg-slate-600/80 transition"
+            className="px-4 py-2 bg-slate-200 dark:bg-slate-700/80 text-slate-700 dark:text-white rounded hover:bg-slate-300 dark:hover:bg-slate-600/80 transition"
           >
             Cancel
           </button>
@@ -125,16 +127,18 @@ function SortableItem({
   getCategoryColor,
   getComplexityBadge,
   renderImpactScore,
-  formatDate
+  formatDate,
+  theme
 }: SortableItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const [isExpanded, setIsExpanded] = useState(false);
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   } as React.CSSProperties;
 
-  // Determine shared status (basic logic: if assignedTo exists, consider shared)
-  const shared = !!item.assignedTo;
+  // Use the actual shared status from the item, fallback to false for drafts
+  const shared = item.type === 'request' ? (item.shared ?? false) : false;
 
   return (
     <div
@@ -142,92 +146,224 @@ function SortableItem({
       style={style}
       {...attributes}
       {...listeners}
-      className={`select-none bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-lg overflow-hidden cursor-pointer transition-transform duration-200 ${isDragging ? 'opacity-50' : 'hover:scale-[1.02]'}`}
+      className={`select-none bg-white dark:bg-[#0f1f3d] border-4 border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:border-[#0066cc] dark:hover:border-[#3399ff] hover:shadow-lg ${isDragging ? 'opacity-50' : ''}`}
       onClick={() => handleChatClick(item)}
     >
-      <div className="p-6 flex flex-col min-h-[260px] justify-between">
-        <div>
-          {/* Title */}
-          <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 leading-snug">
-            {item.preview}
-          </h3>
-          {/* Timestamp */}
-          <div className="text-xs text-slate-400 mb-4 flex items-center gap-1">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {formatDate(item.timestamp)}
-          </div>
-          {/* Category badge (status dot moved to bottom) */}
-          <div className="flex items-center justify-end mb-3">
-            {item.category && (
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getCategoryColor(item.category)} shadow-sm`}>{item.category}</span>
+      <div className="p-6 flex flex-col h-full">
+        {/* Header with Title and Actions */}
+        <div className="mb-4">
+          <div className="flex items-start justify-between mb-2">
+            <h3 className="flex-1 min-w-0 text-lg font-semibold text-slate-900 dark:text-white pr-2 line-clamp-2">
+              {item.preview}
+            </h3>
+            {canDelete(item) && (
+              <button
+                onClick={(e) => handleDeleteClick(e, item)}
+                disabled={deleteInProgress}
+                className="flex-shrink-0 p-1 text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L6.382 5H3a1 1 0 100 2h.293l.949 9.486A2 2 0 006.236 18h7.528a2 2 0 001.994-1.514L16.707 7H17a1 1 0 100-2h-3.382l-1.724-2.447A1 1 0 0011 2H9zm3 6a1 1 0 10-2 0v6a1 1 0 102 0V8zm-4 0a1 1 0 112 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clipRule="evenodd" />
+                </svg>
+              </button>
             )}
           </div>
-          {/* Shared / Private indicator */}
-          <div className="mb-4">
-            {shared ? (
-              <span className="inline-flex items-center text-xs font-semibold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 rounded-full px-3 py-1 gap-1">
-                <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M13 7H7v6h6V7z" opacity="0.5" />
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3-9a1 1 0 00-1-1H8a1 1 0 000 2h4a1 1 0 001-1z" clipRule="evenodd" />
-                </svg>
-                Shared
-              </span>
-            ) : (
-              <span className="inline-flex items-center text-xs font-semibold text-slate-300 bg-slate-500/20 border border-slate-500/30 rounded-full px-3 py-1 gap-1">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 20 20" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7H7v6h6V7z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 18a8 8 0 100-16 8 8 0 000 16z" />
-                </svg>
-                Private
-              </span>
-            )}
+          
+          {/* Date and Sharing Status */}
+          <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+            <span>{formatDate(item.timestamp)}</span>
+            <span className="text-slate-400 dark:text-slate-500">•</span>
+            <span className={shared ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}>
+              {shared ? "Shared" : "Private"}
+            </span>
           </div>
-          {/* Optional complexity badge */}
-          {getComplexityBadge(item.complexity)}
-          {/* Impact score if available */}
-          {renderImpactScore(item.impactScore)}
         </div>
-        {/* Bottom actions */}
-        <div className="mt-6 flex items-center justify-between">
-          {/* Status dot indicator */}
-          <span
-            className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${(() => {
-              switch (item.statusCode) {
-                case 'new': return 'bg-amber-500';
-                case 'in_review': return 'bg-purple-500';
-                case 'pilot': return 'bg-green-500';
-                case 'completed': return 'bg-emerald-500';
-                case 'rejected': return 'bg-red-500';
-                default: return 'bg-blue-500';
-              }
-            })()}`}
-            title={item.status}
-          />
+
+        {/* Expandable Details Section */}
+        {item.request?.processSummary && (
+          <div className="mb-4">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
+              className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 transition-colors"
+            >
+              <svg 
+                className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              Process Details
+            </button>
+            {isExpanded && (
+              <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-md border border-slate-200 dark:border-slate-700">
+                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {item.request.processSummary}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Content Grid */}
+        <div className="flex-grow space-y-4">
+          {/* Pain Points */}
+          {item.request?.painPoints && item.request.painPoints.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                Pain Points
+              </h4>
+              <ul className="space-y-1">
+                {item.request.painPoints.slice(0, 2).map((pain, idx) => (
+                  <li key={idx} className="text-sm text-slate-700 dark:text-slate-300 flex items-start">
+                    <span className="text-slate-400 dark:text-slate-500 mr-2">•</span>
+                    <span className="line-clamp-1">{pain}</span>
+                  </li>
+                ))}
+                {item.request.painPoints.length > 2 && (
+                  <li className="text-sm text-slate-500 dark:text-slate-400 italic">
+                    +{item.request.painPoints.length - 2} more
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {/* Tools & Resources Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Tools */}
+            {item.request?.tools && item.request.tools.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                  Tools
+                </h4>
+                <div className="space-y-1">
+                  {item.request.tools.slice(0, 2).map((tool, idx) => (
+                    <div key={idx} className="text-sm text-slate-700 dark:text-slate-300 truncate">
+                      {tool}
+                    </div>
+                  ))}
+                  {item.request.tools.length > 2 && (
+                    <div className="text-sm text-slate-500 dark:text-slate-400 italic">
+                      +{item.request.tools.length - 2}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Resources */}
+            {item.request?.roles && item.request.roles.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+                  Resources
+                </h4>
+                <div className="space-y-1">
+                  {item.request.roles.slice(0, 2).map((role, idx) => (
+                    <div key={idx} className="text-sm text-slate-700 dark:text-slate-300 truncate">
+                      {role}
+                    </div>
+                  ))}
+                  {item.request.roles.length > 2 && (
+                    <div className="text-sm text-slate-500 dark:text-slate-400 italic">
+                      +{item.request.roles.length - 2}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Status Bar */}
+        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Status Icon and Text */}
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${(() => {
+                switch (item.statusCode) {
+                  case 'new': return 'bg-amber-100 dark:bg-amber-900/20';
+                  case 'in_review': return 'bg-purple-100 dark:bg-purple-900/20';
+                  case 'pilot': return 'bg-green-100 dark:bg-green-900/20';
+                  case 'completed': return 'bg-emerald-100 dark:bg-emerald-900/20';
+                  case 'rejected': return 'bg-red-100 dark:bg-red-900/20';
+                  default: return 'bg-slate-100 dark:bg-slate-800/50';
+                }
+              })()}`}>
+                {(() => {
+                  switch (item.statusCode) {
+                    case 'new':
+                      return (
+                        <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      );
+                    case 'in_review':
+                      return (
+                        <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      );
+                    case 'pilot':
+                      return (
+                        <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      );
+                    case 'completed':
+                      return (
+                        <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      );
+                    case 'rejected':
+                      return (
+                        <svg className="w-4 h-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      );
+                    default:
+                      return (
+                        <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                      );
+                  }
+                })()}
+              </div>
+              <span className={`text-sm font-medium ${(() => {
+                switch (item.statusCode) {
+                  case 'new': return 'text-amber-700 dark:text-amber-400';
+                  case 'in_review': return 'text-purple-700 dark:text-purple-400';
+                  case 'pilot': return 'text-green-700 dark:text-green-400';
+                  case 'completed': return 'text-emerald-700 dark:text-emerald-400';
+                  case 'rejected': return 'text-red-700 dark:text-red-400';
+                  default: return 'text-slate-700 dark:text-slate-400';
+                }
+              })()}`}>
+                {item.status || 'Draft'}
+              </span>
+            </div>
+          </div>
+
+          {/* View Details Link */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleChatClick(item);
             }}
-            className="text-sm font-bold text-blue-400 hover:text-blue-300 inline-flex items-center gap-1 group"
+            className="text-sm font-medium text-[#0066cc] dark:text-[#3399ff] hover:text-[#004080] dark:hover:text-[#0080ff] transition-colors flex items-center group"
           >
-            <span>Explore Details</span>
-            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            View Details
+            <svg className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
-          {canDelete(item) && (
-            <button
-              onClick={(e) => handleDeleteClick(e, item)}
-              disabled={deleteInProgress}
-              className="text-slate-400 hover:text-red-500 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L6.382 5H3a1 1 0 100 2h.293l.949 9.486A2 2 0 006.236 18h7.528a2 2 0 001.994-1.514L16.707 7H17a1 1 0 100-2h-3.382l-1.724-2.447A1 1 0 0011 2H9zm3 6a1 1 0 10-2 0v6a1 1 0 102 0V8zm-4 0a1 1 0 112 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clipRule="evenodd" />
-              </svg>
-            </button>
-          )}
         </div>
       </div>
     </div>
@@ -507,15 +643,15 @@ export default function ChatsPage() {
 
   if (isLoading) {
     return (
-      <div className={`flex flex-col h-screen ${theme === "dark" ? "bg-slate-900" : "bg-slate-100"}`}>
+      <div className={`flex flex-col h-screen`}>
         <AppHeader />
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center">
-            <svg className="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-12 w-12 text-[#0066cc] dark:text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V8a4 4 0 00-4 4H4z"></path>
             </svg>
-            <p className={`text-lg font-medium ${theme === "dark" ? "text-slate-300" : "text-slate-700"}`}>Loading your excavation site...</p>
+            <p className={`text-lg font-medium text-slate-700 dark:text-slate-300`}>Loading your excavation site...</p>
           </div>
         </div>
       </div>
@@ -528,18 +664,18 @@ export default function ChatsPage() {
   }
   
   return (
-    <div className={`flex flex-col min-h-screen ${theme === "dark" ? "bg-slate-900" : "bg-slate-100"}`}>
+    <div className={`flex flex-col min-h-screen`}>
       <AppHeader />
       <main className="flex-1 p-6 sm:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
-              <h1 className="page-title">Your Excavation Site</h1>
-              <p className="page-subtitle">
+              <h1 className="text-4xl font-black mb-2 text-slate-800 dark:text-white">Your Excavation Site</h1>
+              <p className="text-lg text-slate-600 dark:text-slate-400">
                 Explore your submitted ideas and track their journey through the automation pipeline.
               </p>
             </div>
-            <Link href="/chat" className="action-button-primary whitespace-nowrap">
+            <Link href="/chat" className="bgc-button-primary whitespace-nowrap mt-4 sm:mt-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
@@ -548,14 +684,14 @@ export default function ChatsPage() {
           </div>
 
           {dragInstructions && (
-            <div className="instruction-badge mb-6 flex items-center justify-between">
+            <div className="bg-[#0066cc]/10 dark:bg-blue-500/10 border border-[#0066cc]/20 dark:border-blue-500/20 rounded-lg px-4 py-3 mb-6 flex items-center justify-between">
               <div className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#0066cc] dark:text-blue-500" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 3a1 1 0 00-1 1v2.586l-2.293-2.293a1 1 0 10-1.414 1.414L7.586 8H5a1 1 0 000 2h2.586l-2.293 2.293a1 1 0 101.414 1.414L9 11.414V14a1 1 0 102 0v-2.586l2.293 2.293a1 1 0 101.414-1.414L12.414 10H15a1 1 0 100-2h-2.586l2.293-2.293a1 1 0 10-1.414-1.414L11 6.586V4a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                <span>Drag to reorganize your geological samples.</span>
+                <span className="text-[#0066cc] dark:text-blue-400 font-medium">Drag to reorganize your geological samples.</span>
               </div>
-              <button onClick={() => setDragInstructions(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+              <button onClick={() => setDragInstructions(false)} className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
@@ -565,11 +701,11 @@ export default function ChatsPage() {
 
           {isLoadingHistory && !history.length ? (
             <div className="text-center py-10">
-              <svg className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-8 w-8 text-[#0066cc] dark:text-blue-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V8a4 4 0 00-4 4H4z"></path>
               </svg>
-              <p className={`text-slate-500 dark:text-slate-400`}>Loading history...</p>
+              <p className={`text-slate-600 dark:text-slate-400`}>Loading history...</p>
             </div>
           ) : error ? (
             <div className="text-center py-10 px-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
@@ -579,13 +715,13 @@ export default function ChatsPage() {
               <p className="text-red-700 dark:text-red-300 font-semibold">{error}</p>
             </div>
           ) : history.length === 0 ? (
-            <div className="text-center py-16 px-6 bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
+            <div className="text-center py-16 px-6 bgc-panel rounded-xl shadow-md">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-2">No Geological Samples Yet</h3>
               <p className="text-slate-500 dark:text-slate-400 mb-6">Start a new excavation to submit your innovative AI automation ideas.</p>
-              <Link href="/chat" className="action-button-primary">
+              <Link href="/chat" className="bgc-button-primary">
                  Start New Excavation
               </Link>
             </div>
@@ -616,6 +752,7 @@ export default function ChatsPage() {
                       getComplexityBadge={getComplexityBadge}
                       renderImpactScore={renderImpactScore}
                       formatDate={formatDate}
+                      theme={theme}
                     />
                   ))}
                 </div>
@@ -635,6 +772,7 @@ export default function ChatsPage() {
                         getComplexityBadge={getComplexityBadge}
                         renderImpactScore={renderImpactScore}
                         formatDate={formatDate}
+                        theme={theme}
                       />
                   </div>
                 ) : null}

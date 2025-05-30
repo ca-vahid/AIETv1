@@ -7,6 +7,9 @@ import AppHeader from '@/components/AppHeader';
 import Link from 'next/link';
 import { getIdToken } from 'firebase/auth';
 import { getRequestStatusLabel } from '@/lib/utils/statusUtils';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/firebase';
+import { Fragment } from 'react';
 
 // Types
 interface RequestDetail {
@@ -17,6 +20,7 @@ interface RequestDetail {
   userId: string;
   assignedTo?: string;
   complexity?: 'low' | 'medium' | 'high';
+  shared?: boolean;
   attachmentsSummary?: { 
     count: number; 
     firstThumbUrl?: string 
@@ -54,6 +58,23 @@ interface RequestDetail {
   }[];
 }
 
+// Simple confirmation dialog component
+function ConfirmDialog({ open, onCancel, onConfirm }: { open: boolean; onCancel: () => void; onConfirm: () => void }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-sm w-full p-6">
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">Make this idea private?</h3>
+        <p className="text-sm text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">Keeping your idea public helps others brainstorm and provide feedback through thumbs-up or comments. Are you sure you want to make it private?</p>
+        <div className="flex justify-end gap-3">
+          <button onClick={onCancel} className="px-4 py-2 text-sm rounded-lg bg-slate-200 dark:bg-slate-700/70 text-slate-800 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600 transition">Cancel</button>
+          <button onClick={onConfirm} className="px-4 py-2 text-sm rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition">Make Private</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RequestDetailPage() {
   const params = useParams();
   const requestId = params.id as string;
@@ -63,6 +84,8 @@ export default function RequestDetailPage() {
   const [request, setRequest] = useState<RequestDetail | null>(null);
   const [isLoadingRequest, setIsLoadingRequest] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingShare, setUpdatingShare] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   
   useEffect(() => {
     async function fetchRequestDetail() {
@@ -150,6 +173,34 @@ export default function RequestDetailPage() {
     }
   };
   
+  const performToggleShare = async () => {
+    if (!request || !firebaseUser) return;
+    try {
+      setUpdatingShare(true);
+      await updateDoc(doc(db, 'requests', requestId), {
+        shared: !request.shared,
+        updatedAt: Date.now(),
+      });
+      setRequest(prev => prev ? { ...prev, shared: !prev.shared } : prev);
+    } catch (err) {
+      console.error('Failed to toggle share flag:', err);
+      alert('Failed to update visibility. Please try again later.');
+    } finally {
+      setUpdatingShare(false);
+    }
+  };
+
+  const handleToggleShare = () => {
+    if (!request) return;
+    if (request.shared) {
+      // Confirm before making private
+      setConfirmDialogOpen(true);
+    } else {
+      // Make public immediately
+      performToggleShare();
+    }
+  };
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -230,6 +281,12 @@ export default function RequestDetailPage() {
                           {request.request.category}
                         </span>
                       )}
+                      {/* Visibility Badge */}
+                      {typeof request.shared === 'boolean' && (
+                        <span className={`text-xs font-semibold px-3 py-1 rounded-full shadow-md transform transition-transform duration-300 hover:scale-[1.05] hover:translate-y-[-2px] ${request.shared ? 'bg-emerald-500/90 text-white dark:bg-emerald-600' : 'bg-slate-400/90 text-white dark:bg-slate-600'}`}>
+                          {request.shared ? 'Shared' : 'Private'}
+                        </span>
+                      )}
                       {request.complexity && (
                         <span className={`text-xs font-semibold px-3 py-1 rounded-full shadow-md ml-auto transform transition-transform duration-300 hover:scale-[1.05] hover:translate-y-[-2px] ${
                           request.complexity === 'low' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' :
@@ -256,6 +313,30 @@ export default function RequestDetailPage() {
                           <button className="flex items-center gap-1.5 text-blue-100 hover:text-white transition-all duration-300 hover:scale-110">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
                             <span className="font-medium">{request.commentsCount}</span>
+                          </button>
+                        )}
+                        {/* Share toggle circular button */}
+                        {request.userId === firebaseUser?.uid && (
+                          <button
+                            onClick={handleToggleShare}
+                            disabled={updatingShare}
+                            className="w-8 h-8 flex items-center justify-center text-blue-100 hover:text-white transition-all duration-300 hover:scale-110 disabled:opacity-50"
+                          >
+                            {updatingShare ? (
+                              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v2m0 12v2m8-8h2M4 12H2" />
+                              </svg>
+                            ) : request.shared ? (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v4a4 4 0 004 4h10a4 4 0 004-4V7" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M12 7h.01M17 7h.01" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0-1.657 1.343-3 3-3h7" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 4l3 4-3 4" />
+                              </svg>
+                            )}
                           </button>
                         )}
                       </div>
@@ -661,6 +742,15 @@ export default function RequestDetailPage() {
           ) : null}
         </div>
       </main>
+      {/* Confirm dialog */}
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onCancel={() => setConfirmDialogOpen(false)}
+        onConfirm={() => {
+          setConfirmDialogOpen(false);
+          performToggleShare();
+        }}
+      />
     </div>
   );
 }

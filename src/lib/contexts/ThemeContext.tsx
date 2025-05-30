@@ -13,9 +13,10 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 /**
  * ThemeProvider manages the UI color theme (light or dark) and persists the user preference in localStorage.
  * It toggles the corresponding class (`light` or `dark`) on the <html> element so that Tailwind's `dark:` variants work.
+ * Dark mode is the default theme
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
 
   // On mount, read initial theme from localStorage or system preference
   useEffect(() => {
@@ -28,8 +29,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Default to light if no stored preference
-    const initial: Theme = "light";
+    // Default to dark mode if no stored preference
+    const initial: Theme = "dark";
     setTheme(initial);
     updateHtmlClass(initial);
   }, []);

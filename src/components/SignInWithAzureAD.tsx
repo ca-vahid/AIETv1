@@ -207,7 +207,7 @@ export default function SignInWithAzureAD() {
   if (loading || isProcessingRedirect || isUpdatingProfile) {
     return (
       <button
-        className="bg-gradient-to-r from-indigo-600/50 to-purple-700/50 text-white px-4 py-3 rounded-lg opacity-70 cursor-not-allowed shadow-md"
+        className="bg-gradient-to-r from-[#0066cc]/50 to-[#004080]/50 text-white px-4 py-3 rounded-lg opacity-70 cursor-not-allowed shadow-md"
         disabled
       >
         {isUpdatingProfile ? 'Updating Profile...' : 'Loading...'}
@@ -218,7 +218,7 @@ export default function SignInWithAzureAD() {
   if (user) {
     return (
       <div className="flex flex-col items-center text-center space-y-1">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Signed in as <span className="font-bold">{user.displayName || user.email}</span>
         </p>
         <button
@@ -237,7 +237,7 @@ export default function SignInWithAzureAD() {
               setAuthError("Failed to refresh profile data.");
             }
           }}
-          className="text-xs text-blue-600 underline hover:text-blue-800 transition"
+          className="text-xs text-[#0066cc] underline hover:text-[#0080ff] transition"
         >
           Refresh Profile Data
         </button>
@@ -250,15 +250,9 @@ export default function SignInWithAzureAD() {
     <div className="flex flex-col items-center text-center space-y-2">
       <button
         onClick={handleSignIn}
-        className={`
-          font-medium text-sm py-3 px-5 rounded-lg shadow-md flex items-center justify-center w-full transition-all duration-300
-          ${
-            theme === 'dark'
-              ? 'bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 text-white border border-indigo-500/30'
-              : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border border-blue-500/30'
-          }
-          hover:shadow-lg hover:-translate-y-0.5
-        `}
+        className="font-medium text-sm py-3 px-5 rounded-lg shadow-md flex items-center justify-center w-full transition-all duration-300
+          bg-gradient-to-r from-[#0066cc] to-[#004080] hover:from-[#0080ff] hover:to-[#0066cc] text-white border border-[#0066cc]/30
+          hover:shadow-lg hover:-translate-y-0.5"
       >
         <svg 
           width="20" 
