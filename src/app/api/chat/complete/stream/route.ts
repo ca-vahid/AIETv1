@@ -7,7 +7,7 @@ import { DraftConversation, FinalRequest } from '@/lib/types/conversation';
 // @ts-ignore
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const THINKING_MODEL = 'gemini-2.0-flash-thinking-exp';
+const THINKING_MODEL = 'gemini-1.5-flash-latest';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 /**
@@ -121,37 +121,55 @@ export async function POST(req: NextRequest) {
 
         const llmStream = await model.generateContentStream({
           contents,
-          systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] }
+          systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] },
+          // @ts-ignore - Add thinking_config based on user's instructions
+          thinkingConfig: {
+            includeThoughts: true,
+          }
         });
 
         for await (const chunk of llmStream.stream) {
-          const text = chunk.text();
-          
-          // Check if this is a thinking part (for models that support it)
-          // Since thinking mode is experimental, we'll handle both cases
-          const isThinking = chunk.candidates?.[0]?.content?.parts?.some((part: any) => part.thought === true);
-          
-          if (isThinking && text) {
-            if (!thinkingBegan) {
-              thinkingBegan = true;
-              controller.enqueue(encoder.encode('💭 AI Thinking Process:\n'));
+          if (chunk.candidates && chunk.candidates.length > 0) {
+            const candidate = chunk.candidates[0];
+            if (candidate.content && candidate.content.parts) {
+              for (const part of candidate.content.parts) {
+                const currentPart = part as any; // Cast to access 'thought' if not in types
+                const partText = currentPart.text;
+
+                if (partText) { // Ensure there's text to process
+                  const isThoughtPart = currentPart.thought === true;
+
+                  if (isThoughtPart) {
+                    if (!thinkingBegan) {
+                      thinkingBegan = true;
+                      controller.enqueue(encoder.encode('💭 AI Thinking Process:\n'));
+                    }
+                    // Format thinking text with indentation
+                    const thoughtLines = partText.split('\n').map((line: string) => `   │ ${line}`).join('\n');
+                    controller.enqueue(encoder.encode(thoughtLines + '\n'));
+                  } else {
+                    // This is the actual output part for JSON
+                    if (thinkingBegan) { // End of a thinking block
+                      controller.enqueue(encoder.encode('───────────────────────\n'));
+                      controller.enqueue(encoder.encode('📝 Extracting submission details:\n\n'));
+                      thinkingBegan = false;
+                    }
+                    rawJson += partText;
+                    controller.enqueue(encoder.encode(partText)); // Stream the JSON part
+                  }
+                }
+              }
             }
-            // Format thinking text with indentation
-            const thoughtLines = text.split('\n').map(line => `   │ ${line}`).join('\n');
-            controller.enqueue(encoder.encode(thoughtLines + '\n'));
-          } else if (text) {
-            // This is the actual output
-            if (thinkingBegan) {
-              controller.enqueue(encoder.encode('───────────────────────\n'));
-              controller.enqueue(encoder.encode('📝 Extracting submission details:\n\n'));
-              thinkingBegan = false;
-            }
-            rawJson += text;
-            // Show the JSON being built but formatted nicely
-            controller.enqueue(encoder.encode(text));
           }
         }
 
+        // Ensure final "Extracting submission details" if thinking was the last thing streamed
+        if (thinkingBegan) {
+            controller.enqueue(encoder.encode('───────────────────────\n'));
+            controller.enqueue(encoder.encode('📝 Extracting submission details:\n\n'));
+            thinkingBegan = false;
+        }
+        
         controller.enqueue(encoder.encode('\n\n✅ Extraction complete!\n'));
         await new Promise(resolve => setTimeout(resolve, 300));
         

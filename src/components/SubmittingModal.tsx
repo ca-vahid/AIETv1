@@ -40,11 +40,8 @@ export default function SubmittingModal({ show, logs = '', shareToGallery, onSha
   useEffect(() => {
     if (logContainerRef.current) {
       const element = logContainerRef.current;
-      // Smooth scroll to bottom
-      element.scrollTo({
-        top: element.scrollHeight,
-        behavior: 'smooth'
-      });
+      // Force scroll to bottom
+      element.scrollTop = element.scrollHeight;
     }
   }, [logs]);
   
@@ -56,37 +53,24 @@ export default function SubmittingModal({ show, logs = '', shareToGallery, onSha
     .replace(/```/g, '')
     .trim();
 
-  // Format the logs with better visual separation
-  const formatLogs = (logText: string) => {
-    // Split by newlines but preserve the line breaks
-    const lines = logText.split('\n');
-    return lines.map((line, index) => {
-      // Highlight different types of messages
-      let className = 'block';
-      if (line.includes('AI Thinking Process:') || line.includes('AI is thinking...')) {
-        className += ' text-purple-600 dark:text-purple-400 font-semibold mt-2';
-      } else if (line.includes('   │')) {
-        className += ' text-gray-600 dark:text-gray-400 text-xs italic';
-      } else if (line.includes('✅') || line.includes('Done!')) {
-        className += ' text-green-600 dark:text-green-400 font-semibold';
-      } else if (line.includes('⚠️') || line.includes('Warning:')) {
-        className += ' text-amber-600 dark:text-amber-400';
-      } else if (line.includes('❌') || line.includes('ERROR:')) {
-        className += ' text-red-600 dark:text-red-400 font-semibold';
-      } else if (line.includes('🧠') || line.includes('🤔') || line.includes('💭') || 
-                 line.includes('📝') || line.includes('🔍') || line.includes('🏗️') || 
-                 line.includes('💾') || line.includes('🧹') || line.includes('🎉')) {
-        className += ' text-blue-600 dark:text-blue-400 font-medium mt-1';
-      } else if (line.includes('───────')) {
-        className += ' text-gray-400 dark:text-gray-600 my-1';
-      }
-      
-      return (
-        <span key={index} className={className}>
-          {line || '\u00A0'}{/* Non-breaking space for empty lines */}
-        </span>
-      );
-    });
+  // Format the logs with better visual separation and basic HTML support
+  const formatLogsToHtml = (logText: string): string => {
+    let html = logText;
+    // Basic bold/italic/code (already handled by API, but good to have client-side)
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    html = html.replace(/`(.*?)`/g, '<code class="font-mono px-1 py-0.5 text-xs bg-slate-200 dark:bg-gray-700 rounded">$1</code>');
+    
+    // Emojis and key phrases highlighting (simplified)
+    html = html.replace(/(🧠|🤔|💭|📝|🔍|🏗️|💾|🧹|🎉)/g, '<span class="text-blue-500 dark:text-blue-400">$1</span>');
+    html = html.replace(/(AI Thinking Process:|AI is thinking...)/g, '<strong class="text-purple-600 dark:text-purple-400">$1</strong>');
+    html = html.replace(/(✅|Done!)/g, '<strong class="text-green-600 dark:text-green-400">$1</strong>');
+    html = html.replace(/(⚠️|Warning:)/g, '<span class="text-amber-600 dark:text-amber-400">$1</span>');
+    html = html.replace(/(❌|ERROR:)/g, '<strong class="text-red-600 dark:text-red-400">$1</strong>');
+    html = html.replace(/(   │)/g, '<span class="text-gray-500 dark:text-gray-400 text-xs italic">$1</span>');
+    html = html.replace(/(───────────────────────)/g, '<span class="text-gray-400 dark:text-gray-600 block my-1">$1</span>');
+
+    return html.split('\n').map(line => `<p class="whitespace-pre-wrap min-h-[1em]">${line || '&nbsp;'}</p>`).join('');
   };
 
   return (
@@ -124,9 +108,7 @@ export default function SubmittingModal({ show, logs = '', shareToGallery, onSha
           {cleanedLogs === '' ? (
             <span className="italic text-gray-400 dark:text-gray-500">Waiting for response…</span>
           ) : (
-            <div className="space-y-0.5">
-              {formatLogs(cleanedLogs)}
-            </div>
+            <div dangerouslySetInnerHTML={{ __html: formatLogsToHtml(cleanedLogs) }} />
           )}
         </div>
         
