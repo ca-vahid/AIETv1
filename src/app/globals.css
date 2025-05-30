@@ -56,15 +56,25 @@
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
   
-  /* New vibrant colors */
-  --primary-blue: #2563eb;
-  --primary-indigo: #4f46e5;
-  --primary-purple: #7e22ce;
-  --primary-cyan: #06b6d4;
+  /* Modern Navy/Dark Blue Color Palette */
+  --navy-900: #0a0e27;
+  --navy-800: #0f172a;
+  --navy-700: #1e293b;
+  --navy-600: #334155;
+  --navy-500: #475569;
+  --navy-400: #64748b;
+  
+  --blue-900: #1e3a8a;
+  --blue-800: #1e40af;
+  --blue-700: #1d4ed8;
+  --blue-600: #2563eb;
+  --blue-500: #3b82f6;
+  --blue-400: #60a5fa;
+  
+  --accent-cyan: #06b6d4;
+  --accent-purple: #8b5cf6;
   --accent-pink: #ec4899;
-  --accent-orange: #f97316;
-  --accent-yellow: #eab308;
-  --success-green: #10b981;
+  --accent-emerald: #10b981;
   
   /* Responsive font size variables */
   --fs-xs: clamp(0.7rem, 0.7vw + 0.5rem, 0.85rem);
@@ -103,56 +113,83 @@ html, body {
 /* ---------- Background & Overlay ---------- */
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #0891b2 100%); /* Vibrant dark blue gradient */
-  background-size: cover;
+  background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 25%, var(--blue-900) 75%, var(--navy-900) 100%);
+  background-size: 400% 400%;
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
   position: relative;
-  transition: all 0.3s ease;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: gradientShift 20s ease infinite;
 }
 
-/* Add animated background elements */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Add animated background elements with floating particles */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: url('/background/bg.png');
-  background-size: cover;
-  opacity: 0.15;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+  opacity: 1;
   z-index: -1;
-  animation: pulse 8s ease-in-out infinite alternate;
+  animation: floatingOrbs 30s ease-in-out infinite;
 }
 
-@keyframes pulse {
-  0% {
-    opacity: 0.1;
-  }
-  100% {
-    opacity: 0.25;
-  }
+@keyframes floatingOrbs {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
 }
 
-/* Dark overlay (more vibrant) */
+/* Dark overlay with animated mesh gradient */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.2) 0%, rgba(30, 58, 138, 0.6) 100%);
+  background: 
+    linear-gradient(45deg, rgba(37, 99, 235, 0.03) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(37, 99, 235, 0.03) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(139, 92, 246, 0.03) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(139, 92, 246, 0.03) 75%);
+  background-size: 50px 50px;
+  background-position: 0 0, 0 25px, 25px -25px, -25px 0px;
   z-index: -1;
+  animation: meshMove 60s linear infinite;
+}
+
+@keyframes meshMove {
+  0% { background-position: 0 0, 0 25px, 25px -25px, -25px 0px; }
+  100% { background-position: 50px 50px, 50px 75px, 75px 25px, 25px 50px; }
 }
 
 /* Light mode background & overlay */
 html.light body {
-  background: linear-gradient(135deg, #bfdbfe 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 25%, #a5b4fc 75%, #ddd6fe 100%);
+  animation: gradientShift 20s ease infinite;
 }
 
 html.light body::before {
-  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.8) 0%, rgba(191, 219, 254, 0.3) 100%);
+  background: 
+    linear-gradient(45deg, rgba(99, 102, 241, 0.05) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(99, 102, 241, 0.05) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(139, 92, 246, 0.05) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(139, 92, 246, 0.05) 75%);
+  background-size: 50px 50px;
 }
 
 html.light body::after {
-  opacity: 0.05;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
 }
 
 /* ---------- Utility Layer ---------- */
@@ -198,65 +235,166 @@ html.light body::after {
 
 /* Custom theme colors for components */
 .theme-panel {
-  @apply bg-slate-800/80 backdrop-blur-lg border border-indigo-900/50 ring-1 ring-white/10 text-white shadow-lg;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2), 0 0 15px rgba(79, 70, 229, 0.3);
-  transition: all 0.3s ease;
+  @apply relative overflow-hidden;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 
+    0 8px 32px rgba(15, 23, 42, 0.4),
+    0 0 0 1px rgba(59, 130, 246, 0.1) inset,
+    0 0 80px rgba(59, 130, 246, 0.15) inset !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent);
+  animation: shimmerLine 3s ease-in-out infinite;
+}
+
+@keyframes shimmerLine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .theme-panel:hover {
-  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.3), 0 10px 15px -6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(79, 70, 229, 0.4);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 
+    0 12px 48px rgba(15, 23, 42, 0.5),
+    0 0 0 1px rgba(59, 130, 246, 0.2) inset,
+    0 0 120px rgba(59, 130, 246, 0.2) inset;
+  transform: translateY(-2px);
 }
 
 .theme-panel-light {
-  @apply bg-slate-800/70 backdrop-blur-lg border border-indigo-800/40 ring-1 ring-white/10 text-white shadow-lg;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.2), 0 0 10px rgba(79, 70, 229, 0.2);
+  @apply relative overflow-hidden;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(51, 65, 85, 0.8) 100%) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  box-shadow: 
+    0 4px 24px rgba(15, 23, 42, 0.3),
+    0 0 0 1px rgba(59, 130, 246, 0.05) inset !important;
 }
 
 /* Light mode variants */
 html.light .theme-panel {
-  @apply bg-white/85 backdrop-blur-lg border border-blue-200 ring-1 ring-blue-500/20 text-slate-900 shadow-xl;
-  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1), 0 8px 10px -6px rgba(59, 130, 246, 0.1), 0 0 15px rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 245, 249, 0.9) 100%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 
+    0 8px 32px rgba(59, 130, 246, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+    0 0 60px rgba(59, 130, 246, 0.05) inset !important;
 }
 
 html.light .theme-panel-light {
-  @apply bg-blue-50/80 backdrop-blur-md border border-blue-200 ring-1 ring-blue-500/10 text-slate-900;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -2px rgba(59, 130, 246, 0.1);
+  background: linear-gradient(135deg, rgba(241, 245, 249, 0.9) 0%, rgba(226, 232, 240, 0.85) 100%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 
+    0 4px 24px rgba(59, 130, 246, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset !important;
 }
 
 /* Fix for darker theme-panel-light in dark mode */
 html.dark .theme-panel-light {
-  @apply bg-slate-800/80 backdrop-blur-md border border-indigo-900/30 ring-1 ring-white/5 text-white;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(51, 65, 85, 0.8) 100%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  ring: 1px;
+  ring-color: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
 }
 
 .theme-input {
-  @apply bg-slate-700/80 border-indigo-700 text-white placeholder:text-slate-400;
+  @apply relative;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #f1f5f9;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-input:focus {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 
+    0 0 0 3px rgba(59, 130, 246, 0.1),
+    0 0 20px rgba(59, 130, 246, 0.2);
 }
 
 html.light .theme-input {
-  @apply bg-white/80 border-blue-300 text-slate-900 placeholder:text-slate-500;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #1e293b;
+}
+
+html.light .theme-input:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 
+    0 0 0 3px rgba(59, 130, 246, 0.15),
+    0 0 20px rgba(59, 130, 246, 0.1);
 }
 
 .theme-button-primary {
-  @apply bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:via-indigo-700 hover:to-indigo-800 text-white font-medium transition-all duration-300 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-600/40 hover:-translate-y-0.5;
-  animation: subtle-glow 3s infinite alternate;
+  @apply relative overflow-hidden font-medium;
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-700) 100%);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 4px 15px rgba(37, 99, 235, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateZ(0);
 }
 
-@keyframes subtle-glow {
-  0% {
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-  }
-  100% {
-    box-shadow: 0 4px 18px rgba(79, 70, 229, 0.5);
-  }
+.theme-button-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.theme-button-primary:hover {
+  background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-800) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 6px 20px rgba(37, 99, 235, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px) translateZ(0);
+}
+
+.theme-button-primary:hover::before {
+  left: 100%;
+}
+
+.theme-button-primary:active {
+  transform: translateY(0) translateZ(0);
+  box-shadow: 
+    0 2px 8px rgba(37, 99, 235, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 html.light .theme-button-primary {
-  @apply bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:via-indigo-700 hover:to-indigo-800 text-white font-medium;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-700) 100%);
+  box-shadow: 
+    0 4px 15px rgba(37, 99, 235, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .theme-text-light {
-  @apply text-slate-200;
+  @apply text-slate-100;
 }
 
 html.light .theme-text-light {
@@ -268,208 +406,720 @@ html.light .theme-text-light {
 }
 
 html.light .theme-text-muted {
-  @apply text-slate-500;
+  @apply text-slate-600;
 }
 
-/* New style for sign-in panel */
+/* New style for sign-in panel with modern glass effect */
 .sign-in-panel {
-  @apply bg-gradient-to-br from-slate-900/90 via-slate-800/90 to-indigo-900/90 backdrop-blur-xl border border-indigo-500/30 shadow-2xl;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2), 0 0 15px rgba(79, 70, 229, 0.3);
-  transition: all 0.4s ease;
+  @apply relative overflow-hidden;
+  background: 
+    linear-gradient(135deg, 
+      rgba(15, 23, 42, 0.9) 0%, 
+      rgba(30, 58, 138, 0.85) 50%,
+      rgba(30, 41, 59, 0.9) 100%);
+  backdrop-filter: blur(24px) saturate(180%) brightness(1.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 
+    0 24px 48px rgba(15, 23, 42, 0.5),
+    0 0 0 1px rgba(99, 102, 241, 0.1) inset,
+    0 0 100px rgba(99, 102, 241, 0.15) inset,
+    0 0 200px rgba(59, 130, 246, 0.1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.sign-in-panel::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+  animation: rotateGlow 15s linear infinite;
+}
+
+@keyframes rotateGlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 html.light .sign-in-panel {
-  @apply bg-gradient-to-br from-white/90 via-white/85 to-blue-50/90 backdrop-blur-xl border border-blue-200 shadow-2xl;
+  background: 
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(224, 231, 255, 0.9) 50%,
+      rgba(241, 245, 249, 0.95) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 
+    0 24px 48px rgba(99, 102, 241, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+    0 0 80px rgba(99, 102, 241, 0.1) inset;
 }
 
-/* Style for the "How It Works" cards */
+/* Style for the "How It Works" cards with modern glass effect */
 .feature-card {
-  @apply bg-gradient-to-br from-slate-800/50 to-indigo-900/50 backdrop-blur-md border border-indigo-500/20 rounded-xl transition-all duration-300 hover:scale-[1.02];
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  @apply relative overflow-hidden;
+  background: linear-gradient(135deg, 
+    rgba(30, 41, 59, 0.7) 0%, 
+    rgba(51, 65, 85, 0.6) 100%);
+  backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 
+    0 8px 24px rgba(15, 23, 42, 0.3),
+    0 0 0 1px rgba(99, 102, 241, 0.05) inset;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(99, 102, 241, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: -1;
 }
 
 .feature-card:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 15px rgba(79, 70, 229, 0.2);
+  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 
+    0 16px 40px rgba(15, 23, 42, 0.4),
+    0 0 0 1px rgba(99, 102, 241, 0.15) inset,
+    0 0 60px rgba(99, 102, 241, 0.1) inset;
+}
+
+.feature-card:hover::before {
+  opacity: 1;
 }
 
 html.light .feature-card {
-  @apply bg-gradient-to-br from-white/80 to-blue-50/80 backdrop-blur-md border border-blue-200;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.9) 0%, 
+    rgba(241, 245, 249, 0.85) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  box-shadow: 
+    0 8px 24px rgba(99, 102, 241, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
 }
 
-/* Animated icon for the feature cards */
+/* Animated icon for the feature cards with floating effect */
 .animated-icon {
-  animation: float 3s ease-in-out infinite alternate;
+  animation: floatRotate 6s ease-in-out infinite;
+  filter: drop-shadow(0 8px 16px rgba(99, 102, 241, 0.3));
 }
 
-@keyframes float {
+@keyframes floatRotate {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-8px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-3deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+}
+
+/* Enhanced text visibility in light mode */
+html.light [class~="text-white"] { 
+  color: #1e293b !important; 
+  font-weight: 500;
+}
+
+html.light [class*="text-white\\/80"] { color: rgba(30, 41, 59, 0.80) !important; }
+html.light [class*="text-white\\/70"] { color: rgba(30, 41, 59, 0.70) !important; }
+html.light [class*="text-white\\/60"] { color: rgba(30, 41, 59, 0.60) !important; }
+html.light [class*="text-white\\/50"] { color: rgba(30, 41, 59, 0.50) !important; }
+html.light [class*="text-white\\/30"] { color: rgba(30, 41, 59, 0.30) !important; }
+html.light [class*="text-white\\/20"] { color: rgba(30, 41, 59, 0.20) !important; }
+
+/* ============================================= */
+/* MODERN NAVY THEME - REPLACING GEOLOGICAL THEME */
+/* ============================================= */
+
+/* Header adjustments for AppHeader with navy theme */
+.theme-panel {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 
+    0 8px 32px rgba(15, 23, 42, 0.4),
+    0 0 0 1px rgba(59, 130, 246, 0.1) inset,
+    0 0 80px rgba(59, 130, 246, 0.15) inset !important;
+}
+
+html.light .theme-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 245, 249, 0.9) 100%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 
+    0 8px 32px rgba(59, 130, 246, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+    0 0 60px rgba(59, 130, 246, 0.05) inset !important;
+}
+
+.theme-panel-light {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(51, 65, 85, 0.8) 100%) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  box-shadow: 
+    0 4px 24px rgba(15, 23, 42, 0.3),
+    0 0 0 1px rgba(59, 130, 246, 0.05) inset !important;
+}
+
+html.light .theme-panel-light {
+  background: linear-gradient(135deg, rgba(241, 245, 249, 0.9) 0%, rgba(226, 232, 240, 0.85) 100%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 
+    0 4px 24px rgba(59, 130, 246, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset !important;
+}
+
+/* Profile card badge with navy theme */
+.geological-badge {
+  @apply inline-flex items-center text-xs font-semibold px-3 py-1.5 rounded-full;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+html.light .geological-badge {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #6366f1;
+}
+
+.geological-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+/* Icon wrapper with navy glow */
+.geological-icon-wrapper {
+  @apply relative;
+}
+
+.geological-icon-wrapper::before {
+  content: '';
+  @apply absolute inset-0 rounded-full;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  transform: scale(1.5);
+  animation: iconGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes iconGlow {
+  0% { opacity: 0.5; transform: scale(1.5); }
+  100% { opacity: 1; transform: scale(1.7); }
+}
+
+/* Primary action button - enhanced styling */
+.action-button-primary {
+  @apply px-6 py-3 rounded-lg font-semibold text-white transition-all duration-300 flex items-center justify-center;
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-700) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 4px 15px rgba(37, 99, 235, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.action-button-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.action-button-primary:hover {
+  background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-800) 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 20px rgba(37, 99, 235, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.action-button-primary:hover::before {
+  left: 100%;
+}
+
+/* Clean up old animations by simplifying them */
+@keyframes float { 
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.1; }
+}
+
+/* Remove excessive geological animations */
+.animate-float, .animate-float-delayed, .animate-float-slow { animation: float 4s ease-in-out infinite; }
+.animate-spin-slow { animation: none; }
+.animate-seismic { animation: none; }
+.animate-shimmer { animation: shimmerAnimation 2s infinite linear; }
+
+/* Simplify any remaining geological-specific classes */
+.geological-panel,
+.geological-item-card { 
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  animation: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Ensure proper text colors for readability */
+.corporate-item-card .card-title {
+  @apply text-xl font-bold text-white mb-2 line-clamp-2;
+}
+
+html.light .corporate-item-card .card-title {
+  @apply text-slate-800;
+}
+
+.corporate-item-card .card-metadata {
+  @apply flex items-center text-sm text-slate-300 mb-4;
+}
+
+html.light .corporate-item-card .card-metadata {
+  @apply text-slate-600;
+}
+
+/* Details button with hover effect */
+.corporate-item-card .details-button {
+  @apply mt-4 text-sm font-semibold transition-all flex items-center gap-1;
+  color: var(--blue-400);
+}
+
+.corporate-item-card .details-button:hover {
+  color: var(--blue-300);
+  transform: translateX(4px);
+}
+
+html.light .corporate-item-card .details-button {
+  color: var(--blue-600);
+}
+
+html.light .corporate-item-card .details-button:hover {
+  color: var(--blue-700);
+}
+
+/* Ensure buttons in light mode have proper contrast */
+html.light [class*="bg-slate-700"][class*="hover:bg-slate-600"] {
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-700) 100%) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+html.light [class*="bg-slate-700"][class*="hover:bg-slate-600"]:hover {
+  background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-800) 100%) !important;
+}
+
+/* ============================================= */
+/* CORPORATE THEME REFINEMENTS (formerly GEOLOGICAL) */
+/* ============================================= */
+
+/* Main page title and subtitle adjustments */
+.page-title {
+  @apply text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2;
+}
+
+.page-subtitle {
+  @apply text-lg text-slate-600 dark:text-slate-300 mb-8;
+}
+
+/* Instruction badge - simplified */
+.instruction-badge {
+  @apply px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 shadow-sm;
+}
+
+/* Primary action button - Ensure consistency */
+.action-button-primary {
+  @apply px-6 py-3 rounded-lg font-semibold text-white transition-all duration-300 flex items-center justify-center;
+  @apply bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-700 hover:via-indigo-700 hover:to-indigo-800 shadow-md hover:shadow-lg;
+}
+html.light .action-button-primary {
+  @apply bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 text-white;
+  /* Ensure no conflicting geological gradients apply here */
+}
+
+/* More subtle body background effects */
+body::after { /* Less prominent background pattern */
+  opacity: 0.05 !important;
+  animation: pulse 20s ease-in-out infinite alternate; /* Slower, more subtle pulse */
+}
+
+@keyframes pulse { /* Redefine for subtlety */
   0% {
-    transform: translateY(0px);
+    opacity: 0.03;
   }
   100% {
-    transform: translateY(-8px);
+    opacity: 0.07;
   }
 }
 
-/* ---------------------------------------------------------- */
-/* Light mode overrides for legacy dark-theme utility classes */
-/* ---------------------------------------------------------- */
-/*
-   Many existing components hard-code the Tailwind class `text-white` (and
-   opacity variants like `text-white/80`) because the original theme was
-   designed solely for a dark UI.  Rather than refactoring every component,
-   we override those utilities **only when the <html> element has the `light`
-   class**.  This ensures good contrast on the light background while keeping
-   backwards-compatibility with the current markup.
-*/
-html.light [class~="text-white"] { color: #0f172a !important; }
+body::before { /* More neutral overlay for dark mode */
+  background: radial-gradient(circle at top right, rgba(80, 80, 100, 0.05) 0%, rgba(30, 30, 50, 0.15) 100%);
+}
 
-html.light [class*="text-white\\/80"] { color: rgba(15, 23, 42, 0.80) !important; }
-html.light [class*="text-white\\/70"] { color: rgba(15, 23, 42, 0.70) !important; }
-html.light [class*="text-white\\/60"] { color: rgba(15, 23, 42, 0.60) !important; }
-html.light [class*="text-white\\/50"] { color: rgba(15, 23, 42, 0.50) !important; }
-html.light [class*="text-white\\/30"] { color: rgba(15, 23, 42, 0.30) !important; }
-html.light [class*="text-white\\/20"] { color: rgba(15, 23, 42, 0.20) !important; }
+html.light body::before { /* Lighter, cleaner overlay for light mode */
+  background: radial-gradient(circle at top right, rgba(0, 0, 100, 0.02) 0%, rgba(200, 200, 255, 0.03) 100%);
+}
+
+/* Item cards for chats page - Corporate Style */
+.corporate-item-card {
+  @apply relative rounded-xl overflow-hidden transition-all duration-300 border;
+  @apply bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-lg;
+  /* Ensure this replaces .geological-item-card styling effectively */
+}
+
+.corporate-item-card:hover {
+  @apply shadow-xl transform -translate-y-1;
+}
+
+/* Status indicator - simplified dots or text labels */
+.status-indicator {
+  @apply absolute top-4 left-4 z-10 flex items-center gap-2;
+}
+
+.status-dot {
+  @apply w-3 h-3 rounded-full;
+}
+
+/* Status colors - ensure high contrast */
+.status-draft .status-dot { @apply bg-sky-500; }
+.status-draft .status-label { @apply text-sky-700 dark:text-sky-400; }
+
+.status-new .status-dot { @apply bg-amber-500; }
+.status-new .status-label { @apply text-amber-700 dark:text-amber-400; }
+
+.status-in_review .status-dot { @apply bg-purple-500; }
+.status-in_review .status-label { @apply text-purple-700 dark:text-purple-400; }
+
+.status-pilot .status-dot { @apply bg-emerald-500; }
+.status-pilot .status-label { @apply text-emerald-700 dark:text-emerald-400; }
+
+.status-completed .status-dot { @apply bg-green-500; }
+.status-completed .status-label { @apply text-green-700 dark:text-green-400; }
+
+.status-rejected .status-dot { @apply bg-red-500; }
+.status-rejected .status-label { @apply text-red-700 dark:text-red-400; }
+
+.status-label {
+  @apply text-xs font-semibold uppercase tracking-wider;
+}
+
+/* Category badge - simplified */
+.category-badge {
+  @apply absolute top-4 right-4 z-10 text-xs px-2.5 py-1 rounded-full font-medium;
+  @apply bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 shadow-sm;
+}
+
+/* Card Title */
+.corporate-item-card .card-title {
+  @apply text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2 line-clamp-2;
+}
+
+/* Card Metadata Text */
+.corporate-item-card .card-metadata {
+  @apply flex items-center text-xs text-slate-500 dark:text-slate-400 mb-4;
+}
+.corporate-item-card .card-metadata svg {
+  @apply h-4 w-4 mr-1.5 text-slate-400 dark:text-slate-500;
+}
+
+/* Progress Bar (for drafts) - simplified */
+.corporate-item-card .progress-bar-container {
+  @apply mb-4;
+}
+.corporate-item-card .progress-bar-labels {
+  @apply flex justify-between text-xs mb-1 text-slate-600 dark:text-slate-300 font-medium;
+}
+.corporate-item-card .progress-bar-track {
+  @apply w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden;
+}
+.corporate-item-card .progress-bar-fill {
+  @apply h-full rounded-full bg-blue-600 dark:bg-blue-500 transition-all duration-500;
+}
+
+/* Metric Badges - simplified */
+.metric-badge {
+  @apply flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm;
+  @apply bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 shadow-sm;
+}
+.metric-badge svg {
+  @apply w-4 h-4;
+}
+
+/* Metric icon colors */
+.metric-badge .icon-green { @apply text-green-500 dark:text-green-400; }
+.metric-badge .icon-blue { @apply text-blue-500 dark:text-blue-400; }
+.metric-badge .icon-purple { @apply text-purple-500 dark:text-purple-400; }
+.metric-badge .icon-amber { @apply text-amber-500 dark:text-amber-400; }
+
+
+/* Explore/Details Button */
+.corporate-item-card .details-button {
+  @apply mt-4 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors flex items-center gap-1;
+}
+.corporate-item-card .details-button svg {
+  @apply w-4 h-4;
+}
+
+/* ============================================= */
+/* PROFILE CARD GEOLOGICAL STYLES                */
+/* ============================================= */
+
+/* Geological badge for profile */
+.geological-badge {
+  @apply inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+  transition: all 0.3s ease;
+}
+
+html.light .geological-badge {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #d97706;
+}
+
+.geological-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+/* Geological icon wrapper */
+.geological-icon-wrapper {
+  @apply relative;
+}
+
+.geological-icon-wrapper::before {
+  content: '';
+  @apply absolute inset-0 rounded-full;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 70%);
+  transform: scale(1.5);
+}
+
+/* Header adjustments for AppHeader with geological theme */
+.theme-panel {
+  @apply bg-gradient-to-br from-slate-800/90 via-stone-800/90 to-amber-900/80 backdrop-blur-lg border border-amber-900/30 shadow-lg;
+}
+
+html.light .theme-panel {
+  @apply bg-gradient-to-br from-white/95 via-amber-50/95 to-orange-50/90 backdrop-blur-lg border border-amber-400/30 shadow-lg;
+}
+
+.theme-panel-light {
+  @apply bg-gradient-to-br from-slate-800/80 via-stone-800/80 to-amber-900/70 backdrop-blur-md border border-amber-900/20 shadow-lg;
+}
+
+html.light .theme-panel-light {
+  @apply bg-gradient-to-br from-amber-50/90 via-orange-50/85 to-amber-100/80 backdrop-blur-md border border-amber-300/30;
+}
+
+/* Update version badge to match geological theme */
+.version-badge {
+  background: linear-gradient(to right, #d97706, #dc2626) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+}
+
+html.light .version-badge {
+  background: linear-gradient(to right, #f59e0b, #ef4444) !important;
+  border: 1px solid rgba(245, 158, 11, 0.5) !important;
+}
+
+/* Simplify geological-panel if used on this page */
+.geological-panel { 
+  @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg;
+  /* Override specific geological panel effects */
+  background-image: none !important; /* Remove complex gradients */
+  backdrop-filter: none !important; 
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important; /* Standard shadow */
+}
+
+html.light .geological-panel {
+    @apply bg-white border-slate-200 shadow-lg;
+    background-image: none !important;
+}
+
+/* Attempt to neutralize old geological item card styles more forcefully if they are still somehow applied */
+.geological-item-card, 
+.geological-gem, 
+.gem-facet, 
+.geological-metric, 
+.geological-instruction-badge, 
+.action-card-geology, 
+.card-terrain, 
+.terrain-layer,
+.geological-button-primary,
+.geological-button-secondary,
+.stat-card-geology,
+.automation-card,
+.geological-footer {
+  background: transparent !important; 
+  box-shadow: none !important;
+  border: none !important;
+  animation: none !important;
+  backdrop-filter: none !important;
+  /* Reset specific text colors if they were set with !important */
+  color: inherit !important; 
+}
+
+/* Ensure text within formerly geological components is readable under new corporate parent */
+.geological-item-card .text-white, 
+.geological-metric .text-white,
+.geological-button-primary,
+.geological-button-secondary {
+  /* This will be overridden by html.light specific rule below if in light mode */
+  color: rgb(var(--foreground-rgb)) !important; 
+}
+
+/* Confirmation Dialog - Corporate Style */
+/* Assuming the dialog uses a wrapper that might have been .geological-panel, */
+/* it should now pick up the simplified .geological-panel styles above. */
+/* If it uses a distinct class, style that class: e.g., .confirmation-dialog-wrapper */
+
+.confirmation-dialog-content h3 { /* More specific if needed */
+  @apply text-xl font-semibold text-slate-800 dark:text-white mb-3;
+}
+.confirmation-dialog-content p {
+  @apply text-slate-600 dark:text-slate-300 mb-6;
+}
+.confirmation-dialog-content .button-cancel {
+  @apply px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600 transition shadow-sm;
+}
+.confirmation-dialog-content .button-delete {
+  @apply px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition shadow-sm;
+}
+
+
+/* General cleanup of excessive animations from geological theme */
+@keyframes float { to { transform: none !important; } }
+@keyframes float-delayed { to { transform: none !important; } }
+@keyframes float-slow { to { transform: none !important; } }
+@keyframes spin-slow { to { transform: none !important; } }
+@keyframes seismic { to { d: path("M0,50 Q300,50 600,50 T1200,50") !important; } } /* Neutralize */
+@keyframes drift { to { transform: none !important; } }
+@keyframes gem-rotate { to { transform: none !important; } }
+@keyframes shimmer { to { background-position: 0% 0 !important; transform: none !important; } } /* Stop shimmer */
+
+
+.animate-float, .animate-float-delayed, .animate-float-slow, .animate-spin-slow, .animate-seismic, .animate-shimmer {
+  animation: none !important;
+}
+
+/* Version badge styling (ensure it remains distinct and visible) */
+.version-badge {
+  background: linear-gradient(to right, #d97706, #dc2626) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  color: white !important;
+  font-weight: 500 !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), 0 0 3px rgba(220, 38, 38, 0.3) !important;
+  position: relative !important; /* Needed for ::after */
+  overflow: hidden !important; /* Needed for ::after */
+}
+
+html.light .version-badge {
+  background: linear-gradient(to right, #f59e0b, #ef4444) !important;
+  border: 1px solid rgba(245, 158, 11, 0.5) !important;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.15), 0 0 3px rgba(245, 158, 11, 0.2) !important;
+}
+
+.version-badge::after { /* Subtle shimmer for version badge */
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 20%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
+  animation: badgeShimmer 2.5s infinite linear;
+  z-index: 1;
+}
+
+@keyframes badgeShimmer {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 150% 0;
+  }
+}
 
 /* Same logic for `fill-white` used by inline SVG icons */
 html.light [class~="fill-white"],
-html.light svg.fill-white { fill: #0f172a !important; }
+html.light svg.fill-white { fill: #1e293b !important; }
 
 /* Light mode text overrides for hero section and status displays */
 html.light h2[class*="text-white"],
 html.light h3[class*="text-white"] { color: #1e293b !important; }
 
-html.light p[class*="text-[#d1e4f1]"] { color: #334155 !important; }
+html.light p[class*="text-[#d1e4f1]"] { color: #475569 !important; }
 
 html.light [class*="text-slate-300"],
-html.light [class*="text-slate-400"] { color: #475569 !important; }
+html.light [class*="text-slate-400"] { color: #64748b !important; }
 
 /* Additional light mode overrides for specific UI elements */
-html.light .bg-slate-800\/60 { background-color: rgba(241, 245, 249, 0.8) !important; }
-html.light .bg-blue-900\/50 { background-color: rgba(219, 234, 254, 0.8) !important; }
+html.light .bg-slate-800\/60 { background-color: rgba(241, 245, 249, 0.9) !important; }
+html.light .bg-blue-900\/50 { background-color: rgba(224, 231, 255, 0.8) !important; }
 
-/* Status indicators in light mode */
-html.light [class*="text-blue-400"] { color: #3b82f6 !important; } /* Brighter blue in light mode */
-html.light [class*="text-blue-300"] { color: #2563eb !important; } /* Darker hover blue in light mode */
+/* Status indicators with enhanced visibility */
+html.light [class*="text-blue-400"] { color: #2563eb !important; }
+html.light [class*="text-blue-300"] { color: #3b82f6 !important; }
 
-/* Light mode overrides for "How It Works" section and cards */
-html.light [class*="border-slate-700"] { border-color: #e2e8f0 !important; }
-html.light [class*="border-slate-600"] { border-color: #e2e8f0 !important; }
-
-/* Light mode styles for the chat interface */
-html.light [class*="bg-slate-800/40"] { background-color: rgba(248, 250, 252, 0.7) !important; }
-html.light [class*="bg-slate-800/30"] { background-color: rgba(248, 250, 252, 0.6) !important; }
-html.light [class*="bg-slate-800/50"] { background-color: rgba(248, 250, 252, 0.8) !important; }
-html.light [class*="bg-slate-800/60"] { background-color: rgba(248, 250, 252, 0.8) !important; }
-html.light [class*="bg-blue-700/90"] { background-color: rgba(59, 130, 246, 0.9) !important; }
-
-/* Chat messages styling */
-html.light [class*="bg-slate-800/60"][class*="border-slate-600"] { 
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  border-color: #e2e8f0 !important;
-}
-
-/* Input area styling */
-html.light [class*="border-slate-600"][class*="bg-slate-800/80"] {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  border-color: #e2e8f0 !important;
-}
-
-/* Main container background */
-html.light [class="flex-1 bg-gradient-to-b from-slate-900 to-transparent p-4 md:p-6"] {
-  background: linear-gradient(to bottom, rgba(241, 245, 249, 0.7), transparent) !important;
-}
-
-/* Additional chat UI elements in light mode */
-html.light [class*="from-slate-900"] { 
-  background: linear-gradient(to bottom, rgba(241, 245, 249, 0.7), transparent) !important;
-}
-
-/* Back to home link and "back to home" text in top bar */
-html.light [class*="text-blue-400"] { color: #2563eb !important; } /* Darker blue for links in light mode */
-
-/* Chat bubbles */
-html.light [class*="bg-blue-600/80"][class*="text-white"] { /* User message bubbles */
-  background-color: rgba(37, 99, 235, 0.9) !important;
-  color: white !important; /* Keep text white for good contrast */
-}
-
-/* Chat input placeholder */
-html.light textarea::placeholder {
-  color: #64748b !important;
-}
-
-/* Fix for highlighted specific UI elements in light mode */
-html.light [class*="bg-blue-900"][class*="text-blue-300"] {
-  background-color: rgba(224, 231, 255, 0.8) !important; /* light indigo bg */
-  color: #1e3a8a !important; /* navy blue text */
-  border: 1px solid #818cf8 !important; /* indigo border */
-}
-
-/* Start Chat with AI Assistant button in light mode */
-html.light .theme-button-primary {
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4) !important;
-}
-
-/* New Request button in light mode */
-html.light [class*="bg-slate-700"][class*="hover:bg-slate-600"] {
-  background: linear-gradient(to right, #2563eb, #4f46e5) !important;
-  color: white !important;
-}
-html.light [class*="bg-slate-700"][class*="hover:bg-slate-600"]:hover {
-  background: linear-gradient(to right, #1e40af, #4338ca) !important;
-}
-
-/* Make the AIET Intake Portal title more vibrant */
-/* Light mode version */
-html.light [class*="text-blue-400"] {
-  color: #4f46e5 !important; /* Indigo blue */
-}
-
-/* Dark mode version */
-html.dark [class*="text-blue-400"] {
-  color: #93c5fd !important; /* Light blue that pops on dark background */
-}
-
-/* But keep svg icons blue in light mode */
-html.light svg[class*="text-blue-400"] {
-  color: #4f46e5 !important; /* Indigo for icons */
-}
-
-/* Dark mode styling for version badge and Start Chat button */
-/* Version badge in dark mode */
-[class*="bg-blue-900"][class*="text-blue-300"] {
-  @apply bg-gradient-to-r from-indigo-900 to-blue-900 text-blue-200 border border-indigo-700/50;
-  animation: subtle-pulse 4s infinite alternate;
-}
-
-@keyframes subtle-pulse {
-  0% {
-    box-shadow: 0 0 5px rgba(79, 70, 229, 0.3);
-  }
-  100% {
-    box-shadow: 0 0 12px rgba(79, 70, 229, 0.6);
-  }
-}
-
-/* Add specific styles for the version badge in dark mode */
+/* Enhanced version badge with modern glass effect */
 .version-badge {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(to right, #4338ca, #7e22ce);
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--accent-purple) 100%);
   color: white;
-  font-weight: 500;
-  padding: 0.25rem 0.75rem;
+  font-weight: 600;
+  padding: 0.375rem 1rem;
   border-radius: 9999px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2), 0 0 5px rgba(99, 102, 241, 0.4);
-  border: 1px solid rgba(129, 140, 248, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 4px 16px rgba(99, 102, 241, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 0 24px rgba(139, 92, 246, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
 }
 
-/* Light mode variant for version badge */
-html.light .version-badge {
-  background: linear-gradient(to right, #3b82f6, #4f46e5);
-  color: white;
-  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.2), 0 0 5px rgba(79, 70, 229, 0.3);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+.version-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 
+    0 6px 20px rgba(99, 102, 241, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+    0 0 32px rgba(139, 92, 246, 0.4);
 }
 
 .version-badge::after {
@@ -485,15 +1135,410 @@ html.light .version-badge {
     rgba(255, 255, 255, 0.3) 50%,
     rgba(255, 255, 255, 0) 100%
   );
-  animation: badgeShimmer 1.5s infinite;
+  animation: badgeShimmer 2.5s infinite linear;
   z-index: 1;
 }
 
 @keyframes badgeShimmer {
-  0% {
-    transform: translateX(-100%);
+  0% { transform: translateX(-200%); }
+  100% { transform: translateX(200%); }
+}
+
+/* Light mode variant for version badge */
+html.light .version-badge {
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--accent-purple) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 
+    0 4px 16px rgba(99, 102, 241, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+    0 0 24px rgba(139, 92, 246, 0.2);
+}
+
+/* Modern corporate item cards with enhanced visibility */
+.corporate-item-card {
+  @apply relative rounded-xl overflow-hidden transition-all duration-300;
+  background: linear-gradient(135deg, 
+    rgba(15, 23, 42, 0.9) 0%, 
+    rgba(30, 41, 59, 0.85) 100%);
+  backdrop-filter: blur(16px) saturate(150%);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(15, 23, 42, 0.4),
+    0 0 0 1px rgba(99, 102, 241, 0.1) inset,
+    0 0 60px rgba(99, 102, 241, 0.1) inset;
+}
+
+.corporate-item-card:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 
+    0 12px 40px rgba(15, 23, 42, 0.5),
+    0 0 0 1px rgba(99, 102, 241, 0.2) inset,
+    0 0 80px rgba(99, 102, 241, 0.15) inset;
+  transform: translateY(-4px) scale(1.01);
+}
+
+html.light .corporate-item-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(241, 245, 249, 0.9) 100%);
+  border: 2px solid rgba(99, 102, 241, 0.25);
+  box-shadow: 
+    0 8px 32px rgba(99, 102, 241, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+}
+
+/* Enhanced status indicators with better visibility */
+.status-indicator {
+  @apply absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+html.light .status-indicator {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.status-dot {
+  @apply w-3 h-3 rounded-full;
+  box-shadow: 0 0 8px currentColor;
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+/* Enhanced metric badges with glass effect */
+.metric-badge {
+  @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium;
+  background: linear-gradient(135deg, 
+    rgba(30, 41, 59, 0.6) 0%, 
+    rgba(51, 65, 85, 0.5) 100%);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 
+    0 4px 12px rgba(15, 23, 42, 0.2),
+    0 0 0 1px rgba(99, 102, 241, 0.05) inset;
+  color: #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.metric-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 16px rgba(15, 23, 42, 0.3),
+    0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+html.light .metric-badge {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.8) 0%, 
+    rgba(241, 245, 249, 0.7) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #1e293b;
+}
+
+.metric-badge svg {
+  @apply w-4 h-4;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Pulse animation for important elements */
+@keyframes pulseGlow {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    transform: scale(1);
   }
-  100% {
-    transform: translateX(100%);
+  50% { 
+    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+    transform: scale(1.02);
   }
+}
+
+.pulse-effect {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Modern scrollbar styling */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.3);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-700) 100%);
+  border-radius: 6px;
+  border: 2px solid rgba(15, 23, 42, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-800) 100%);
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.5);
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(241, 245, 249, 0.5);
+}
+
+/* ============================================= */
+/* HOME PAGE SPECIFIC STYLES - NAVY THEME */
+/* ============================================= */
+
+/* Main action cards with bold navy theme */
+.action-card-geology {
+  @apply relative overflow-hidden rounded-2xl transition-all duration-300;
+  background: linear-gradient(135deg, var(--navy-800) 0%, var(--navy-700) 100%);
+  border: 3px solid var(--blue-500);
+  box-shadow: 
+    0 10px 40px rgba(30, 58, 138, 0.3),
+    0 0 0 1px rgba(99, 102, 241, 0.2) inset,
+    0 0 80px rgba(99, 102, 241, 0.1) inset;
+  transform: scale(1);
+}
+
+.action-card-geology:hover {
+  transform: scale(1.05) translateY(-4px);
+  border-color: var(--blue-400);
+  box-shadow: 
+    0 20px 60px rgba(30, 58, 138, 0.4),
+    0 0 0 2px rgba(99, 102, 241, 0.3) inset,
+    0 0 120px rgba(99, 102, 241, 0.2) inset;
+}
+
+/* Icon container with enhanced visibility */
+.action-card-geology .icon-container {
+  @apply w-16 h-16 rounded-2xl flex items-center justify-center;
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-700) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 4px 20px rgba(99, 102, 241, 0.4),
+    0 0 40px rgba(99, 102, 241, 0.2) inset;
+}
+
+.action-card-geology .icon-container svg {
+  @apply text-white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Remove old terrain layers and replace with subtle gradient effect */
+.card-terrain {
+  display: none;
+}
+
+/* Geological buttons updated to navy theme */
+.geological-button-primary {
+  @apply px-4 py-3 rounded-lg font-bold text-white text-center transition-all duration-300 flex items-center justify-center;
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--accent-purple) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 4px 20px rgba(99, 102, 241, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.geological-button-primary:hover {
+  background: linear-gradient(135deg, var(--blue-700) 0%, var(--accent-purple) 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 30px rgba(99, 102, 241, 0.5),
+    0 0 0 2px rgba(255, 255, 255, 0.2) inset;
+}
+
+.geological-button-secondary {
+  @apply px-4 py-3 rounded-lg font-bold text-white text-center transition-all duration-300 flex items-center justify-center;
+  background: rgba(99, 102, 241, 0.2);
+  border: 2px solid var(--blue-500);
+  backdrop-filter: blur(8px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.geological-button-secondary:hover {
+  background: rgba(99, 102, 241, 0.3);
+  border-color: var(--blue-400);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+}
+
+/* Stats cards with bold borders */
+.stat-card-geology {
+  @apply rounded-xl p-4 flex items-center gap-4 transition-all duration-300;
+  background: linear-gradient(135deg, 
+    rgba(30, 41, 59, 0.9) 0%, 
+    rgba(51, 65, 85, 0.8) 100%);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 
+    0 4px 16px rgba(15, 23, 42, 0.3),
+    0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+}
+
+.stat-card-geology:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 24px rgba(15, 23, 42, 0.4),
+    0 0 0 1px rgba(99, 102, 241, 0.2) inset;
+}
+
+html.light .stat-card-geology {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(241, 245, 249, 0.9) 100%);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 
+    0 4px 16px rgba(99, 102, 241, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+
+.stat-icon {
+  @apply w-12 h-12 rounded-xl flex items-center justify-center;
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-700) 100%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Automation cards with navy theme */
+.automation-card {
+  @apply rounded-xl p-6 transition-all duration-300;
+  background: linear-gradient(135deg, 
+    rgba(30, 41, 59, 0.9) 0%, 
+    rgba(51, 65, 85, 0.85) 100%);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 
+    0 6px 24px rgba(15, 23, 42, 0.3),
+    0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+}
+
+.automation-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 
+    0 12px 40px rgba(15, 23, 42, 0.4),
+    0 0 0 2px rgba(99, 102, 241, 0.2) inset;
+}
+
+html.light .automation-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(241, 245, 249, 0.9) 100%);
+  border: 2px solid rgba(99, 102, 241, 0.3);
+}
+
+.automation-icon {
+  @apply w-16 h-16 rounded-xl flex items-center justify-center mb-4;
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-700) 100%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 4px 16px rgba(99, 102, 241, 0.4),
+    0 0 40px rgba(99, 102, 241, 0.2) inset;
+}
+
+.automation-icon svg {
+  @apply text-white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Updated geological panel for consistency */
+.geological-panel {
+  background: linear-gradient(135deg, 
+    rgba(15, 23, 42, 0.95) 0%, 
+    rgba(30, 41, 59, 0.9) 100%) !important;
+  border: 3px solid rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 
+    0 12px 40px rgba(15, 23, 42, 0.4),
+    0 0 0 1px rgba(99, 102, 241, 0.1) inset,
+    0 0 60px rgba(99, 102, 241, 0.1) inset !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+}
+
+html.light .geological-panel {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.98) 0%, 
+    rgba(241, 245, 249, 0.95) 100%) !important;
+  border: 3px solid rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 
+    0 12px 40px rgba(99, 102, 241, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset !important;
+}
+
+/* Geological card updated */
+.geological-card {
+  background: linear-gradient(135deg, 
+    rgba(30, 41, 59, 0.9) 0%, 
+    rgba(51, 65, 85, 0.85) 100%) !important;
+  border: 2px solid rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 
+    0 8px 32px rgba(15, 23, 42, 0.3),
+    0 0 0 1px rgba(99, 102, 241, 0.1) inset !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+html.light .geological-card {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(241, 245, 249, 0.9) 100%) !important;
+  border: 2px solid rgba(99, 102, 241, 0.3) !important;
+}
+
+/* Footer with navy theme */
+.geological-footer {
+  background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+  border-top: 2px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.3);
+}
+
+html.light .geological-footer {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-top: 2px solid rgba(99, 102, 241, 0.3);
+  box-shadow: 0 -4px 20px rgba(99, 102, 241, 0.1);
+}
+
+/* Bold text styles for better visibility */
+.action-card-geology h3 {
+  @apply text-2xl font-black mb-3;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.action-card-geology p {
+  @apply text-base font-medium;
+  opacity: 0.95;
+}
+
+.stat-card-geology p:first-of-type {
+  @apply text-3xl font-black;
+  letter-spacing: -0.02em;
+}
+
+.automation-card h3 {
+  @apply text-xl font-black;
+  letter-spacing: -0.01em;
+}
+
+/* Remove all amber/orange/red color references */
+.text-amber-600, .text-orange-600, .text-red-600,
+.dark\:text-amber-400, .dark\:text-orange-400, .dark\:text-red-400,
+.from-amber-600, .via-orange-600, .to-red-600,
+.dark\:from-amber-400, .dark\:via-orange-400, .dark\:to-red-400 {
+  @apply text-blue-600 dark:text-blue-400 !important;
+}
+
+/* Replace gradient text with navy theme */
+.bg-clip-text.text-transparent.bg-gradient-to-r {
+  background: linear-gradient(135deg, var(--blue-600) 0%, var(--accent-purple) 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
 }

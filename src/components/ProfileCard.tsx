@@ -1,8 +1,6 @@
 'use client';
 
 import React from 'react';
-import { UserProfile } from '@/app/api/profile/route';
-import Image from 'next/image';
 import { useSessionProfile } from '@/lib/contexts/SessionProfileContext';
 import Link from 'next/link';
 
@@ -16,12 +14,12 @@ export default function ProfileCard({ onEditClick, compact = false }: ProfileCar
 
   if (isLoading) {
     return (
-      <div className="theme-panel rounded-lg shadow-lg p-6 animate-pulse">
+      <div className="theme-panel rounded-2xl shadow-xl p-6 animate-pulse">
         <div className="flex items-center space-x-4">
-          <div className="rounded-full bg-slate-700 h-20 w-20"></div>
+          <div className="rounded-full bg-slate-700/30 h-20 w-20"></div>
           <div className="flex-1">
-            <div className="h-4 bg-slate-700 rounded w-3/4 mb-2"></div>
-            <div className="h-3 bg-slate-700 rounded w-1/2"></div>
+            <div className="h-4 bg-slate-700/30 rounded w-3/4 mb-2"></div>
+            <div className="h-3 bg-slate-700/30 rounded w-1/2"></div>
           </div>
         </div>
       </div>
@@ -30,180 +28,130 @@ export default function ProfileCard({ onEditClick, compact = false }: ProfileCar
 
   if (!profile) {
     return (
-      <div className="theme-panel rounded-lg shadow-lg p-6">
-        <p className="theme-text-muted">Please sign in to view your profile.</p>
+      <div className="theme-panel rounded-2xl shadow-xl p-6">
+        <p className="text-slate-300 font-medium">Please sign in to view your profile.</p>
       </div>
     );
   }
 
   return (
-    <div className="theme-panel rounded-lg shadow-lg overflow-hidden max-w-lg">
-      {/* Slimmer header with photo and name */}
-      <div className="relative bg-gradient-to-r from-slate-800 to-blue-900 p-4 h-20">
-        {/* Removed Edit button */}
-        
-        {/* Positioned avatar that overlaps */}
-        <div className="absolute left-6 -bottom-14">
+    <div className="bg-white/5 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden relative border border-white/10">
+      {/* Modern background with floating particles */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-4 -right-4 w-24 h-24 bg-blue-500/10 rounded-full blur-xl"></div>
+        <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-purple-500/10 rounded-full blur-xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-cyan-500/5 rounded-full blur-lg"></div>
+      </div>
+
+      {/* Header section */}
+      <div className="relative p-8 text-center">
+        {/* Avatar with enhanced styling */}
+        <div className="relative inline-block mb-6">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 blur-lg animate-pulse"></div>
+          
           {profile.photoUrl ? (
             <img 
               src={profile.photoUrl} 
               alt={profile.name}
-              className="w-28 h-28 rounded-full border-2 border-white shadow-md object-cover ring-2 ring-blue-600/20"
+              className="relative w-24 h-24 rounded-full border-4 border-slate-600/50 shadow-2xl object-cover ring-4 ring-blue-500/20"
             />
           ) : (
-            <div className="w-28 h-28 rounded-full border-2 border-white shadow-md bg-blue-900 flex items-center justify-center overflow-hidden ring-2 ring-blue-600/20">
-              <span className="text-3xl font-semibold text-blue-300">
+            <div className="relative w-24 h-24 rounded-full border-4 border-slate-600/50 shadow-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center ring-4 ring-blue-500/20">
+              <span className="text-2xl font-bold text-white">
                 {profile.name?.charAt(0).toUpperCase() || profile.email?.charAt(0).toUpperCase()}
               </span>
             </div>
           )}
-        </div>
-      </div>
-      
-      {/* Name and badges moved to body section - adjust padding for larger avatar */}
-      <div className="px-6 pt-20 pb-4 border-t border-slate-700">
-        <div className="text-white mb-4">
-          <h1 className="text-2xl font-bold">{profile.name}</h1>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {profile.jobTitle && (
-              <span className="bg-white/10 text-white text-xs font-medium px-2.5 py-0.5 rounded-full">
-                {profile.jobTitle}
-              </span>
-            )}
-            {profile.department && (
-              <span className="bg-white/10 text-white text-xs font-medium px-2.5 py-0.5 rounded-full">
-                {profile.department}
-              </span>
-            )}
+          
+          {/* Online status indicator */}
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-slate-800 shadow-lg">
+            <div className="w-full h-full bg-green-400 rounded-full animate-ping opacity-75"></div>
           </div>
         </div>
 
-        {/* Profile details grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-          {profile.email && (
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Email</p>
-                <p className="text-sm font-medium theme-text-light break-all">{profile.email}</p>
-              </div>
-            </div>
+        {/* Name with gradient */}
+        <h1 className="text-2xl font-bold mb-2" style={{
+          background: 'linear-gradient(135deg, var(--blue-400) 0%, var(--accent-purple) 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>
+          {profile.name}
+        </h1>
+
+        {/* Role badges */}
+        <div className="flex flex-wrap justify-center gap-2 mb-6">
+          {profile.jobTitle && (
+            <span className="inline-flex items-center text-sm font-bold px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/20 to-blue-600/20 border border-blue-500/40 text-blue-300 shadow-lg">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {profile.jobTitle}
+            </span>
           )}
-          
-          {profile.businessPhone && (
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Business Phone</p>
-                <p className="text-sm font-medium theme-text-light break-all">{profile.businessPhone}</p>
-              </div>
-            </div>
-          )}
-          
-          {profile.mobilePhone && (
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Mobile Phone</p>
-                <p className="text-sm font-medium theme-text-light">{profile.mobilePhone}</p>
-              </div>
-            </div>
-          )}
-          
-          {profile.officeLocation && (
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Office</p>
-                <p className="text-sm font-medium theme-text-light">{profile.officeLocation}</p>
-              </div>
-            </div>
-          )}
-          
-          {(profile.city || profile.state || profile.country) && (
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 mb-1">Location</p>
-                <p className="text-sm font-medium theme-text-light">
-                  {[profile.city, profile.state, profile.country].filter(Boolean).join(', ')}
-                </p>
-              </div>
-            </div>
+          {profile.department && (
+            <span className="inline-flex items-center text-sm font-bold px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 border border-purple-500/40 text-purple-300 shadow-lg">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm6 6H7v2h6v-2z" clipRule="evenodd" />
+              </svg>
+              {profile.department}
+            </span>
           )}
         </div>
-      </div>
-      
-      {/* Additional info accordion (only shown in non-compact mode) */}
-      {!compact && (profile.aboutMe || profile.skills || profile.interests) && (
-        <div className="px-6 pb-6 border-t border-slate-700 space-y-4">
-          {profile.aboutMe && (
-            <div className="pt-4">
-              <h3 className="text-sm font-semibold text-slate-300 mb-2">About Me</h3>
-              <p className="text-sm theme-text-muted">{profile.aboutMe}</p>
-            </div>
-          )}
-          
-          {profile.skills && (
-            <div>
-              <h3 className="text-sm font-semibold text-slate-300 mb-2">Skills</h3>
-              <p className="text-sm theme-text-muted">{profile.skills}</p>
-            </div>
-          )}
-          
-          {profile.interests && (
-            <div>
-              <h3 className="text-sm font-semibold text-slate-300 mb-2">Interests</h3>
-              <p className="text-sm theme-text-muted">{profile.interests}</p>
-            </div>
-          )}
-        </div>
-      )}
-      
-      {/* Footer - refresh data button */}
-      <div className="px-6 py-3 bg-inherit border-t border-slate-700">
-        <div className="flex justify-between items-center">
-          <Link 
-            href="/chat"
-            className="inline-flex items-center text-sm text-blue-400 hover:text-blue-300 transition-all"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 transition-transform group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+
+        {/* Location info if available */}
+        {profile.officeLocation && (
+          <div className="flex items-center justify-center text-slate-300 mb-6">
+            <svg className="w-5 h-5 mr-2 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
-            Start Chat
-          </Link>
-          
-          <button
-            onClick={() => window.location.reload()}
-            className="inline-flex items-center text-sm text-slate-400 hover:text-slate-300"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-            </svg>
-            Refresh Profile
-          </button>
+            <span className="font-semibold">{profile.officeLocation}</span>
+            {(profile.city || profile.country) && (
+              <span className="text-slate-400 ml-1">
+                • {[profile.city, profile.country].filter(Boolean).join(', ')}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Stats section */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-400">12</div>
+            <div className="text-xs text-slate-400 font-medium">Ideas Submitted</div>
+          </div>
+          <div className="text-center border-x border-slate-700/50">
+            <div className="text-2xl font-bold text-purple-400">8</div>
+            <div className="text-xs text-slate-400 font-medium">In Progress</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-emerald-400">4</div>
+            <div className="text-xs text-slate-400 font-medium">Completed</div>
+          </div>
         </div>
+
+        {/* About section */}
+        {profile.aboutMe && (
+          <div className="text-center mb-6">
+            <p className="text-sm text-slate-300 italic">"{profile.aboutMe}"</p>
+          </div>
+        )}
+
+        {/* Skills tags */}
+        {profile.skills && typeof profile.skills === 'string' && profile.skills.trim() && (
+          <div className="mb-6">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Expertise</h3>
+            <div className="flex flex-wrap justify-center gap-2">
+              {profile.skills.split(',').slice(0, 4).map((skill, index) => (
+                <span 
+                  key={index}
+                  className="px-3 py-1 text-xs font-medium bg-slate-700/50 text-slate-300 rounded-full border border-slate-600/50"
+                >
+                  {skill.trim()}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

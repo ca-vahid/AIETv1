@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, useLayoutEffect } from "react";
 import { useSessionProfile } from "@/lib/contexts/SessionProfileContext";
 import { getIdToken } from "firebase/auth";
 import dynamic from 'next/dynamic';
@@ -681,6 +681,9 @@ export default function ChatWindow({
   // Flag to prevent multiple streaming submissions
   const [hasStartedSubmission, setHasStartedSubmission] = useState(false);
 
+  // Share to gallery preference (default ON)
+  const [shareToGallery, setShareToGallery] = useState(true);
+
   // Handle completion of chat draft into final request
   const handleCompleteChat = useCallback(async () => {
     if (!firebaseUser || !internalChatId || hasStartedSubmission) return; // Prevent re-entry
@@ -752,6 +755,16 @@ export default function ChatWindow({
         
         setIsSubmissionComplete(true);
 
+        // Persist share preference
+        try {
+          await updateDoc(doc(db, 'requests', reqId), {
+            shared: shareToGallery,
+            updatedAt: Date.now(),
+          });
+        } catch (shareErr) {
+          console.error('Failed to update share flag:', shareErr);
+        }
+
         // Attempt to mark conversation as submitted in Firestore (best-effort)
         try {
           const conversationsRef = collection(db, 'conversations');
@@ -788,7 +801,7 @@ export default function ChatWindow({
         setIsFinalizing(false);
       }, 3000);
     }
-  }, [firebaseUser, internalChatId, hasStartedSubmission]);
+  }, [firebaseUser, internalChatId, hasStartedSubmission, shareToGallery]);
 
   // Create a function to handle starting a new submission
   const handleStartNewSubmission = useCallback(() => {
@@ -806,12 +819,29 @@ export default function ChatWindow({
     setTitleGenerated(false);
     setAttachments([]);
     setHasStartedSubmission(false);
+    setShareToGallery(true);
     
     // Start a new chat
     hasStartedConversation.current = false;
     hasLoadedConversation.current = false;
     startNewChat();
   }, [startNewChat]);
+
+  // Toggle share flag after submission complete
+  const handleShareToggleAfterSubmit = async () => {
+    const newVal = !shareToGallery;
+    setShareToGallery(newVal);
+    if (requestId) {
+      try {
+        await updateDoc(doc(db, 'requests', requestId), {
+          shared: newVal,
+          updatedAt: Date.now(),
+        });
+      } catch (err) {
+        console.error('Failed to update share flag after submit:', err);
+      }
+    }
+  };
 
   // Generate title function updated
   const generateTitle = async (context: string, isDetailed: boolean) => {
@@ -1282,13 +1312,79 @@ export default function ChatWindow({
     }
   }, [handleFileUpload]);
 
+  // ---- Feature Tour state ----
+  // Refs to target elements
+  const attachmentBtnRef = useRef<HTMLButtonElement>(null);
+  const langBtnRef = useRef<HTMLButtonElement>(null);
+  const sendBtnRef = useRef<HTMLButtonElement>(null);
+
+  const tourTips = [
+    {
+      icon: '🌐',
+      text: 'Click here to switch languages instantly and chat in your preferred language!',
+      ref: langBtnRef,
+    },
+    {
+      icon: '📎',
+      text: 'Attach screenshots, PDFs or any file (max 10 MB) to enrich your request.',
+      ref: attachmentBtnRef,
+    },
+    {
+      icon: '🚀',
+      text: 'Tap to send your message and let AIET Assistant get to work!',
+      ref: sendBtnRef,
+    },
+  ] as const;
+  const [tourIndex, setTourIndex] = useState<number>(-1); // Start disabled to avoid SSR mismatch
+
+  // Enable tour on client if not already completed
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!localStorage.getItem('aiet-tour-done')) {
+      setTourIndex(0);
+    }
+  }, []);
+
+  const closeTour = () => {
+    setTourIndex(-1);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('aiet-tour-done', '1');
+    }
+  };
+
+  // Tooltip position state
+  const [tipPos, setTipPos] = useState<{top:number,left:number} | null>(null);
+
+  useLayoutEffect(() => {
+    if (tourIndex >= 0 && tourIndex < tourTips.length) {
+      const el = tourTips[tourIndex].ref.current;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        setTipPos({
+          top: rect.top - 60,
+          left: rect.left + rect.width / 2,
+        });
+        el.classList.add('ring-4', 'ring-blue-400', 'ring-offset-2', 'animate-pulse');
+        return () => {
+          el.classList.remove('ring-4', 'ring-blue-400', 'ring-offset-2', 'animate-pulse');
+        };
+      }
+    }
+    return () => {};
+  }, [tourIndex]);
+
   return (
     <div className="flex flex-col bg-white dark:bg-gray-900 h-full rounded-xl shadow-xl overflow-hidden border border-blue-100 dark:border-gray-700">
       {/* Loading progress bar - only show during INITIAL loading phase */}
       {isInitialLoading && <LoadingProgress />}
 
       {/* Submission modal with live progress */}
-      <SubmittingModal show={isFinalizing} logs={submissionLogs} />
+      <SubmittingModal 
+        show={isFinalizing} 
+        logs={submissionLogs} 
+        shareToGallery={shareToGallery} 
+        onShareChange={setShareToGallery}
+      />
 
       {/* Language feedback notification */}
       <animated.div 
@@ -1460,6 +1556,21 @@ export default function ChatWindow({
                 </svg>
                 Start New Submission
               </button>
+            </div>
+
+            {/* Share status & toggle */}
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={shareToGallery} 
+                  onChange={handleShareToggleAfterSubmit}
+                  className="h-5 w-5 accent-amber-600 dark:accent-amber-500"
+                />
+                <span className="select-none">
+                  Share in Gallery: <span className="font-bold">{shareToGallery ? 'On' : 'Off'}</span>
+                </span>
+              </label>
             </div>
           </div>
         </div>
@@ -1633,6 +1744,22 @@ export default function ChatWindow({
             onAttachmentRemoved={(path) => setAttachments(prev => prev.filter(a => a.path !== path))}
             onContinue={handleContinueFromAttachments}
           />
+        </div>
+      )}
+
+      {/* Feature Tour Overlay */}
+      {tourIndex >= 0 && tourIndex < tourTips.length && (
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-xl rounded-full px-5 py-3 flex items-center gap-3 text-white max-w-[90vw]">
+            <span className="text-xl">{tourTips[tourIndex].icon}</span>
+            <span className="text-sm md:text-base font-medium">{tourTips[tourIndex].text}</span>
+            <button
+              onClick={() => (tourIndex + 1 < tourTips.length ? setTourIndex(tourIndex + 1) : closeTour())}
+              className="ml-4 text-blue-300 hover:text-blue-200 font-bold text-sm whitespace-nowrap"
+            >
+              {tourIndex + 1 < tourTips.length ? 'Next →' : 'Got it'}
+            </button>
+          </div>
         </div>
       )}
     </div>

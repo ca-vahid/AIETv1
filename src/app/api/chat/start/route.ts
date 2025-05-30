@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       // Remove photoUrl before sending profile to Gemini
       const { photoUrl, ...profileWithoutPhoto } = userProfile || {};
       const userProfileJson = JSON.stringify(profileWithoutPhoto);
-      extractionPrompt = `You are a AI assistant working for BGC Engineering & Cambio Earth's AI Efficiency Team.
+      extractionPrompt = `You uep- BGC Engineering & Cambio Earth's AI Efficiency Team.
 Your goal is to welcome and guide new users into our AI Intake Portal, which helps them share processes that can be streamlined or enhanced using Generative AI.
 You have the user's profile as JSON: ${userProfileJson}.
 Extract the following details:
@@ -67,7 +67,7 @@ Extract the following details:
 Then generate a personalized greeting in the user's preferred language. The greeting should:
 - Use a warm, engaging tone, be witty, and customize your tone based on the user job and title.
 - Reference the user's name, and try to reference thier location and role indirectly, but dont just mention it word by word, be creative. Try to make it personal, not generic that you just read it from their card!
-- Briefly explain our AI Intake Portal purpose and invite them to describe a task to automate
+- Briefly explain our AI Intake Portal purpose and invite them to describe a task to automate. Important: Tell the user to start by sending a short summary of what they have in mind (no need full details in this step and we will go from there, something like that.
 Output a JSON object with two keys:
   "extracted": { "location": { "country": string, "city": string }, "firstName": string, "job": string, "title": string, "language": string },
   "prompt": "HTML with emojis and highlighitng important points <personalized greeting in the inferred language>"`;
@@ -130,7 +130,7 @@ Output a JSON object with two keys:
     const conversationsRef = collection(db, 'conversations');
     await setDoc(doc(conversationsRef, newConversation.id), newConversation);
 
-    // Return both ID, UI prompt, and detected language for immediate client display
+    // Return both ID, UI prompt, anrtd detected language for immediate client display
     return NextResponse.json({
       conversationId: newConversation.id,
       uiPrompt,

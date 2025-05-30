@@ -15,7 +15,7 @@ export interface CheckResult {
 }
 
 // Use the thinking model for logic checks
-const THINKING_MODEL = "gemini-2.5-pro-preview-03-25";
+const THINKING_MODEL = "gemini-2.5-flash-preview-05-20";
 
 /**
  * Checks if a criterion is satisfied by the conversation messages using an LLM.

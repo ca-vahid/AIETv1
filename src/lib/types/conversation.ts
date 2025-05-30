@@ -98,6 +98,10 @@ export interface FinalRequest {
     content: string;
     timestamp: number;
   }[];
+  /**
+   * If true, this request will appear in the public Idea Gallery.  The owner can toggle this later.
+   */
+  shared?: boolean;
   createdAt: number;
   updatedAt: number;
 } 

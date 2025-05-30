@@ -94,12 +94,28 @@ export async function POST(req: NextRequest) {
 
         const systemPrompt = `You are AIET Intake Analyzer for a business process automation program at a large company (BGC).\n\n` +
           `Goal: Given the full intake conversation between an employee (the submitter) and the AI assistant, output ONLY a JSON object that fills an IdeaCardExtract structure so it can be displayed in the public idea gallery.\n` +
+          `The gallery is visible to all employees. Names and profile photos are allowed. Attachments are shown as thumbnails only (no download links).\n\n` +
+          `IdeaCardExtract TypeScript definition (return exactly these keys, no extras):\n\n` +
+          `interface IdeaCardExtract {\n` +
+          `  title: string;                        // Concise headline (max 100 chars)\n` +
+          `  category: string;                     // Try to determine the category of the process to the best of your ability. You know the goal. Try to categorize the process as accurately as possible.\n` +
+          `  painPoints: string[];                 // Bullet-style problems (max 5)\n` +
+          `  processSummary: string;               // Detailed description of today's process as described by the user. Imagine you were telling the story on behalf of the user to the audience. \'s manual process\n` +
+          `  frequency: string;                    // e.g. \"Daily\", \"Weekly\"\n` +
+          `  durationMinutes: number;              // Typical minutes per run (integer)\n` +
+          `  peopleInvolved: number;               // Count of people affected\n` +
+          `  hoursSavedPerWeek: number;            // Estimated total hours saved company-wide\n` +
+          `  impactNarrative: string;              // Describe the envisioned automated solution and its benefits to the team/company (e.g., improved accuracy, morale, new capabilities)\n` +
+          `  tools: string[];                      // Any tools that are in use or were mentioned or could be used to automate the process\n` +
+          `  roles: string[];                      // Job roles that this would effect or involve, maybedepartments\n` +
+          `  complexity: 'low' | 'medium' | 'high';// Rough effort guess\n` +
+          `}\n\n` +
           `Return ONLY the JSON. Do NOT wrap in markdown or commentary.`;
 
         let rawJson = '';
         // Add a short delay to simulate thinking time before we actually start the LLM request
         controller.enqueue(encoder.encode('Analyzing conversation to extract submission details...\n'));
-        await new Promise(resolve => setTimeout(resolve, 700));
+        //await new Promise(resolve => setTimeout(resolve, 700));
 
         const llmStream = await model.generateContentStream({
           contents,
@@ -171,6 +187,7 @@ export async function POST(req: NextRequest) {
           },
           commentsCount: 0,
           upVotes: 0,
+          shared: true,
           conversation: draft.messages,
           comments: [],
           createdAt: Date.now(),

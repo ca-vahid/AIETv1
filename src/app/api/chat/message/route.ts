@@ -332,47 +332,6 @@ export async function POST(req: NextRequest) {
               console.log("\x1b[32m%s\x1b[0m", "[API] Conversation updated in Firestore");
             }
             
-            // Now handle the completion if needed (after we've saved non-finalizing updates)
-            if (shouldComplete) {
-              try {
-                console.log("\x1b[33m%s\x1b[0m", `[API] Finalizing draft into request: ${conversationId}`);
-                const completeRes = await fetch(`${origin}/api/chat/complete`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                  },
-                  body: JSON.stringify({ conversationId })
-                });
-                if (completeRes.ok) {
-                  console.log("\x1b[32m%s\x1b[0m", `[API] Draft ${conversationId} finalized into request`);
-                  draftDeleted = true; // don't try to update deleted doc
-                } else {
-                  console.error("\x1b[31m%s\x1b[0m", `[API] Failed to finalize draft: ${await completeRes.text()}`);
-                  
-                  // If we failed to finalize, still try to save the state update
-                  if (!draftDeleted) {
-                    await updateDoc(doc(conversationsRef, conversationId), {
-                      messages: updatedMessages,
-                      state: newState,
-                      updatedAt: Date.now()
-                    });
-                  }
-                }
-              } catch (completeErr) {
-                console.error("\x1b[31m%s\x1b[0m", `[API] Error calling complete endpoint: ${completeErr}`);
-                
-                // If completion failed, still try to save the state update
-                if (!draftDeleted) {
-                  await updateDoc(doc(conversationsRef, conversationId), {
-                    messages: updatedMessages,
-                    state: newState,
-                    updatedAt: Date.now()
-                  });
-                }
-              }
-            }
-            
             // Persist to outer scope for header usage
             finalState = newState;
             

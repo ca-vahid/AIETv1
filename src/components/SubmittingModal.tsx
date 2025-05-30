@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 interface SubmittingModalProps {
   show: boolean;
   logs?: string; // Live streamed logs / LLM output
+  shareToGallery: boolean;
+  onShareChange: (value: boolean) => void;
 }
 
-export default function SubmittingModal({ show, logs = '' }: SubmittingModalProps) {
+export default function SubmittingModal({ show, logs = '', shareToGallery, onShareChange }: SubmittingModalProps) {
   const [forceShow, setForceShow] = React.useState(false);
   const [elapsed, setElapsed] = useState(0);
   
@@ -53,7 +55,20 @@ export default function SubmittingModal({ show, logs = '' }: SubmittingModalProp
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Submitting Your Idea</h3>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">We're processing your request and extracting key details. You can watch the live progress below.</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Time elapsed: {elapsed}s. This shouldn't take more than 30 seconds.</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Time elapsed: {elapsed}s. This shouldn't take more than 1 minute.</p>
+
+        {/* Gallery share toggle */}
+        <label className="flex items-center justify-center gap-2 mb-4 text-sm font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 rounded-lg shadow-inner">
+          <input
+            type="checkbox"
+            checked={shareToGallery}
+            onChange={(e) => onShareChange(e.target.checked)}
+            className="h-5 w-5 accent-amber-600 dark:accent-amber-500 cursor-pointer"
+          />
+          <span className="select-none">
+            Add this idea to <span className="font-bold underline">Gallery</span> for others to see
+          </span>
+        </label>
 
         {/* Live log area */}
         <div className="flex-1 overflow-y-auto bg-gray-100 dark:bg-gray-800 rounded-md p-3 text-left text-xs sm:text-sm leading-relaxed border border-gray-200 dark:border-gray-700 whitespace-pre-wrap font-mono shadow-inner max-h-[60vh]">

@@ -10,13 +10,13 @@ import { usePathname } from 'next/navigation';
 // Current version of the application
 const APP_VERSION = 'v1.4.5';
 // Release date
-const RELEASE_DATE = 'May 25, 2025';
+const RELEASE_DATE = 'May 19, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
   {
     version: 'v1.4.5',
-    date: 'May 25, 2025',
+    date: 'May 19, 2025',
     changes: [
       'Redesigned landing page with three clear primary options: Submit Idea, View Submissions, and Browse Gallery',
       'Streamlined profile card with compact view option and removed edit button',
@@ -266,21 +266,30 @@ export default function AppHeader() {
 
   return (
     <>
-      <header className={`${theme === "dark" ? "theme-panel" : "theme-panel-light"} shadow-lg sticky top-0 z-10 backdrop-blur-lg bg-gradient-to-r ${theme === "dark" ? "from-slate-900 via-indigo-950 to-slate-900" : "from-blue-100 via-blue-50 to-blue-100"}`}>
-        <div className="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8 flex justify-between items-center">
+      <header className="bg-white/5 backdrop-blur-xl shadow-2xl sticky top-0 z-10 border-b border-white/20">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex justify-between items-center">
           {/* Left side: Logo and optional back button */}
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-xl font-bold text-blue-400 flex items-center transition-transform hover:scale-105">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-1.5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
-              </svg>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500 dark:from-blue-300 dark:to-indigo-400">AIET Portal</span>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-xl font-bold flex items-center transition-all transform hover:scale-105 group">
+              <div className="relative p-2 rounded-xl bg-white/10 border border-white/20 shadow-lg group-hover:shadow-blue-500/25 transition-all backdrop-blur-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-400 group-hover:text-blue-300 transition-colors" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <span className="text-2xl font-bold" style={{
+                  background: 'linear-gradient(135deg, var(--blue-400) 0%, var(--accent-purple) 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}>AIET</span>
+                <div className="text-xs text-slate-400 font-medium -mt-1">AI Efficiency Portal</div>
+              </div>
             </Link>
             
             {/* Version tag updated with animation */}
             <button 
               onClick={() => setChangelogOpen(true)}
-              className="version-badge text-xs"
+              className="version-badge text-xs font-bold"
             >
               {APP_VERSION}
             </button>
@@ -292,17 +301,17 @@ export default function AppHeader() {
               <div className="flex items-center gap-6">
                 <Link 
                   href="/chats"
-                  className="text-slate-200 hover:text-white text-sm flex items-center px-3 py-1 bg-slate-700/40 rounded-lg transition-colors"
+                  className="text-slate-200 hover:text-white text-sm font-semibold flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all transform hover:scale-105 shadow-lg border border-white/20 backdrop-blur-sm"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
                   </svg>
                   Back to Home
                 </Link>
                 
-                <div className="text-white/90 text-sm flex items-center">
-                  <div className="w-5 h-5 rounded-full bg-blue-700 flex items-center justify-center mr-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-blue-300" viewBox="0 0 20 20" fill="currentColor">
+                <div className="text-white text-sm font-semibold flex items-center bg-white/10 px-4 py-2 rounded-xl border border-white/20 shadow-lg backdrop-blur-sm">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mr-3 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
                       <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
                     </svg>
@@ -310,42 +319,45 @@ export default function AppHeader() {
                   <span className="text-white">AIET Intake Chat</span>
                 </div>
                 
-                <div className="flex items-center bg-slate-700/50 py-0.5 px-2 rounded-full">
-                  <span className="text-sm mr-2 whitespace-nowrap text-white/90">
+                <div className="flex items-center bg-white/10 py-2 px-4 rounded-xl border border-white/20 shadow-lg backdrop-blur-sm">
+                  <span className="text-sm mr-3 whitespace-nowrap text-white font-semibold">
                     Standard
                   </span>
                   <button 
                     onClick={toggleModel}
-                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors focus:outline-none ${
-                      useThinkingModel ? 'bg-blue-400' : 'bg-slate-600'
+                    className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      useThinkingModel ? 'bg-gradient-to-r from-blue-500 to-purple-500' : 'bg-slate-600'
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-                        useThinkingModel ? 'translate-x-5' : 'translate-x-1'
+                      className={`inline-block h-5 w-5 rounded-full bg-white shadow-lg transition-transform ${
+                        useThinkingModel ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
                   </button>
+                  <span className="text-sm ml-3 whitespace-nowrap text-white font-semibold">
+                    Advanced
+                  </span>
                 </div>
               </div>
             )}
           </div>
           
           {/* Right side: Theme toggle and user controls */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {/* Theme Toggle */}
             <button
               aria-label="Toggle dark mode"
               onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-slate-600/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-3 rounded-xl hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all transform hover:scale-105 bg-white/10 border border-white/20 backdrop-blur-sm"
             >
               {theme === "dark" ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 3.75A.75.75 0 0 1 12.75 3h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5A.75.75 0 0 1 12 4.25v-.5zM6.22 5.03a.75.75 0 0 1 1.06 0l.35.35a.75.75 0 0 1-1.06 1.06l-.35-.35a.75.75 0 0 1 0-1.06zM3 11.25A.75.75 0 0 1 3.75 10.5h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5A.75.75 0 0 1 3 12.25v-.5zM6.22 18.97a.75.75 0 0 1 1.06 0l.35-.35a.75.75 0 0 1 1.06 1.06l-.35.35a.75.75 0 0 1-1.06-1.06zM11.25 21a.75.75 0 0 1-.75-.75v-.5a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5zM17.43 18.62a.75.75 0 0 1 0-1.06l.35-.35a.75.75 0 0 1 1.06 1.06l-.35.35a.75.75 0 0 1-1.06 0zM20.25 11.25A.75.75 0 0 1 21 10.5h.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1-.75-.75v-.5zM17.43 5.38a.75.75 0 0 1 1.06 0l.35.35a.75.75 0 0 1-1.06 1.06l-.35-.35a.75.75 0 0 1 0-1.06z" />
                   <path d="M12 6.75a5.25 5.25 0 1 0 5.25 5.25A5.26 5.26 0 0 0 12 6.75Z" />
                 </svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-200" viewBox="0 0 24 24" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-200" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M21.752 15.002a9 9 0 0 1-11.807-11.8a.75.75 0 0 0-1.071-.858A10.501 10.501 0 1 0 22.61 16.073a.75.75 0 0 0-.858-1.071Z" />
                 </svg>
               )}
@@ -353,22 +365,24 @@ export default function AppHeader() {
             
             {/* User info and sign out */}
             {isLoggedIn ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-white hidden sm:inline">
-                  Hello, {profile.name.split(' ')[0]}
-                </span>
-                {profile.photoUrl && (
-                  <img 
-                    src={profile.photoUrl} 
-                    alt={profile.name}
-                    className="w-7 h-7 rounded-full border border-slate-600 shadow-sm object-cover hidden sm:block"
-                  />
-                )}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-xl border border-white/20 backdrop-blur-sm">
+                  <span className="text-sm font-bold text-white hidden sm:inline">
+                    Hello, {profile.name.split(' ')[0]}
+                  </span>
+                  {profile.photoUrl && (
+                    <img 
+                      src={profile.photoUrl} 
+                      alt={profile.name}
+                      className="w-8 h-8 rounded-full border-2 border-blue-500/30 shadow-lg object-cover hidden sm:block"
+                    />
+                  )}
+                </div>
                 <button
                   onClick={handleSignOut}
-                  className="text-sm bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-3 py-1.5 rounded-full shadow-sm transition flex items-center gap-1"
+                  className="text-sm font-bold bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2 rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center gap-2 border border-red-500/30"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
                   <span className="hidden sm:inline">Sign Out</span>
