@@ -190,7 +190,7 @@ export default function FileUploader({
       
       <div 
         className={`
-          flex flex-col items-center justify-center p-4 border-2 border-dashed min-h-[120px]
+          flex flex-col items-center justify-center p-3 border-2 border-dashed min-h-[80px]
           rounded-lg transition-colors duration-200 
           ${isDragging 
             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
@@ -200,14 +200,14 @@ export default function FileUploader({
         `}
       >
         {isUploading ? (
-          <div className="flex flex-col items-center space-y-2">
-            <div className="w-10 h-10 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Uploading...</p>
+          <div className="flex flex-col items-center space-y-1">
+            <div className="w-8 h-8 border-3 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Uploading...</p>
           </div>
         ) : (
           <>
             <svg 
-              className={`w-10 h-10 mb-3 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} 
+              className={`w-8 h-8 mb-2 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24" 
@@ -220,7 +220,7 @@ export default function FileUploader({
                 d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
               ></path>
             </svg>
-            <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
               <span className="font-semibold">Click to upload</span> or drag and drop
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">

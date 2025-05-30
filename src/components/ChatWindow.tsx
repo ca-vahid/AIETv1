@@ -1574,6 +1574,18 @@ export default function ChatWindow({
             </div>
           </div>
         </div>
+      ) : currentStep === 'attachments' ? (
+        /* Show attachment panel instead of input area during attachments step */
+        <div className="border-t border-blue-100 dark:border-gray-700 bg-blue-50/90 dark:bg-gray-900/90 flex-shrink-0">
+          <AttachmentPanel
+            conversationId={internalChatId || ''}
+            attachments={attachments}
+            onAttachmentAdded={(attachment) => setAttachments(prev => [...prev, attachment])}
+            onAttachmentRemoved={(path) => setAttachments(prev => prev.filter(a => a.path !== path))}
+            onContinue={handleContinueFromAttachments}
+            className="m-4"
+          />
+        </div>
       ) : (
         <div className="border-t border-blue-100 dark:border-gray-700 p-4 bg-blue-50/90 dark:bg-gray-900/90 flex-shrink-0">
           <div className="flex items-center space-x-2">
@@ -1731,19 +1743,6 @@ export default function ChatWindow({
               </button>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Add attachment panel in the attachments step */}
-      {currentStep === 'attachments' && (
-        <div className="px-4 py-4">
-          <AttachmentPanel
-            conversationId={internalChatId || ''}
-            attachments={attachments}
-            onAttachmentAdded={(attachment) => setAttachments(prev => [...prev, attachment])}
-            onAttachmentRemoved={(path) => setAttachments(prev => prev.filter(a => a.path !== path))}
-            onContinue={handleContinueFromAttachments}
-          />
         </div>
       )}
 
