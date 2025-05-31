@@ -117,9 +117,11 @@ export async function POST(req: NextRequest) {
         // @ts-ignore experimental thinkingConfig
         const llmStream = await genAI.models.generateContentStream({
           model: THINKING_MODEL,
-          systemInstruction: systemPrompt,
           contents,
-          thinkingConfig: { includeThoughts: true }
+          systemInstruction: systemPrompt,
+          config: {
+            thinkingConfig: { includeThoughts: true }
+          }
         } as any);
 
         for await (const chunk of llmStream) {
