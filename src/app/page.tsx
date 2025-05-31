@@ -326,44 +326,45 @@ export default function Home() {
 
             {/* How it works section */}
             <div className="mb-20">
-              <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-                <span className="text-slate-800 dark:text-white">How </span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0066cc] to-[#004080]">AIET</span>
-                <span className="text-slate-800 dark:text-white"> Works</span>
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="text-center group bg-white/30 dark:bg-[#0a1628]/60 backdrop-blur-md rounded-2xl border border-[#0066cc]/20 shadow-xl p-6 flex flex-col items-center transition-all duration-300">
-                  <div className="w-24 h-24 mx-auto mb-6 relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#0066cc] to-[#004080] rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-4xl font-black text-[#0066cc]">1</span>
+              <div className="mx-auto max-w-5xl px-6 py-10 bg-white/30 dark:bg-[#0a1628]/60 backdrop-blur-md rounded-3xl border border-[#0066cc]/20 shadow-2xl">
+                <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+                  <span className="text-slate-800 dark:text-white">How </span>
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0066cc] to-[#004080]">AIET</span>
+                  <span className="text-slate-800 dark:text-white"> Works</span>
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div className="text-center group p-6 flex flex-col items-center transition-all duration-300">
+                    <div className="w-24 h-24 mx-auto mb-6 relative">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#0066cc] to-[#004080] rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-4xl font-black text-[#0066cc]">1</span>
+                      </div>
                     </div>
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-3">Describe Your Process</h3>
+                    <p className="text-slate-600 dark:text-slate-400">Tell our AI about your repetitive geological workflows in plain English</p>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-3">Describe Your Process</h3>
-                  <p className="text-slate-600 dark:text-slate-400">Tell our AI about your repetitive geological workflows in plain English</p>
-                </div>
 
-                <div className="text-center group bg-white/30 dark:bg-[#0a1628]/60 backdrop-blur-md rounded-2xl border border-[#0066cc]/20 shadow-xl p-6 flex flex-col items-center transition-all duration-300">
-                  <div className="w-24 h-24 mx-auto mb-6 relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#0066cc] to-[#004080] rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-4xl font-black text-[#0066cc]">2</span>
+                  <div className="text-center group p-6 flex flex-col items-center transition-all duration-300">
+                    <div className="w-24 h-24 mx-auto mb-6 relative">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#0066cc] to-[#004080] rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-4xl font-black text-[#0066cc]">2</span>
+                      </div>
                     </div>
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-3">AI Analysis</h3>
+                    <p className="text-slate-600 dark:text-slate-400">Our system analyzes your needs and suggests intelligent automation solutions</p>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-3">AI Analysis</h3>
-                  <p className="text-slate-600 dark:text-slate-400">Our system analyzes your needs and suggests intelligent automation solutions</p>
-                </div>
 
-                <div className="text-center group bg-white/30 dark:bg-[#0a1628]/60 backdrop-blur-md rounded-2xl border border-[#0066cc]/20 shadow-xl p-6 flex flex-col items-center transition-all duration-300">
-                  <div className="w-24 h-24 mx-auto mb-6 relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#0066cc] to-[#004080] rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-4xl font-black text-[#0066cc]">3</span>
+                  <div className="text-center group p-6 flex flex-col items-center transition-all duration-300">
+                    <div className="w-24 h-24 mx-auto mb-6 relative">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#0066cc] to-[#004080] rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-4xl font-black text-[#0066cc]">3</span>
+                      </div>
                     </div>
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-3">Transform & Deploy</h3>
+                    <p className="text-slate-600 dark:text-slate-400">Your ideas become efficient automated workflows, saving hours every week</p>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-3">Transform & Deploy</h3>
-                  <p className="text-slate-600 dark:text-slate-400">Your ideas become efficient automated workflows, saving hours every week</p>
                 </div>
               </div>
             </div>
