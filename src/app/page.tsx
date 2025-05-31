@@ -408,7 +408,7 @@ export default function Home() {
                       </div>
                       <h3 className="text-xl font-bold text-white mb-2">Submit New Idea</h3>
                       <p className="text-sm text-slate-200 mb-4 flex-grow">Describe your geological workflow for AI automation</p>
-                      <div className="bgc-button-primary w-full text-center">
+                      <div className="bgc-button-primary w-full text-center mt-auto rounded-b-xl action-card-cta">
                         Start Analysis
                       </div>
                     </div>
@@ -433,7 +433,7 @@ export default function Home() {
                           <span className="text-lg font-bold text-green-400">{stats.totalSubmitted}</span>
                         </div>
                       </div>
-                      <div className="bgc-button-primary w-full bg-gradient-to-r from-[#d97706] to-[#ea580c] text-center">
+                      <div className="bgc-button-primary w-full bg-gradient-to-r from-[#d97706] to-[#ea580c] text-center mt-auto rounded-b-xl action-card-cta">
                         View All
                       </div>
                     </div>
@@ -442,7 +442,7 @@ export default function Home() {
                   {/* Gallery Card */}
                   <div className="action-card-bgc action-card-3d group block relative overflow-hidden cursor-not-allowed">
                     {/* Under Construction Banner */}
-                    <div className="absolute top-0 right-0 z-20 transform rotate-45 translate-x-8 translate-y-4">
+                    <div className="absolute top-0 right-0 z-20 coming-soon-ribbon transform rotate-45 translate-x-8 translate-y-4">
                       <div className="bg-amber-500 text-white text-xs font-bold px-12 py-1 shadow-lg">
                         COMING SOON
                       </div>
@@ -468,7 +468,7 @@ export default function Home() {
                       </div>
                       <h3 className="text-xl font-bold text-white mb-2">Innovation Gallery</h3>
                       <p className="text-sm text-slate-200 mb-4 flex-grow">Explore automation ideas from the BGC community</p>
-                      <div className="bgc-button-primary w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] text-center">
+                      <div className="bgc-button-primary w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] text-center mt-auto rounded-b-xl action-card-cta">
                         Browse Ideas
                       </div>
                     </div>
