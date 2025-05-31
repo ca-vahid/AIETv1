@@ -333,7 +333,7 @@ export default function Home() {
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="text-center group">
+                <div className="text-center group bg-white/30 dark:bg-[#0a1628]/60 backdrop-blur-md rounded-2xl border border-[#0066cc]/20 shadow-xl p-6 flex flex-col items-center transition-all duration-300">
                   <div className="w-24 h-24 mx-auto mb-6 relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-[#0066cc] to-[#004080] rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -344,7 +344,7 @@ export default function Home() {
                   <p className="text-slate-600 dark:text-slate-400">Tell our AI about your repetitive geological workflows in plain English</p>
                 </div>
 
-                <div className="text-center group">
+                <div className="text-center group bg-white/30 dark:bg-[#0a1628]/60 backdrop-blur-md rounded-2xl border border-[#0066cc]/20 shadow-xl p-6 flex flex-col items-center transition-all duration-300">
                   <div className="w-24 h-24 mx-auto mb-6 relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-[#0066cc] to-[#004080] rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -355,7 +355,7 @@ export default function Home() {
                   <p className="text-slate-600 dark:text-slate-400">Our system analyzes your needs and suggests intelligent automation solutions</p>
                 </div>
 
-                <div className="text-center group">
+                <div className="text-center group bg-white/30 dark:bg-[#0a1628]/60 backdrop-blur-md rounded-2xl border border-[#0066cc]/20 shadow-xl p-6 flex flex-col items-center transition-all duration-300">
                   <div className="w-24 h-24 mx-auto mb-6 relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-[#0066cc] to-[#004080] rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
