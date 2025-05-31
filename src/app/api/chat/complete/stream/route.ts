@@ -102,10 +102,6 @@ export async function POST(req: NextRequest) {
 
         const contents = [
           {
-            role: 'system',
-            parts: [ { text: systemPrompt } ]
-          },
-          {
             role: 'user',
             parts: [ { text: `FULL CONVERSATION:\n${JSON.stringify(draft.messages)}\n\nSUMMARY (if any):\n${draft.state.collectedData.processDescription || ''}` } ]
           }
@@ -121,6 +117,7 @@ export async function POST(req: NextRequest) {
         // @ts-ignore experimental thinkingConfig
         const llmStream = await genAI.models.generateContentStream({
           model: THINKING_MODEL,
+          systemInstruction: systemPrompt,
           contents,
           thinkingConfig: { includeThoughts: true }
         } as any);
