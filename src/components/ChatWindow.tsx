@@ -1761,6 +1761,20 @@ export default function ChatWindow({
           </div>
         </div>
       )}
+
+      {/* Dev shortcut to force submission (not in production) */}
+      {process.env.NODE_ENV !== 'production' && !isSubmissionComplete && (
+        <button
+          onClick={() => {
+            if (currentStep !== 'submit') onStepChange('submit');
+            handleCompleteChat();
+          }}
+          className="fixed bottom-4 right-4 z-[1050] bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-full shadow-lg text-xs font-semibold uppercase tracking-wide"
+          title="DEV: Force Submit"
+        >
+          Force&nbsp;Submit
+        </button>
+      )}
     </div>
   );
 } 

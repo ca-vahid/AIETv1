@@ -4,11 +4,11 @@ import { db } from '@/lib/firebase/firebase';
 import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
 import { DraftConversation, FinalRequest } from '@/lib/types/conversation';
-// Switch to new Google GenAI client
-import { GoogleGenAI } from '@google/genai';
+// @ts-ignore
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const THINKING_MODEL = 'gemini-2.5-pro-preview-05-06';
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 /**
  * POST /api/chat/complete/stream - Finalize a draft conversation into a request (streaming)
@@ -80,6 +80,18 @@ export async function POST(req: NextRequest) {
         await new Promise(resolve => setTimeout(resolve, 300));
 
         /* 5. Gemini extraction (stream with thinking) */
+        const model = genAI.getGenerativeModel({ model: THINKING_MODEL });
+        const contents = [
+          {
+            role: 'user',
+            parts: [
+              {
+                text: `FULL CONVERSATION:\n${JSON.stringify(draft.messages)}\n\nSUMMARY (if any):\n${draft.state.collectedData.processDescription || ''}`
+              }
+            ]
+          }
+        ];
+
         const systemPrompt = `You are AIET Intake Analyzer for a business process automation program at a large company (BGC).\n\n` +
           `Goal: Given the full intake conversation between an employee (the submitter) and the AI assistant, output ONLY a JSON object that fills an IdeaCardExtract structure so it can be displayed in the public idea gallery.\n` +
           `The gallery is visible to all employees. Names and profile photos are allowed. Attachments are shown as thumbnails only (no download links).\n\n` +
@@ -100,13 +112,6 @@ export async function POST(req: NextRequest) {
           `}\n\n` +
           `Return ONLY the JSON. Do NOT wrap in markdown or commentary.`;
 
-        const contents = [
-          {
-            role: 'user',
-            parts: [ { text: `FULL CONVERSATION:\n${JSON.stringify(draft.messages)}\n\nSUMMARY (if any):\n${draft.state.collectedData.processDescription || ''}` } ]
-          }
-        ];
-
         let rawJson = '';
         let thinkingBegan = false;
         
@@ -114,19 +119,15 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode('\n🤔 AI is thinking...\n'));
         controller.enqueue(encoder.encode('───────────────────────\n'));
 
-        // @ts-ignore experimental thinkingConfig
-        const llmStream = await genAI.models.generateContentStream({
-          model: THINKING_MODEL,
+        // Cast to any to allow experimental thinkingConfig parameter
+        const llmStream = await model.generateContentStream({
           contents,
-          systemInstruction: systemPrompt,
-          config: {
-            thinkingConfig: { includeThoughts: true }
-          }
+          systemInstruction: { role: "system", parts: [{ text: systemPrompt }] },
+          thinkingConfig: { includeThoughts: true }
         } as any);
 
-        for await (const chunk of llmStream) {
-          // new client exposes chunk.text directly
-          const text: string = (chunk as any).text;
+        for await (const chunk of llmStream.stream) {
+          const text = chunk.text();
           
           // Check if this is a thinking part (for models that support it)
           // Since thinking mode is experimental, we'll handle both cases
