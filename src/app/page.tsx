@@ -177,22 +177,21 @@ export default function Home() {
           <>
             {/* Hero section with BGC Engineering theme */}
             <div className="text-center mb-16 relative">
-              <div className="mb-8" style={{ transform: `translateY(${scrollY * -0.3}px)` }}>
+              <div className="mx-auto max-w-3xl px-6 py-8 bg-white/30 dark:bg-[#0a1628]/60 backdrop-blur-md rounded-3xl border border-[#0066cc]/20 shadow-2xl flex flex-col items-center gap-2">
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-tight">
                   <span className="block text-slate-800 dark:text-white mb-2">
                     Transform Your
                   </span>
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0066cc] via-[#0052a3] to-[#004080]">
                     Earth Science Workflows
-                </span>
+                  </span>
                   <span className="block text-slate-800 dark:text-white mt-2">
                     with AI Innovation
-                </span>
-              </h1>
-              
+                  </span>
+                </h1>
                 <p className="text-xl md:text-2xl text-slate-700 dark:text-slate-300 mb-4 font-medium">
                   Pioneering responsible solutions through intelligent automation
-              </p>
+                </p>
                 <p className="text-lg text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2">
                   <span className="inline-block w-2 h-2 bg-[#0066cc] rounded-full"></span>
                   BGC Engineering × AI Efficiency Team
@@ -386,145 +385,148 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Main dashboard grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Compact Profile Card */}
-              <div className="lg:col-span-4">
-                <div className="bgc-panel rounded-2xl overflow-hidden hover-lift">
-                  <ProfileCard compact={true} />
+            {/* Dashboard container */}
+            <div className="mx-auto max-w-7xl p-6 bg-white/20 dark:bg-gray-900/20 backdrop-blur-md rounded-3xl">
+              {/* Main dashboard grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Compact Profile Card */}
+                <div className="lg:col-span-4">
+                  <div className="bgc-panel rounded-2xl overflow-hidden hover-lift">
+                    <ProfileCard compact={true} />
+                  </div>
+                </div>
+
+                {/* Main action cards */}
+                <div className="lg:col-span-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Submit Idea Card */}
+                    <Link href="/chat" className="action-card-bgc action-card-3d group block">
+                      <div className="relative z-10 h-full flex flex-col">
+                        <div className="w-16 h-16 mb-4 rounded-xl bg-gradient-to-br from-[#0066cc] to-[#004080] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Submit New Idea</h3>
+                        <p className="text-sm text-slate-200 mb-4 flex-grow">Describe your geological workflow for AI automation</p>
+                        <div className="bgc-button-primary w-full text-center">
+                          Start Analysis
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* My Submissions Card */}
+                    <Link href="/chats" className="action-card-bgc action-card-3d group block">
+                      <div className="relative z-10 h-full flex flex-col">
+                        <div className="w-16 h-16 mb-4 rounded-xl bg-gradient-to-br from-[#d97706] to-[#ea580c] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">My Explorations</h3>
+                        <div className="space-y-2 mb-4 flex-grow">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-200">In Progress</span>
+                            <span className="text-lg font-bold text-amber-400">{stats.totalDrafts}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-slate-200">Submitted</span>
+                            <span className="text-lg font-bold text-green-400">{stats.totalSubmitted}</span>
+                          </div>
+                        </div>
+                        <div className="bgc-button-primary w-full bg-gradient-to-r from-[#d97706] to-[#ea580c] text-center">
+                          View All
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* Gallery Card */}
+                    <div className="action-card-bgc action-card-3d group block relative overflow-hidden cursor-not-allowed">
+                      {/* Under Construction Banner */}
+                      <div className="absolute top-0 right-0 z-20 transform rotate-45 translate-x-8 translate-y-4">
+                        <div className="bg-amber-500 text-white text-xs font-bold px-12 py-1 shadow-lg">
+                          COMING SOON
+                        </div>
+                      </div>
+                      
+                      {/* Construction Overlay */}
+                      <div className="absolute inset-0 z-10 bg-slate-900/40 dark:bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center">
+                        <div className="text-center">
+                          <svg className="w-16 h-16 text-amber-500 mx-auto mb-2 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <p className="text-white font-semibold text-lg">Under Construction</p>
+                          <p className="text-amber-300 text-sm mt-1">This feature is coming soon!</p>
+                        </div>
+                      </div>
+                      
+                      {/* Original Content (now behind overlay) */}
+                      <div className="relative z-0 h-full flex flex-col opacity-50">
+                        <div className="w-16 h-16 mb-4 rounded-xl bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Innovation Gallery</h3>
+                        <p className="text-sm text-slate-200 mb-4 flex-grow">Explore automation ideas from the BGC community</p>
+                        <div className="bgc-button-primary w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] text-center">
+                          Browse Ideas
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick stats with BGC theme */}
+            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="geo-card card-3d-subtle p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.statusCounts.completed}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">Completed</p>
+                </div>
+              </div>
+              
+              <div className="geo-card card-3d-subtle p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.statusCounts.in_review}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">In Review</p>
                 </div>
               </div>
 
-              {/* Main action cards */}
-              <div className="lg:col-span-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Submit Idea Card */}
-                  <Link href="/chat" className="action-card-bgc action-card-3d group block">
-                    <div className="relative z-10 h-full flex flex-col">
-                      <div className="w-16 h-16 mb-4 rounded-xl bg-gradient-to-br from-[#0066cc] to-[#004080] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                      </div>
-                      <h3 className="text-xl font-bold text-white mb-2">Submit New Idea</h3>
-                      <p className="text-sm text-slate-200 mb-4 flex-grow">Describe your geological workflow for AI automation</p>
-                      <div className="bgc-button-primary w-full text-center mt-auto rounded-b-xl action-card-cta">
-                        Start Analysis
-                      </div>
-                    </div>
-                  </Link>
-
-                  {/* My Submissions Card */}
-                  <Link href="/chats" className="action-card-bgc action-card-3d group block">
-                    <div className="relative z-10 h-full flex flex-col">
-                      <div className="w-16 h-16 mb-4 rounded-xl bg-gradient-to-br from-[#d97706] to-[#ea580c] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                      </div>
-                      <h3 className="text-xl font-bold text-white mb-2">My Explorations</h3>
-                      <div className="space-y-2 mb-4 flex-grow">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-200">In Progress</span>
-                          <span className="text-lg font-bold text-amber-400">{stats.totalDrafts}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-200">Submitted</span>
-                          <span className="text-lg font-bold text-green-400">{stats.totalSubmitted}</span>
-                        </div>
-                      </div>
-                      <div className="bgc-button-primary w-full bg-gradient-to-r from-[#d97706] to-[#ea580c] text-center mt-auto rounded-b-xl action-card-cta">
-                        View All
-                      </div>
-                    </div>
-                  </Link>
-
-                  {/* Gallery Card */}
-                  <div className="action-card-bgc action-card-3d group block relative overflow-hidden cursor-not-allowed">
-                    {/* Under Construction Banner */}
-                    <div className="absolute top-0 right-0 z-20 coming-soon-ribbon transform rotate-45 translate-x-8 translate-y-4">
-                      <div className="bg-amber-500 text-white text-xs font-bold px-12 py-1 shadow-lg">
-                        COMING SOON
-                      </div>
-                    </div>
-                    
-                    {/* Construction Overlay */}
-                    <div className="absolute inset-0 z-10 bg-slate-900/40 dark:bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center">
-                      <div className="text-center">
-                        <svg className="w-16 h-16 text-amber-500 mx-auto mb-2 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <p className="text-white font-semibold text-lg">Under Construction</p>
-                        <p className="text-amber-300 text-sm mt-1">This feature is coming soon!</p>
-                      </div>
-                    </div>
-                    
-                    {/* Original Content (now behind overlay) */}
-                    <div className="relative z-0 h-full flex flex-col opacity-50">
-                      <div className="w-16 h-16 mb-4 rounded-xl bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                      </div>
-                      <h3 className="text-xl font-bold text-white mb-2">Innovation Gallery</h3>
-                      <p className="text-sm text-slate-200 mb-4 flex-grow">Explore automation ideas from the BGC community</p>
-                      <div className="bgc-button-primary w-full bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] text-center mt-auto rounded-b-xl action-card-cta">
-                        Browse Ideas
-                      </div>
-                    </div>
-                  </div>
+              <div className="geo-card card-3d-subtle p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-teal-500/20 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
                 </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.statusCounts.pilot}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">In Pilot</p>
+                </div>
+              </div>
 
-                {/* Quick stats with BGC theme */}
-                <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="geo-card card-3d-subtle p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.statusCounts.completed}</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">Completed</p>
-                    </div>
-                  </div>
-                  
-                  <div className="geo-card card-3d-subtle p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.statusCounts.in_review}</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">In Review</p>
-                    </div>
-                  </div>
-
-                  <div className="geo-card card-3d-subtle p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-teal-500/20 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.statusCounts.pilot}</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">In Pilot</p>
-                    </div>
-                  </div>
-
-                  <div className="geo-card card-3d-subtle p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.statusCounts.new}</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">New Ideas</p>
-                    </div>
-                  </div>
+              <div className="geo-card card-3d-subtle p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.statusCounts.new}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">New Ideas</p>
                 </div>
               </div>
             </div>
@@ -644,7 +646,7 @@ export default function Home() {
                       <div className="w-14 h-14 rounded-lg bg-[#0066cc]/15 dark:bg-[#0066cc]/10 flex items-center justify-center">
                         <svg className="w-8 h-8 text-[#0066cc]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
+                        </svg>
                       </div>
                     </div>
                     <div>
@@ -660,7 +662,7 @@ export default function Home() {
                       <div className="w-14 h-14 rounded-lg bg-[#d97706]/15 dark:bg-[#d97706]/10 flex items-center justify-center">
                         <svg className="w-8 h-8 text-[#d97706]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                        </svg>
                       </div>
                     </div>
                     <div>
@@ -676,7 +678,7 @@ export default function Home() {
                       <div className="w-14 h-14 rounded-lg bg-[#10b981]/15 dark:bg-[#10b981]/10 flex items-center justify-center">
                         <svg className="w-8 h-8 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                        </svg>
                       </div>
                     </div>
                     <div>
@@ -692,7 +694,7 @@ export default function Home() {
                       <div className="w-14 h-14 rounded-lg bg-[#8b5cf6]/15 dark:bg-[#8b5cf6]/10 flex items-center justify-center">
                         <svg className="w-8 h-8 text-[#8b5cf6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                      </svg>
+                        </svg>
                       </div>
                     </div>
                     <div>
