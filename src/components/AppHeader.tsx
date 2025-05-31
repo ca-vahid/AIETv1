@@ -299,8 +299,8 @@ export default function AppHeader() {
     <>
       <header className={`sticky top-0 z-50 backdrop-blur-xl ${ 
         theme === 'dark'
-          ? 'bg-gradient-to-r from-[#0a1628]/95 via-[#0f1f3d]/95 to-[#0a1628]/95 shadow-2xl border-b border-[#0066cc]/20'
-          : 'bg-gradient-to-r from-[#e6f0ff]/90 via-[#f0f6ff]/95 to-[#e6f0ff]/90 shadow-lg border-b border-[#0066cc]/15'
+          ? 'bg-[#0a1628]/80 shadow-2xl border-b border-white/10'
+          : 'bg-white/60 shadow-lg border-b border-slate-200/50'
       }`}>
         <div className="max-w-7xl mx-auto px-4 py-1.5 sm:px-6 lg:px-8 flex justify-between items-center">
           {/* Left side: Logo and optional back button */}

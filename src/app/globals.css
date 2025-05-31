@@ -417,8 +417,11 @@ html.light .text-slate-700 {
   min-height: 280px;
   transform-style: preserve-3d;
   perspective: 1200px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 
+    0 6px 12px rgba(10, 22, 40, 0.2),
+    0 12px 24px rgba(10, 22, 40, 0.15),
+    0 24px 48px rgba(10, 22, 40, 0.1),
+    0 48px 96px rgba(10, 22, 40, 0.05);
 }
 
 .action-card-bgc::before {
@@ -460,8 +463,13 @@ html.light .text-slate-700 {
 }
 
 .action-card-bgc:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-20px) rotateX(10deg) rotateY(5deg) scale(1.05);
+  box-shadow: 
+    0 12px 24px rgba(10, 22, 40, 0.25),
+    0 24px 48px rgba(10, 22, 40, 0.2),
+    0 48px 96px rgba(10, 22, 40, 0.15),
+    0 96px 192px rgba(10, 22, 40, 0.1),
+    0 0 60px rgba(0, 102, 204, 0.2);
 }
 
 .action-card-bgc:hover::before {
@@ -969,41 +977,4 @@ html.light .geo-card p {
   30% { transform: translateY(-4px) rotateX(2deg) rotateY(1deg) scale(1.01); }
   60% { transform: translateY(-8px) rotateX(4deg) rotateY(1.5deg) scale(1.02); }
   100% { transform: translateY(-12px) rotateX(6deg) rotateY(2deg) scale(1.03); }
-}
-
-/* Quick landing page tweaks */
-/* Subtle depth on primary action cards */
-.action-card-bgc {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.action-card-bgc:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-}
-
-/* CTA styling: separate button from card body */
-.action-card-cta {
-  margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0 0 0.75rem 0.75rem;
-  padding: 0.75rem 1rem;
-  transition: background-color 0.3s, color 0.3s;
-}
-.action-card-cta:hover {
-  background: white;
-  color: var(--bgc-blue-600);
-}
-html.light .action-card-cta:hover {
-  background: var(--bgc-blue-600);
-  color: white;
-}
-
-/* Ribbon slide-in animation for Coming Soon */
-@keyframes slideInRibbon {
-  from { transform: translate(50%, -100%) rotate(45deg); opacity: 0; }
-  to   { transform: translate(0, 0) rotate(45deg); opacity: 1; }
-}
-.coming-soon-ribbon {
-  animation: slideInRibbon 0.6s ease-out forwards;
 }

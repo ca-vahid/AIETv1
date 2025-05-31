@@ -73,7 +73,7 @@ interface SortableItemProps {
   theme: string;
 }
 
-// Confirmation dialog component
+// Simplified confirmation dialog component
 function ConfirmationDialog({
   isOpen,
   onClose,
@@ -90,14 +90,14 @@ function ConfirmationDialog({
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
-      <div className="bgc-panel confirmation-dialog-3d rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-lg border border-slate-200 dark:border-slate-700">
         <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-2">{title}</h3>
         <p className="text-slate-600 dark:text-slate-300 mb-6">{message}</p>
         <div className="flex justify-end space-x-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-200 dark:bg-slate-700/80 text-slate-700 dark:text-white rounded hover:bg-slate-300 dark:hover:bg-slate-600/80 transition"
+            className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
           >
             Cancel
           </button>
@@ -106,7 +106,7 @@ function ConfirmationDialog({
               onConfirm();
               onClose();
             }}
-            className="px-4 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded hover:from-red-700 hover:to-orange-700 transition"
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
           >
             Delete
           </button>
@@ -146,7 +146,7 @@ function SortableItem({
       style={style}
       {...attributes}
       {...listeners}
-      className={`chat-card-3d ${isDragging ? 'dragging' : ''}`}
+      className={`relative bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer ${isDragging ? 'opacity-50 scale-105' : ''}`}
       onClick={() => handleChatClick(item)}
     >
       <div className="p-6 flex flex-col h-full">
@@ -406,194 +406,172 @@ export default function ChatsPage() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
+  
   useEffect(() => {
-    async function fetchChatHistory() {
-      if (!firebaseUser) return;
-      
-      try {
-        setIsLoadingHistory(true);
-        const idToken = await getIdToken(firebaseUser);
-        
-        const response = await fetch('/api/chat/history', {
-          headers: {
-            Authorization: `Bearer ${idToken}`
-          }
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          
-          // Special handling for index errors
-          if (response.status === 503 && errorData.indexError) {
-            throw new Error('Database indexes are still being created. This typically takes 1-2 minutes. Please try again shortly.');
-          }
-          
-          throw new Error(errorData.error || 'Failed to fetch chat history');
-        }
-        
-        const data = await response.json();
-        setHistory(data.history || []);
-      } catch (err) {
-        console.error('Error fetching chat history:', err);
-        setError('Unable to load your chat history. Please try again later.');
-        // Keep the previous history if there was an error
-        setHistory(prev => prev || []);
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    }
-    
     if (firebaseUser) {
       fetchChatHistory();
     }
   }, [firebaseUser]);
   
-  // Handle navigation to chat detail
-  const handleChatClick = (item: HistoryItem) => {
-    if (item.type === 'draft') {
-      router.push(`/chat/${item.id}`);
-    } else {
-      router.push(`/requests/${item.id}`);
-    }
-  };
-  
-  // Handle delete request
-  const handleDeleteClick = async (event: React.MouseEvent, item: HistoryItem) => {
-    // Stop propagation to prevent navigation
-    event.stopPropagation();
-    
-    // Set the item to delete and open confirmation dialog
-    setItemToDelete(item);
-    setConfirmDialogOpen(true);
-  };
-  
-  // Perform the actual deletion
-  const confirmDelete = async () => {
-    if (!itemToDelete || !firebaseUser) return;
-    
-    setDeleteInProgress(true);
-    
+  async function fetchChatHistory() {
     try {
-      const idToken = await getIdToken(firebaseUser);
+      setIsLoadingHistory(true);
+      setError(null);
       
-      const endpoint = itemToDelete.type === 'draft' 
-        ? `/api/chat/delete?id=${itemToDelete.id}`
-        : `/api/requests/delete?id=${itemToDelete.id}`;
-        
-      const response = await fetch(endpoint, {
-        method: 'DELETE',
+      const idToken = await getIdToken(firebaseUser!);
+      const response = await fetch('/api/chat/history?cleanup=false', {
         headers: {
           Authorization: `Bearer ${idToken}`
         }
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete item');
+        throw new Error('Failed to fetch chat history');
       }
       
-      // Remove the deleted item from the history
-      setHistory(current => current.filter(item => item.id !== itemToDelete.id));
+      const data = await response.json();
+      
+      // Parse the history and ensure all items have required fields
+      const historyItems: HistoryItem[] = data.history || [];
+      
+      setHistory(historyItems);
+    } catch (err) {
+      console.error('Error fetching chat history:', err);
+      setError('Failed to load chat history. Please try again.');
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }
+  
+  const handleChatClick = (item: HistoryItem) => {
+    if (item.type === 'draft') {
+      router.push(`/chat/${item.id}`);
+    } else {
+      router.push(`/chat/${item.id}`);
+    }
+  };
+  
+  const handleDeleteClick = async (event: React.MouseEvent, item: HistoryItem) => {
+    event.stopPropagation();
+    setItemToDelete(item);
+    setConfirmDialogOpen(true);
+  };
+  
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    
+    try {
+      setDeleteInProgress(true);
+      
+      const idToken = await getIdToken(firebaseUser!);
+      const response = await fetch('/api/chat/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          id: itemToDelete.id,
+          type: itemToDelete.type
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete item');
+      }
+      
+      // Remove the item from the local state
+      setHistory(prev => prev.filter(item => item.id !== itemToDelete.id));
       
     } catch (err) {
       console.error('Error deleting item:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      alert(`Failed to delete: ${errorMessage}`);
+      setError('Failed to delete item. Please try again.');
     } finally {
       setDeleteInProgress(false);
       setItemToDelete(null);
     }
   };
   
-  // Format date using date-fns for relative time
   const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    // Use relative time for updates within the last day
-    if (now.getTime() - date.getTime() < 24 * 60 * 60 * 1000) {
+    try {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        // Try parsing as Unix timestamp
+        const unixDate = new Date(timestamp * 1000);
+        if (isNaN(unixDate.getTime())) {
+          return 'Unknown date';
+        }
+        return formatDistanceToNow(unixDate, { addSuffix: true });
+      }
       return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Unknown date';
     }
-    // Use absolute date for older updates
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
   };
   
-  // Get status badge color based on status
+  // Color coding for status badges
   const getStatusColor = (item: HistoryItem) => {
     if (item.type === 'draft') {
-      return 'bg-blue-600 text-white dark:bg-blue-600/70';
+      return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
     }
     
-    // For submitted requests
     switch (item.statusCode) {
       case 'new':
-        return 'bg-amber-500 text-white dark:bg-yellow-600/70';
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300';
       case 'in_review':
-        return 'bg-purple-500 text-white dark:bg-purple-600/70';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300';
       case 'pilot':
-        return 'bg-green-500 text-white dark:bg-green-600/70';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
       case 'completed':
-        return 'bg-emerald-500 text-white dark:bg-emerald-600/70';
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300';
       case 'rejected':
-        return 'bg-red-500 text-white dark:bg-red-600/70';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
       default:
-        return 'bg-gray-500 text-white dark:bg-gray-600/70';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
     }
   };
   
-  // Get category badge color
+  // Color coding for categories
   const getCategoryColor = (category?: string) => {
-    if (!category) return 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+    if (!category) return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
     
-    switch (category.toLowerCase()) {
-      case 'data-entry':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-700/30 dark:text-blue-300';
-      case 'analysis':
-        return 'bg-purple-100 text-purple-700 dark:bg-purple-700/30 dark:text-purple-300';
-      case 'reporting':
-        return 'bg-green-100 text-green-700 dark:bg-green-700/30 dark:text-green-300';
-      case 'automation':
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-700/30 dark:text-amber-300';
-      case 'integration':
-        return 'bg-pink-100 text-pink-700 dark:bg-pink-700/30 dark:text-pink-300';
-      default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-700/30 dark:text-gray-300';
-    }
+    const colors: { [key: string]: string } = {
+      'data_analysis': 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+      'reporting': 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+      'communication': 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300',
+      'workflow': 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300',
+      'integration': 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300',
+    };
+    
+    return colors[category] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
   };
   
-  // Get impact score stars
+  // Render impact score badge
   const renderImpactScore = (score?: number) => {
-    if (score === undefined) return null;
+    if (!score && score !== 0) return null;
+    
+    let colorClass = 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+    let label = 'Low Impact';
+    
+    if (score >= 8) {
+      colorClass = 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
+      label = 'High Impact';
+    } else if (score >= 5) {
+      colorClass = 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300';
+      label = 'Medium Impact';
+    }
     
     return (
-      <div className="flex items-center">
-        {[...Array(5)].map((_, i) => (
-          <svg 
-            key={i}
-            xmlns="http://www.w3.org/2000/svg" 
-            className={`h-4 w-4 ${i < score ? 'text-yellow-400' : 'text-slate-300 dark:text-slate-600'}`}
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-        ))}
-      </div>
+      <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${colorClass}`}>
+        {label} ({score}/10)
+      </span>
     );
   };
   
-  // Check if an item can be deleted
+  // Check if an item can be deleted (only drafts and new submissions)
   const canDelete = (item: HistoryItem) => {
-    // Draft conversations can always be deleted
-    if (item.type === 'draft') return true;
-    
-    // Only 'new' requests can be deleted
     return item.type === 'request' && item.statusCode === 'new';
   };
   
@@ -670,28 +648,28 @@ export default function ChatsPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
-              <h1 className="text-4xl font-black mb-2 text-slate-800 dark:text-white">Your Ideas Portal</h1>
+              <h1 className="text-4xl font-bold mb-2 text-slate-800 dark:text-white">My Ideas</h1>
               <p className="text-lg text-slate-600 dark:text-slate-400">
-                Explore your submitted ideas and track their journey through the automation pipeline.
+                Track your automation ideas and monitor their progress through development.
               </p>
             </div>
-            <Link href="/chat" className="bgc-button-primary whitespace-nowrap mt-4 sm:mt-0">
+            <Link href="/chat" className="bg-[#0066cc] hover:bg-[#004080] text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap mt-4 sm:mt-0">
               <div className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                <span>Start New Idea</span>
+                <span>New Idea</span>
               </div>
             </Link>
           </div>
 
           {dragInstructions && (
-            <div className="bg-[#0066cc]/10 dark:bg-blue-500/10 border border-[#0066cc]/20 dark:border-blue-500/20 rounded-lg px-4 py-3 mb-6 flex items-center justify-between">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg px-4 py-3 mb-6 flex items-center justify-between">
               <div className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-[#0066cc] dark:text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 3a1 1 0 00-1 1v2.586l-2.293-2.293a1 1 0 10-1.414 1.414L7.586 8H5a1 1 0 000 2h2.586l-2.293 2.293a1 1 0 101.414 1.414L9 11.414V14a1 1 0 102 0v-2.586l2.293 2.293a1 1 0 101.414-1.414L12.414 10H15a1 1 0 100-2h-2.586l2.293-2.293a1 1 0 10-1.414-1.414L11 6.586V4a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                <span className="text-[#0066cc] dark:text-blue-400 font-medium">Drag to reorganize your geological samples.</span>
+                <span className="text-blue-700 dark:text-blue-300 font-medium">Drag and drop to reorder your ideas.</span>
               </div>
               <button onClick={() => setDragInstructions(false)} className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -717,14 +695,14 @@ export default function ChatsPage() {
               <p className="text-red-700 dark:text-red-300 font-semibold">{error}</p>
             </div>
           ) : history.length === 0 ? (
-            <div className="text-center py-16 px-6 bgc-panel rounded-xl shadow-md">
+            <div className="text-center py-16 px-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-2">No Geological Samples Yet</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">Start a new excavation to submit your innovative AI automation ideas.</p>
-              <Link href="/chat" className="bgc-button-primary">
-                 Start New Excavation
+              <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-2">No Ideas Yet</h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-6">Create your first automation idea to get started.</p>
+              <Link href="/chat" className="bg-[#0066cc] hover:bg-[#004080] text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                 Create Idea
               </Link>
             </div>
           ) : (
