@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         const llmStream = await model.generateContentStream({
           contents,
           systemInstruction: { role: "system", parts: [{ text: systemPrompt }] },
-          thinkingConfig: { includeThoughts: true }
+          
         } as any);
 
         for await (const chunk of llmStream.stream) {
