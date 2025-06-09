@@ -442,43 +442,87 @@ export default function ChatWindow({
 
   // Define functions with useCallback before they are used in useEffect
   const startNewChat = useCallback(async () => {
-    // Show typing indicator while creating new conversation
     setIsLoading(true);
-    // Set initial loading to true during chat start
     setIsInitialLoading(true);
+
     try {
       if (!profile || !firebaseUser) {
-        throw new Error("Not authenticated");
+        throw new Error('Not authenticated');
       }
-      
-      // Get the ID token
+
       const idToken = await getIdToken(firebaseUser);
-      
-      const response = await fetch("/api/chat/start", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${idToken}` }
+
+      const response = await fetch('/api/chat/start', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          Accept: 'text/event-stream',
+        },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to start chat");
+      if (!response.ok || !response.body) {
+        throw new Error('Failed to start chat');
       }
 
-      const data = await response.json();
-      // Immediately set detected language from start API
-      if (data.language) {
-        setLanguage(data.language);
+      // Prepare an empty assistant message to stream into
+      const assistantMessageId = `assistant-${Date.now()}`;
+      setMessages([
+        {
+          id: assistantMessageId,
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now(),
+        },
+      ]);
+
+      setStreamingMessageId(assistantMessageId);
+      setStreamingComplete(false);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const frames = buffer.split('\n\n');
+        buffer = frames.pop() || '';
+
+        for (const frame of frames) {
+          const match = frame.match(/^event:(.*)\ndata:(.*)$/);
+          if (!match) continue;
+
+          const [, rawEvent, rawData] = match;
+          const event = rawEvent.trim();
+          const data = rawData;
+
+          if (event === 'meta') {
+            try {
+              const meta = JSON.parse(data);
+              if (meta.conversationId) {
+                setChatId(meta.conversationId);
+                setInternalChatId(meta.conversationId);
+                hasLoadedConversation.current = true; // prevent duplicate loading
+              }
+            } catch (_) {}
+          } else if (event === 'token') {
+            setMessages(prev =>
+              prev.map(m =>
+                m.id === assistantMessageId ? { ...m, content: m.content + data } : m,
+              ),
+            );
+          } else if (event === 'done') {
+            setIsLoading(false);
+            setIsInitialLoading(false);
+            setStreamingComplete(true);
+          }
+        }
       }
-      // Capture extracted profile details but only show greeting to user
-      if (data.extracted) {
-        setExtractedProfile(data.extracted);
-        console.debug("Extracted user details:", data.extracted);
-      }
-      setChatId(data.conversationId);
-      setInternalChatId(data.conversationId); // Update internal state too
-      // initial load will be triggered by useEffect on chatId change
     } catch (error) {
-      console.error("Error starting chat:", error);
-      // Hide loading indicators on failure
+      console.error('Error starting chat:', error);
       setIsLoading(false);
       setIsInitialLoading(false);
     }
@@ -1375,8 +1419,8 @@ export default function ChatWindow({
 
   return (
     <div className="flex flex-col bg-white dark:bg-gray-900 h-full rounded-xl shadow-xl overflow-hidden border border-blue-100 dark:border-gray-700">
-      {/* Loading progress bar - only show during INITIAL loading phase */}
-      {isInitialLoading && <LoadingProgress />}
+      {/* Inline spinner shown only during the very first load */}
+      {/* Removed the full-screen LoadingProgress bar for a leaner UI */}
 
       {/* Submission modal with live progress */}
       <SubmittingModal 
@@ -1410,6 +1454,28 @@ export default function ChatWindow({
         <div className="text-sm text-gray-700 dark:text-gray-300">
           Step {currentIndex + 1} of {steps.length}: {labels[stepKey]}
         </div>
+        {isInitialLoading && (
+          <svg
+            className="animate-spin h-4 w-4 text-blue-600 dark:text-blue-400"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            ></path>
+          </svg>
+        )}
       </div>
 
       {/* Messages container */}

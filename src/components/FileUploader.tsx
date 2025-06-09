@@ -190,7 +190,7 @@ export default function FileUploader({
       
       <div 
         className={`
-          flex flex-col items-center justify-center p-3 border-2 border-dashed min-h-[80px]
+          flex flex-col items-center justify-center p-2 border-2 border-dashed min-h-[60px]
           rounded-lg transition-colors duration-200 
           ${isDragging 
             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
@@ -201,13 +201,13 @@ export default function FileUploader({
       >
         {isUploading ? (
           <div className="flex flex-col items-center space-y-1">
-            <div className="w-8 h-8 border-3 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
+            <div className="w-6 h-6 border-3 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Uploading...</p>
           </div>
         ) : (
           <>
             <svg 
-              className={`w-8 h-8 mb-2 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} 
+              className={`w-6 h-6 mb-1 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`} 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24" 
