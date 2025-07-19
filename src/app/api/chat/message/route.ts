@@ -6,8 +6,10 @@ import { db } from "@/lib/firebase/firebase";
 import { Message } from "@/lib/types/conversation";
 import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
-// @ts-ignore: missing type declarations for @google/generative-ai
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { genAI, buildRequest } from "@/lib/genai";
+// Model names
+const STANDARD_MODEL = "gemini-2.5-flash";
+const THINKING_MODEL = "gemini-2.5-pro";
 import {
   analyseUserMessage,
   reducer as conversationReducerNew,
@@ -17,14 +19,6 @@ import {
 
 // Remove Edge runtime configuration
 // export const runtime = 'edge';
-
-// Initialize the Gemini API with the key from environment variables
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
-// Define models - use the latest ones
-
-const STANDARD_MODEL = "gemini-2.5-flash-preview-04-17";
-const THINKING_MODEL = "gemini-2.5-pro-preview-03-25";
 
 /**
  * POST /api/chat/message - Processes a user message and generates a response using Gemini
@@ -185,37 +179,27 @@ export async function POST(req: NextRequest) {
       }
       
       console.log("\x1b[32m%s\x1b[0m", "[API] Creating model with system instructions");
-      
-      // Get the generative model
-      const model = genAI.getGenerativeModel({
-        model: MODEL,
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.8,
-          topK: 40,
-          // Allow larger responses to reduce MAX_TOKENS truncation issues
-          maxOutputTokens: 2048,
-        }
-      });
-      
-      console.log("\x1b[32m%s\x1b[0m", "[API] Preparing model contents with chat history");
-      
-      // Include the latest user action (text or synthesized) so the model sees the intent.
+
       const contents = [
         ...chatHistory,
         ...(userMessage ? [{ role: 'user', parts: [{ text: userMessage.content }] }] : [])
       ];
-      
+ 
       // Track state that may change during streaming (e.g., details -> attachments auto jump)
       let finalState = newStatePreLLM;
       
       // Stream the response using generateContentStream
       console.log("\x1b[32m%s\x1b[0m", "[API] Sending message stream with Gemini API");
-      const responseStream = await model.generateContentStream({
-        contents,
-        // systemInstruction must be a Content object, not plain string.
-        systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] },
-      });
+      const responseStream = await genAI.models.generateContentStream(
+        buildRequest(
+          MODEL,
+          contents,
+          undefined,
+          {
+            systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] },
+          }
+        )
+      );
       
       // Use ReadableStream for proper server-sent events
       const stream = new ReadableStream({
@@ -226,12 +210,12 @@ export async function POST(req: NextRequest) {
             let draftDeleted = false;
             
             // Stream each chunk directly to the client
-            for await (const chunk of responseStream.stream) {
-              const text = chunk.text();
-              assistantMessage += text;
-              
-              // Send just the text without SSE formatting
-              controller.enqueue(new TextEncoder().encode(text));
+            for await (const chunk of responseStream as any) {
+              const textChunk = chunk.text ?? '';
+              if (textChunk) {
+                assistantMessage += textChunk;
+                controller.enqueue(new TextEncoder().encode(textChunk));
+              }
             }
             
             console.log("\x1b[32m%s\x1b[0m", "[API] Gemini response streaming complete");

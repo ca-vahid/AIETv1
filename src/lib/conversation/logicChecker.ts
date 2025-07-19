@@ -1,5 +1,4 @@
-// @ts-ignore: missing type declarations for @google/generative-ai
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { genAI, buildRequest } from "@/lib/genai";
 import { Message } from "@/lib/types/conversation";
 
 /**
@@ -27,18 +26,6 @@ export async function checkCriterion(
   messages: Message[],
   criterion: string
 ): Promise<CheckResult> {
-  // Initialize Gemini AI client
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-  const model = genAI.getGenerativeModel({
-    model: THINKING_MODEL,
-    generationConfig: {
-      temperature: 0,
-      topP: 1,
-      topK: 1,
-      maxOutputTokens: 500,
-    },
-  });
-
   // Build JSON-only prompt
   const prompt = `You are a logic-checker that evaluates a chat transcript against a criterion.
 Reply ONLY with valid JSON:
@@ -57,7 +44,10 @@ Criterion:
   // Call the LLM with error handling for max tokens or throttling errors
   let result;
   try {
-    result = await model.generateContent(prompt);
+    const request = buildRequest(THINKING_MODEL, prompt, undefined, {
+      config: { temperature: 0 },
+    });
+    result = await genAI.models.generateContent(request);
   } catch (error) {
     console.error("\x1b[31m%s\x1b[0m", "[LogicChecker] Error generating content:", error);
     return {
@@ -66,23 +56,21 @@ Criterion:
       rawResponse: error
     };
   }
-  const response = result.response;
+  const response = result as any;
+  console.log("[LogicChecker] Full API Response Object:", JSON.stringify(response, null, 2));
 
-  // Log the full response object for detailed debugging
-  console.log("\x1b[35m%s\x1b[0m", "[LogicChecker] Full API Response Object:", JSON.stringify(response, null, 2));
-
-  // Check if response or text() is missing before proceeding
   if (!response) {
      console.error("\x1b[31m%s\x1b[0m", "[LogicChecker] Error: API response object is missing.");
      return { satisfied: false, reasoning: "API response object missing", rawResponse: null };
   }
   
-  let text;
+  let text: string;
   try {
-    text = response.text();
+    const maybeText = (response as any).text;
+    text = typeof maybeText === 'function' ? maybeText() : maybeText;
   } catch (e) {
-     console.error("\x1b[31m%s\x1b[0m", "[LogicChecker] Error calling response.text():", e);
-     return { satisfied: false, reasoning: `Error extracting text: ${e}`, rawResponse: response }; // Log the response object on error
+    console.error("\x1b[31m%s\x1b[0m", "[LogicChecker] Error extracting text:", e);
+    return { satisfied: false, reasoning: `Error extracting text: ${e}`, rawResponse: response };
   }
 
   if (typeof text !== 'string' || text.trim().length === 0) {

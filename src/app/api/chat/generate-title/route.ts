@@ -3,12 +3,9 @@ import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from '@/lib/firebase/firebase';
-// @ts-ignore: missing type declarations for @google/generative-ai
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { genAI, buildRequest } from "@/lib/genai";
 
-// Initialize the Gemini API with the key from environment variables
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use a fast model for titles
+const MODEL_NAME = "gemini-1.5-flash";
 
 /**
  * POST /api/chat/generate-title
@@ -59,23 +56,25 @@ export async function POST(req: NextRequest) {
       ? `You have access to a user's request and the assistant's response for creating an automation using new AI methods and system  Generate a title for their request. Make it engaging and intersting (max 15 words) \n\n${transcript}`
       : `You have access to a user's request and the assistant's response for creating an automation using new AI methods and system  Generate a title for their request. Make it engaging and intersting (max 15 words) \n\n${transcript}`;
 
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const generatedTitle = response.text().trim().replace(/^"|"$/g, ''); // Clean up quotes
+    const response = await genAI.models.generateContent(
+      buildRequest(MODEL_NAME, prompt)
+    );
+    const titleProp = (response as any).text;
+    const title = typeof titleProp === 'function' ? titleProp() : titleProp;
 
-    if (!generatedTitle) {
+    if (!title) {
       throw new Error("Failed to generate title text from LLM");
     }
 
-    console.log(`[API TitleGen] ${isDetailed ? 'Detailed' : 'Initial'} Title: "${generatedTitle}" using full conversation history`);
+    console.log(`[API TitleGen] ${isDetailed ? 'Detailed' : 'Initial'} Title: "${title}" using full conversation history`);
 
     // Update the conversation with the generated title
     await updateDoc(conversationRef, {
-      title: generatedTitle,
+      title: title,
       updatedAt: Date.now()
     });
 
-    return NextResponse.json({ title: generatedTitle });
+    return NextResponse.json({ title: title });
   } catch (error) {
     console.error("[API TitleGen] Error:", error);
     return NextResponse.json({ 

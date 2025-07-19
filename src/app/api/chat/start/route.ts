@@ -4,13 +4,8 @@ import { DraftConversation } from '@/lib/types/conversation';
 import { collection, doc, setDoc, getDoc, doc as adminDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
-// @ts-ignore - No types available for @google/generative-ai
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-// Initialize Gemini for start prompt generation
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const START_MODEL_NAME = process.env.GEMINI_START_MODEL || 'gemini-2.5-flash-preview-04-17';
-const startModel = genAI.getGenerativeModel({ model: START_MODEL_NAME });
+import { genAI, buildRequest } from '@/lib/genai';
+const START_MODEL_NAME = process.env.GEMINI_START_MODEL || 'gemini-2.5-flash';
 
 // Helper encoder reused for SSE frames
 const encoder = new TextEncoder();
@@ -23,6 +18,9 @@ const encoder = new TextEncoder();
  *  - done:  indicates the stream is complete
  */
 export async function POST(req: Request) {
+  // -------- Detect headless mode --------
+  const isHeadless = req.headers.get('x-headless') === '1';
+
   // -------- Authorisation --------
   const authHeader = req.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -45,6 +43,44 @@ export async function POST(req: Request) {
   const userProfileDoc = await getDoc(adminDoc(db, 'users', userId));
   const userProfile = userProfileDoc.exists() ? userProfileDoc.data() : null;
 
+  // -------- Conversation creation --------
+  const conversationId = crypto.randomUUID();
+  const headlessGreeting = `Hi! Welcome to the Idea Intake Portal.`;
+
+  if (isHeadless) {
+    const newConversation: DraftConversation = {
+      id: conversationId,
+      userId,
+      status: 'draft',
+      messages: [
+        {
+          role: 'assistant',
+          content: headlessGreeting,
+          timestamp: Date.now(),
+        },
+      ],
+      state: {
+        currentStep: 'init',
+        missingProfileFields: [],
+        collectedData: {},
+        validations: {},
+        language: 'en',
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    try {
+      const convRef = doc(collection(db, 'conversations'), conversationId);
+      await setDoc(convRef, newConversation);
+    } catch (persistErr) {
+      console.error('[API] chat/start headless persist error', persistErr);
+      return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 });
+    }
+
+    return NextResponse.json({ conversationId });
+  }
+
   // -------- Build Gemini prompt --------
   const defaultName = userProfile?.name?.split(' ')[0] || 'there';
   const defaultGreeting = `Hi ${defaultName}! Welcome to the AIET Intake Portal. ` +
@@ -63,7 +99,6 @@ export async function POST(req: Request) {
     `IMPORTANT: Return ONLY the greeting rich HTML format. Highlight something personal about them, use emjois if you see fit. Do NOT wrap in JSON, markdown, or any other commentary.`;
 
   // -------- Prepare SSE stream --------
-  const conversationId = crypto.randomUUID();
   let accumulatedPrompt = '';
 
   const body = new ReadableStream({
@@ -75,14 +110,17 @@ export async function POST(req: Request) {
         // 2️⃣  Stream Gemini tokens
         try {
           // @ts-ignore – generateContentStream exists at runtime and returns an async iterable
-          const geminiResult: any = await startModel.generateContentStream(extractionPrompt);
-          const geminiStream: any = geminiResult.stream || geminiResult;
+          const geminiStream: any = await genAI.models.generateContentStream(
+            buildRequest(START_MODEL_NAME, extractionPrompt)
+          );
+          // Stream each chunk of the AI's response
           for await (const chunk of geminiStream as any) {
-            const rawText = (chunk as any).text();
-            // Replace line breaks to keep SSE framing intact
-            const textPart = rawText.replace(/\n/g, ' ');
-            accumulatedPrompt += rawText;
-            controller.enqueue(encoder.encode(`event:token\ndata:${textPart}\n\n`));
+            const rawText = chunk.text;
+            if (rawText) {
+              const textPart = rawText.replace(/\n/g, ' ');
+              accumulatedPrompt += rawText;
+              controller.enqueue(encoder.encode(`event:token\ndata:${textPart}\n\n`));
+            }
           }
         } catch (gemErr) {
           console.error('[API] chat/start Gemini error (streaming)', gemErr);

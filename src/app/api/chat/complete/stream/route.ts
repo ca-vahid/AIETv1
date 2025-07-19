@@ -4,11 +4,10 @@ import { db } from '@/lib/firebase/firebase';
 import { getAuth } from 'firebase-admin/auth';
 import { adminApp } from '@/lib/firebase/admin';
 import { DraftConversation, FinalRequest } from '@/lib/types/conversation';
-// @ts-ignore
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { genAI, buildRequest } from '@/lib/genai';
+import { Type } from '@google/genai';
 
-const THINKING_MODEL = 'gemini-2.5-pro-preview-05-06';
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const THINKING_MODEL = 'gemini-2.5-pro';
 
 /**
  * POST /api/chat/complete/stream - Finalize a draft conversation into a request (streaming)
@@ -79,101 +78,97 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode('🧠 Calling AI to analyze and extract idea details...\n'));
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        /* 5. Gemini extraction (stream with thinking) */
-        const model = genAI.getGenerativeModel({ model: THINKING_MODEL });
-        const contents = [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: `FULL CONVERSATION:\n${JSON.stringify(draft.messages)}\n\nSUMMARY (if any):\n${draft.state.collectedData.processDescription || ''}`
-              }
-            ]
-          }
-        ];
+        /* ---------------- 5. Gemini extraction --------------- */
+        // Build a text transcript the model can ingest
+        const transcript = draft.messages
+          .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+          .join('\n');
 
-        const systemPrompt = `You are AIET Intake Analyzer for a business process automation program at a large company (BGC).\n\n` +
-          `Goal: Given the full intake conversation between an employee (the submitter) and the AI assistant, output ONLY a JSON object that fills an IdeaCardExtract structure so it can be displayed in the public idea gallery.\n` +
-          `The gallery is visible to all employees. Names and profile photos are allowed. Attachments are shown as thumbnails only (no download links).\n\n` +
-          `IdeaCardExtract TypeScript definition (return exactly these keys, no extras):\n\n` +
-          `interface IdeaCardExtract {\n` +
-          `  title: string;                        // Concise headline (max 100 chars)\n` +
-          `  category: string;                     // Try to determine the category of the process to the best of your ability. You know the goal. Try to categorize the process as accurately as possible.\n` +
-          `  painPoints: string[];                 // Bullet-style problems (max 5)\n` +
-          `  processSummary: string;               // Detailed description of today's process as described by the user. Imagine you were telling the story on behalf of the user to the audience. \'s manual process\n` +
-          `  frequency: string;                    // e.g. \"Daily\", \"Weekly\"\n` +
-          `  durationMinutes: number;              // Typical minutes per run (integer)\n` +
-          `  peopleInvolved: number;               // Count of people affected\n` +
-          `  hoursSavedPerWeek: number;            // Estimated total hours saved company-wide\n` +
-          `  impactNarrative: string;              // Describe the envisioned automated solution and its benefits to the team/company (e.g., improved accuracy, morale, new capabilities)\n` +
-          `  tools: string[];                      // Any tools that are in use or were mentioned or could be used to automate the process\n` +
-          `  roles: string[];                      // Job roles that this would effect or involve, maybedepartments\n` +
-          `  complexity: 'low' | 'medium' | 'high';// Rough effort guess\n` +
-          `}\n\n` +
-          `Return ONLY the JSON. Do NOT wrap in markdown or commentary.`;
-
-        let rawJson = '';
-        let thinkingBegan = false;
+        const systemPrompt = `You are an AI assistant that extracts structured data from a conversation about an automation idea. Analyze the following transcript and extract the key details about the user's request.`;
         
-        // Add a short delay to simulate thinking time before we actually start the LLM request
-        controller.enqueue(encoder.encode('\n🤔 AI is thinking...\n'));
-        controller.enqueue(encoder.encode('───────────────────────\n'));
+        const responseSchema = {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            processSummary: { type: Type.STRING },
+            frequency: { type: Type.STRING },
+            durationMinutes: { type: Type.NUMBER },
+            peopleInvolved: { type: Type.NUMBER },
+            tools: { type: Type.ARRAY, items: { type: Type.STRING } },
+            roles: { type: Type.ARRAY, items: { type: Type.STRING } },
+            hoursSavedPerWeek: { type: Type.NUMBER },
+            category: { type: Type.STRING },
+            painPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
+            complexity: { type: Type.STRING },
+          },
+          required: [
+            'title',
+            'processSummary',
+            'frequency',
+            'durationMinutes',
+            'peopleInvolved',
+            'tools',
+            'roles',
+            'hoursSavedPerWeek',
+            'category',
+            'painPoints',
+            'complexity',
+          ],
+        };
 
-        // Cast to any to allow experimental thinkingConfig parameter
-        const llmStream = await model.generateContentStream({
-          contents,
-          systemInstruction: { role: "system", parts: [{ text: systemPrompt }] },
-          
-        } as any);
+        // Use streaming so we can show thinking progress
+        const analysisStream = await genAI.models.generateContentStream(
+          buildRequest(
+            THINKING_MODEL,
+            [
+              { role: 'user', parts: [{ text: transcript }] },
+            ],
+            undefined,
+            {
+              systemInstruction: {
+                role: 'system',
+                parts: [{ text: systemPrompt }],
+              },
+              config: {
+                responseMimeType: 'application/json',
+                responseSchema: responseSchema,
+                thinkingConfig: { includeThoughts: true },
+              },
+            }
+          )
+        );
 
-        for await (const chunk of llmStream.stream) {
-          const text = chunk.text();
-          
-          // Check if this is a thinking part (for models that support it)
-          // Since thinking mode is experimental, we'll handle both cases
-          const isThinking = chunk.candidates?.[0]?.content?.parts?.some((part: any) => part.thought === true);
-          
-          if (isThinking && text) {
-            if (!thinkingBegan) {
-              thinkingBegan = true;
-              controller.enqueue(encoder.encode('💭 AI Thinking Process:\n'));
+        // Collect and stream JSON chunks so the client sees AI’s extraction progress
+        let rawJson = '';
+        for await (const chunk of analysisStream as any) {
+          const candidates = chunk.candidates ?? [];
+          for (const cand of candidates) {
+            const partsArr = cand.content?.parts ?? [];
+            for (const p of partsArr) {
+              if (!p.text) continue;
+              if (p.thought) {
+                // Thought summary – stream prefixed so UI can style
+                controller.enqueue(encoder.encode(`🤔 ${p.text}\n`));
+              } else {
+                // Actual JSON content
+                rawJson += p.text;
+                controller.enqueue(encoder.encode(p.text));
+              }
             }
-            // Format thinking text with indentation
-            const thoughtLines = text.split('\n').map(line => `   │ ${line}`).join('\n');
-            controller.enqueue(encoder.encode(thoughtLines + '\n'));
-          } else if (text) {
-            // This is the actual output
-            if (thinkingBegan) {
-              controller.enqueue(encoder.encode('───────────────────────\n'));
-              controller.enqueue(encoder.encode('📝 Extracting submission details:\n\n'));
-              thinkingBegan = false;
-            }
-            rawJson += text;
-            // Show the JSON being built but formatted nicely
-            controller.enqueue(encoder.encode(text));
           }
         }
 
-        controller.enqueue(encoder.encode('\n\n✅ Extraction complete!\n'));
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        controller.enqueue(encoder.encode('🔍 Parsing response & validating...\n'));
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Clean fences and parse
-        let cleaned = rawJson.trim();
-        if (cleaned.startsWith('```json')) cleaned = cleaned.substring(7);
-        if (cleaned.endsWith('```')) cleaned = cleaned.substring(0, cleaned.length - 3);
+        // Remove markdown code fences if present
+        rawJson = rawJson.trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
 
         let extract: any = {};
         try {
-          extract = JSON.parse(cleaned);
-          controller.enqueue(encoder.encode('✅ Successfully parsed submission details.\n'));
+          extract = JSON.parse(rawJson);
+          controller.enqueue(encoder.encode('\n\n✅ Extraction complete!\n'));
           await new Promise(resolve => setTimeout(resolve, 300));
         } catch (err) {
-          // JSON parse failed, continue with empty extract
           console.error('Failed to parse Gemini extract:', err);
-          controller.enqueue(encoder.encode('⚠️ Warning: Encountered issues parsing the output, but continuing with available data...\n'));
+          controller.enqueue(encoder.encode('⚠️ Warning: Encountered issues parsing the AI output, continuing...\n'));
           await new Promise(resolve => setTimeout(resolve, 300));
         }
 
