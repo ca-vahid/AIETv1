@@ -8,12 +8,23 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.5.0';
+const APP_VERSION = 'v1.5.1';
 // Release date
-const RELEASE_DATE = 'May 30, 2025';
+const RELEASE_DATE = 'July 19, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.5.1',
+    date: 'July 19, 2025',
+    changes: [
+      'Migrated to official @google/genai SDK with strict responseSchema enforcement',
+      'Enabled streaming “thinking” summaries and live JSON extraction in submission modal',
+      'Fixed Quick Upload flow to auto-finalise without user interaction',
+      'Improved AI extraction accuracy and eliminated freestyle JSON issues',
+      'Bumped backend and UI version tags to v1.5.1',
+    ]
+  },
   {
     version: 'v1.5.0',
     date: 'May 30, 2025',
