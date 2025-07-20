@@ -1,3 +1,5 @@
+'use client';
+
 import AppHeader from "@/components/AppHeader";
 import { useTheme } from "@/lib/contexts/ThemeContext";
 import React from "react";
