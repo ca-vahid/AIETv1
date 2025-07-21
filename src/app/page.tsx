@@ -3,6 +3,7 @@
 import SignInWithAzureAD from "@/components/SignInWithAzureAD";
 import ProfileCard from "@/components/ProfileCard";
 import SubmissionMethodModal from "@/components/SubmissionMethodModal";
+import Gallery from "@/components/Gallery";
 import Link from "next/link";
 import { useSessionProfile } from "@/lib/contexts/SessionProfileContext";
 import AppHeader from "@/components/AppHeader";
@@ -382,133 +383,81 @@ export default function Home() {
 
         {isLoggedIn && (
           <div className="space-y-12">
-            {/* Professional Header Section */}
-            <div className="text-center max-w-4xl mx-auto">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                <span className="text-slate-800 dark:text-white">Welcome back, </span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                  {profile.name.split(' ')[0]}
-                </span>
-              </h1>
-              <p className="text-xl text-slate-600 dark:text-slate-400 mb-4">
-                Transform your workflows with AI-powered automation
-              </p>
-              <p className="text-lg text-slate-500 dark:text-slate-500">
-                Submit your process improvement ideas, track their progress, and explore innovations from across the organization
-              </p>
-            </div>
-
-            {/* Main Action Section */}
-            <div className="max-w-6xl mx-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                {/* Profile Card - Compact */}
-                <div className="lg:col-span-1">
-                  <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <ProfileCard compact={true} />
-                  </div>
+            {/* Professional Header Section with Action Buttons */}
+            <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+                <div className="text-left max-w-4xl">
+                  <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                    <span className="text-slate-800 dark:text-white">Welcome back, </span>
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                      {profile.name.split(' ')[0]}
+                    </span>
+                  </h1>
+                  <p className="text-xl text-slate-600 dark:text-slate-400 mb-4">
+                    Transform your workflows with AI-powered automation
+                  </p>
+                  <p className="text-lg text-slate-500 dark:text-slate-500">
+                    Submit your process improvement ideas, track their progress, and explore innovations from across the organization
+                  </p>
                 </div>
-
-                {/* Action Buttons - Professional Layout */}
-                <div className="lg:col-span-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    
-                    {/* Submit Idea Button */}
+                
+                {/* Action Buttons in Upper Right */}
+                <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0">
+                  {/* Submit Idea Button with Dropdown */}
+                  <div className="relative">
                     <button
                       onClick={() => setShowSubmissionModal(true)}
-                      className="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:border-blue-300 dark:hover:border-blue-600 text-left"
+                      className="bg-[#0066cc] hover:bg-[#004080] text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap"
                     >
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Submit Idea</h3>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">New automation request</p>
-                        </div>
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Share your workflow challenges and let AI discover automation opportunities
-                      </p>
-                      <div className="absolute bottom-4 right-4 text-blue-500 group-hover:translate-x-1 transition-transform duration-300">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
+                        <span>Add Idea</span>
                       </div>
                     </button>
-
-                    {/* My Ideas Button */}
-                    <Link
-                      href="/chats"
-                      className="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:border-emerald-300 dark:hover:border-emerald-600 text-left"
-                    >
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                  </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">My Ideas</h3>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">{stats.totalDrafts + stats.totalSubmitted} total</p>
-                  </div>
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        View and manage your submitted automation requests
-                      </p>
-                      <div className="absolute bottom-4 right-4 text-emerald-500 group-hover:translate-x-1 transition-transform duration-300">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
-                      </div>
-                    </Link>
-
-                    {/* Gallery Button */}
-                    <div className="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm opacity-60 cursor-not-allowed text-left">
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-slate-400 to-slate-500 rounded-lg flex items-center justify-center">
-                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">Gallery</h3>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">Coming soon</p>
-                    </div>
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Explore automation ideas from teams across the organization
-                      </p>
-                      <div className="absolute top-4 right-4 bg-amber-500 text-white text-xs px-2 py-1 rounded-full">
-                        Soon
-                      </div>
-                    </div>
-                    
                   </div>
                   
-                  {/* Admin Portal Link */}
-                  <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                    <Link
-                      href="/admin"
-                      className="inline-flex items-center space-x-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  {/* My Submissions Button */}
+                  <Link
+                    href="/chats"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap"
+                  >
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                       </svg>
-                      <span>Admin Portal</span>
-                    </Link>
-                  </div>
+                      <span>My Submissions</span>
+                    </div>
+                  </Link>
                 </div>
               </div>
             </div>
 
-            {/* Professional Stats Section */}
-            <div className="max-w-6xl mx-auto">
+            {/* Main Gallery Section */}
+            <div className="max-w-7xl mx-auto">
+              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                <div className="mb-6">
+                  <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">Gallery</h2>
+                  <p className="text-lg text-slate-600 dark:text-slate-400">
+                    Explore automation ideas from teams across the organization
+                  </p>
+                </div>
+                <Gallery />
+              </div>
+            </div>
+
+            {/* Compact Profile and Stats Section */}
+            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Profile Card - Compact */}
+              <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <ProfileCard compact={true} />
+              </div>
+
+              {/* Professional Stats Section */}
               <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-200 dark:border-slate-700 p-6">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Your Activity Overview</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.statusCounts.completed}</div>
                     <div className="text-sm text-slate-600 dark:text-slate-400">Completed</div>

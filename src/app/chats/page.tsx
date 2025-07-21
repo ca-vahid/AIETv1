@@ -53,6 +53,7 @@ interface HistoryItem {
     roles?: string[];
     tools?: string[];
     impactNarrative?: string;
+    chatSummary?: string; // Added chatSummary
     // ... other request fields ...
   };
 }
@@ -180,7 +181,7 @@ function SortableItem({
         </div>
 
         {/* Expandable Details Section */}
-        {item.request?.processSummary && (
+        {(item.request?.chatSummary || item.request?.processSummary) && (
           <div className="mb-4">
             <button
               onClick={(e) => {
@@ -202,7 +203,7 @@ function SortableItem({
             {isExpanded && (
               <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-md border border-slate-200 dark:border-slate-700">
                 <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                  {item.request.processSummary}
+                  {item.request.chatSummary || item.request.processSummary}
                 </p>
               </div>
             )}
@@ -419,7 +420,7 @@ export default function ChatsPage() {
       setError(null);
       
       const idToken = await getIdToken(firebaseUser!);
-      const response = await fetch('/api/chat/history?cleanup=false', {
+      const response = await fetch('/api/chat/history', {
         headers: {
           Authorization: `Bearer ${idToken}`
         }
@@ -464,21 +465,22 @@ export default function ChatsPage() {
       setDeleteInProgress(true);
       
       const idToken = await getIdToken(firebaseUser!);
-      const response = await fetch('/api/chat/delete', {
-        method: 'POST',
+      const response = await fetch(`/api/chat/delete?id=${itemToDelete.id}&type=${itemToDelete.type}`, {
+        method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          id: itemToDelete.id,
-          type: itemToDelete.type
-        })
+        }
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete item');
+        // Attempt to parse error, but handle cases where body might be empty
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          // Ignore parsing error if response body is not valid JSON
+        }
+        throw new Error(errorData?.error || `Failed to delete item. Server responded with ${response.status}`);
       }
       
       // Remove the item from the local state
@@ -486,7 +488,7 @@ export default function ChatsPage() {
       
     } catch (err) {
       console.error('Error deleting item:', err);
-      setError('Failed to delete item. Please try again.');
+      setError((err as Error).message || 'Failed to delete item. Please try again.');
     } finally {
       setDeleteInProgress(false);
       setItemToDelete(null);
@@ -572,7 +574,12 @@ export default function ChatsPage() {
   
   // Check if an item can be deleted (only drafts and new submissions)
   const canDelete = (item: HistoryItem) => {
-    return item.type === 'request' && item.statusCode === 'new';
+    // Always allow deletion for drafts
+    if (item.type === 'draft') {
+      return true;
+    }
+    // For requests, only allow deletion if they are new or in review
+    return item.type === 'request' && (item.statusCode === 'new' || item.statusCode === 'in_review');
   };
   
   // Get complexity badge styling

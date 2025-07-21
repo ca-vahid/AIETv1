@@ -28,16 +28,16 @@ export async function analyseUserMessage(
       return { type: 'NEXT', step: 'description' };
 
     case 'description':
-      log('\x1b[33m%s\x1b[0m', '[StateMachine] Checking criterion for description → details...');
+      log('\x1b[33m%s\x1b[0m', '[StateMachine] Checking criterion for description → attachments...');
       try {
         const checkResult = await checkCriterion(
           messagesHistory,
-          'User provided a description of the task they want to automate.'
+          'User provided a description of the task they want to automate, and some details or is indicating that they want to move on to the next step.'
         );
         log('\x1b[35m%s\x1b[0m', '[StateMachine] Criterion check raw response:', checkResult.rawResponse);
         if (checkResult.satisfied) {
-          log('\x1b[32m%s\x1b[0m', '[StateMachine] Criterion SATISFIED. Transitioning: description → details');
-          return { type: 'NEXT', step: 'details', data: { processDescription: text } };
+          log('\x1b[32m%s\x1b[0m', '[StateMachine] Criterion SATISFIED. Transitioning: description → attachments');
+          return { type: 'NEXT', step: 'attachments', data: { processDescription: text } };
         } else {
           log('\x1b[33m%s\x1b[0m', '[StateMachine] Criterion NOT satisfied. Staying in description.');
           return null;
@@ -46,27 +46,6 @@ export async function analyseUserMessage(
         log('\x1b[31m%s\x1b[0m', '[StateMachine] Error during description check:', error);
         return null;
       }
-
-    case 'details': {
-      log('\x1b[33m%s\x1b[0m', '[StateMachine] Checking criterion for details → attachments...');
-      try {
-        const checkResult = await checkCriterion(
-          messagesHistory,
-          'User provided additional details or is indicating that they want to move on to the next step.'
-        );
-        log('\x1b[35m%s\x1b[0m', '[StateMachine] Criterion check raw response:', checkResult.rawResponse);
-        if (checkResult.satisfied) {
-          log('\x1b[32m%s\x1b[0m', '[StateMachine] Criterion SATISFIED. Transitioning: details → attachments');
-          return { type: 'NEXT', step: 'attachments' };
-        } else {
-          log('\x1b[33m%s\x1b[0m', '[StateMachine] Criterion NOT satisfied. Staying in details.');
-          return null;
-        }
-      } catch (error) {
-        log('\x1b[31m%s\x1b[0m', '[StateMachine] Error during details check:', error);
-        return null;
-      }
-    }
 
     case 'attachments': {
       log('\x1b[33m%s\x1b[0m', '[StateMachine] Checking criterion for attachments → summary...');
@@ -150,8 +129,7 @@ export function promptFor(state: ConversationState, userProfile?: any): string {
   // Build the base prompt, including any sanitized user details
   const base = profileInfo +
     'You are AIETv1 , a professional assistant helping BGC employees submit ideas to be looked at by the AI team to see if we can use genAI or new AI systems to help user save time energy or be more efficient. ' +
-    'Not only that but maybe user want to do something but they couldnt because it too complicate reuquires programmnign or scripting skills ' +
-    'Important: Currently we are in this step: ';
+    'Not only that but maybe user want to do something but they couldnt because it too complicate reuquires programmnign or scripting skills ';
 
   let prompt = base;
   // Personalize greeting if profile available
@@ -159,32 +137,30 @@ export function promptFor(state: ConversationState, userProfile?: any): string {
     const firstName = userProfile.name?.split(' ')[0] || 'there';
     prompt = `Hi ${firstName}! ` + prompt;
   }
+  
+  // Add a clear separator and header for the task-specific instruction
+  prompt += '\n\n**Your Current Task:**\n';
+  
   switch (state.currentStep) {
     case 'init':
-      // Initial greeting handled elsewhere
-      return prompt;
+      // This is used if the state machine is ever prompted *in* the init state.
+      return prompt + "Welcome! To get started, please briefly describe the task or process you'd like to automate.";
 
     case 'description':
       return (
         prompt +
-        "Please describe the task you'd like to automate ."
-      );
-
-    case 'details':
-      return (
-        prompt +
-        "Good. Now let's drill down on specifics—ask one or two probing questions at a time to gather all the details needed."
+        "You have just received the user's initial idea. Your immediate goal is to ask clarifying questions to gather more details. Ask a brief, targeted question to understand more about the process, the tools they use, or the problems they face. Do not repeat their idea back to them. Get straight to the point." +
+        "CRITICAL: Do NOT provide solutions, code, or instructions."
       );
 
     case 'attachments':
-      return prompt + 'This is the attachment step. Do not ask usser any more quesitons about the automation. \n'+
-      "But ask them if they would like to attach any screenshots or files?";
+      return prompt + 'This is the attachment step. Do not ask the user any more questions about the automation. \n'+
+      "Instead, ask if they would like to attach any screenshots or files. Be very brief; use emojis and HTML tags to make it more engaging and concise.";
 
     case 'summary':
-      return prompt + "<HTML with highlights>Summarise everything that have collected, write it in summary format as if we were submtting this for processing.\n" +
-      "If the language is not English, also provide a translation in English. \n" +
-      "At the end ask user if they are ready to submit or they want to make any changes. ";
-
+      return prompt + "<HTML with highlights>Summarise everything that has been collected in a summary format as if you were submitting this for processing.\n" +
+      "If the language is not English, also provide a translation in English.\n" +
+      "Your response should start with Idea Summary: and then the summary of the idea in details. Do not say anything else";
 
     case 'submit':
       return prompt + 'Thank you for your submission!';

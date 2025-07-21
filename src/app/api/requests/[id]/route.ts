@@ -39,12 +39,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     console.log('[API /requests/:id] Returning requestData:', JSON.stringify(requestData, null, 2)); // Debug log
     
     // Check if the user is authorized to access this request
-    // Either they created it or they're part of the AIET team
     const isOwner = requestData.userId === userId;
-    // For now, we'll assume only the owner can view their requests
-    // In a production system, you'd check if they're part of AIET team too
+    const isPublic = requestData.shared === true;
     
-    if (!isOwner) {
+    // Allow access if:
+    // 1. User owns the request (can view their own requests regardless of sharing status)
+    // 2. Request is public/shared (anyone can view public requests)
+    if (!isOwner && !isPublic) {
       return NextResponse.json({ error: 'Not authorized to view this request' }, { status: 403 });
     }
     

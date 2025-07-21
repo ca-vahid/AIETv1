@@ -84,7 +84,25 @@ export async function POST(req: NextRequest) {
           .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
           .join('\n');
 
-        const systemPrompt = `You are an AI assistant that extracts structured data from a conversation about an automation idea. Analyze the following transcript and extract the key details about the user's request.`;
+        const systemPrompt = `You are AIET Intake Analyzer for a business-process automation program at a large company (BGC Engineering).\n\n` +
+          `Goal: Given the full intake conversation between an employee (the submitter) and the AI assistant, output ONLY a JSON object that fills an IdeaCardExtract structure so it can be displayed in the public idea gallery.\n` +
+          `The gallery is visible to all employees. Names and profile photos are allowed. Attachments are shown as thumbnails only (no download links).\n\n` +
+          `IdeaCardExtract TypeScript definition (return exactly these keys, no extras):\n\n` +
+          `interface IdeaCardExtract {\n` +
+          `  title                 // Concise headline (max 100 chars)\n` +
+          `  category              // Category of the current process (e.g., Finance, HR, Field Work, IT)\n` +
+          `  painPoints            // Bullet-style problems (max 5) the user is facing today\n` +
+          `  processSummary        // Narrative of today’s manual process in first-person on behalf of the user\n` +
+          `  frequency             // How often the process happens (e.g., Daily, Weekly)\n` +
+          `  durationMinutes       // Typical minutes per run (integer)\n` +
+          `  peopleInvolved        // Number of people affected or participating\n` +
+          `  hoursSavedPerWeek     // Estimated total hours saved company-wide after automation (integer)\n` +
+          `  impactNarrative       // Describe the envisioned automated solution and its benefits\n` +
+          `  tools                 // Tools / systems currently used or mentioned\n` +
+          `  roles                 // Job roles or departments involved or impacted\n` +
+          `  complexity            // 'low' | 'medium' | 'high' – rough implementation effort\n` +
+          `}\n\n` +
+          `Return ONLY the JSON. Do NOT wrap in markdown or commentary.`;
         
         const responseSchema = {
           type: Type.OBJECT,
@@ -179,12 +197,19 @@ export async function POST(req: NextRequest) {
         const attachmentsArr = draft.state.collectedData.attachments || [];
         const firstThumbUrl = attachmentsArr[0]?.url;
 
+        // Determine if this should be shared in gallery based on data quality
+        const title = extract?.title || draft.title || 'Automation Request';
+        const hasGoodTitle = title && title.trim() !== '' && title !== 'Automation Request';
+        const hasDescription = (extract?.processSummary && extract.processSummary.trim() !== '') ||
+                             (draft.state.collectedData.processDescription && draft.state.collectedData.processDescription.trim() !== '');
+        const shouldShare = hasGoodTitle && hasDescription;
+
         const requestPayload: FinalRequest = {
           id: draft.id,
           userId: draft.userId,
           profileSnapshot: {},
           status: 'new',
-          title: extract?.title || draft.title || 'Automation Request',
+          title,
           request: {
             processDescription: draft.state.collectedData.processDescription || extract?.processSummary || '',
             painType: draft.state.collectedData.painType || [],
@@ -200,6 +225,7 @@ export async function POST(req: NextRequest) {
             category: extract?.category || 'Other',
             painPoints: extract?.painPoints || [],
             processSummary: extract?.processSummary || '',
+            chatSummary: draft.state.collectedData.chatSummary || '',
           },
           complexity: extract?.complexity || 'medium',
           attachmentsSummary: {
@@ -208,12 +234,15 @@ export async function POST(req: NextRequest) {
           },
           commentsCount: 0,
           upVotes: 0,
-          shared: true,
+          shared: shouldShare, // Only share if quality is good
           conversation: draft.messages,
           comments: [],
           createdAt: Date.now(),
           updatedAt: Date.now()
         };
+
+        // Log sharing decision for debugging
+        console.log(`[Complete] Setting shared=${shouldShare} for "${title}" (hasGoodTitle=${hasGoodTitle}, hasDescription=${hasDescription})`);
 
         /* 7. Save & cleanup */
         controller.enqueue(encoder.encode('💾 Saving final request to database...\n'));

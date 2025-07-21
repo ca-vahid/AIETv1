@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       status: 'draft',
       messages: [
         {
-          role: 'assistant',
+          role: 'system',
           content: headlessGreeting,
           timestamp: Date.now(),
         },
@@ -136,7 +136,7 @@ export async function POST(req: Request) {
           status: 'draft',
           messages: [
             {
-              role: 'assistant',
+              role: 'system',
               content: accumulatedPrompt,
               timestamp: Date.now(),
             },

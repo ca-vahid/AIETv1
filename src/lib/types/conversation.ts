@@ -14,7 +14,6 @@ export interface ConversationState {
   currentStep:
     | 'init'
     | 'description'
-    | 'details'
     | 'attachments'
     | 'summary'
     | 'submit';
@@ -28,6 +27,14 @@ export interface ConversationState {
     peopleInvolved?: number;
     tools?: string[];
     roles?: string[];
+    /**
+     * Summary generated at the chatbot "summary" step. Stored to avoid losing it during final submission.
+     */
+    processSummary?: string;
+    /**
+     * Summary text produced at the summary step (chat-stage summary)
+     */
+    chatSummary?: string;
     impactNarrative?: string;
     impactScore?: number;
     hoursSavedPerWeek?: number;
@@ -81,7 +88,14 @@ export interface FinalRequest {
     }[];
     category?: string;
     painPoints?: string[];
+    /**
+     * Summary produced by the final AI extraction pass
+     */
     processSummary?: string;
+    /**
+     * Summary shown to the user inside the chat at the summary step.
+     */
+    chatSummary?: string;
     impactNarrative?: string;
   };
   classification?: {

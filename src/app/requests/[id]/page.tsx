@@ -35,6 +35,7 @@ interface RequestDetail {
     painNarrative?: string;
     painPoints?: string[];
     processSummary?: string;
+    chatSummary?: string;
     frequency?: string;
     durationMinutes?: number;
     peopleInvolved?: number;
@@ -57,6 +58,32 @@ interface RequestDetail {
     timestamp: number;
   }[];
 }
+
+// Confirmation dialog for deletion
+function DeleteConfirmDialog({ open, onCancel, onConfirm, isDeleting }: { open: boolean; onCancel: () => void; onConfirm: () => void; isDeleting: boolean }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-sm w-full p-6">
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2">Confirm Deletion</h3>
+        <p className="text-sm text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">Are you sure you want to permanently delete this idea? This action cannot be undone.</p>
+        <div className="flex justify-end gap-3">
+          <button onClick={onCancel} className="px-4 py-2 text-sm rounded-lg bg-slate-200 dark:bg-slate-700/70 text-slate-800 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600 transition" disabled={isDeleting}>Cancel</button>
+          <button onClick={onConfirm} className="px-4 py-2 text-sm rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition flex items-center" disabled={isDeleting}>
+            {isDeleting && (
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            )}
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 // Simple confirmation dialog component
 function ConfirmDialog({ open, onCancel, onConfirm }: { open: boolean; onCancel: () => void; onConfirm: () => void }) {
@@ -86,6 +113,30 @@ export default function RequestDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [updatingShare, setUpdatingShare] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [backPath, setBackPath] = useState('/chats');
+  const [backLabel, setBackLabel] = useState('Back to My Requests');
+  
+  // Determine where the user came from
+  useEffect(() => {
+    const referrer = document.referrer;
+    const currentHost = window.location.origin;
+    
+    if (referrer.includes(currentHost)) {
+      const referrerPath = referrer.replace(currentHost, '');
+      if (referrerPath === '/' || referrerPath.includes('/#')) {
+        // User came from gallery (main page)
+        setBackPath('/');
+        setBackLabel('Back to Gallery');
+      } else if (referrerPath.includes('/chats')) {
+        // User came from My Requests
+        setBackPath('/chats');
+        setBackLabel('Back to My Requests');
+      }
+      // For other cases, keep default (My Requests)
+    }
+  }, []);
   
   useEffect(() => {
     async function fetchRequestDetail() {
@@ -122,6 +173,32 @@ export default function RequestDetailPage() {
       fetchRequestDetail();
     }
   }, [firebaseUser, requestId]);
+
+  const handleDelete = async () => {
+    if (!request || !firebaseUser) return;
+    setIsDeleting(true);
+
+    try {
+      const idToken = await getIdToken(firebaseUser);
+      const response = await fetch(`/api/chat/delete?id=${requestId}&type=request`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete the request.');
+      }
+
+      router.push(backPath);
+    } catch (err) {
+      console.error('Error deleting request:', err);
+      setError('Failed to delete. Please try again.');
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+    }
+  };
   
   // Format date 
   const formatDate = (timestamp: number) => {
@@ -232,14 +309,26 @@ export default function RequestDetailPage() {
         <div className="mx-auto max-w-5xl relative z-10">
           <div className="flex justify-between items-center px-4 py-3 mb-6 bg-white/60 dark:bg-slate-800/60 rounded-xl backdrop-blur-md border border-white/80 dark:border-slate-700/50 shadow-lg transition-all duration-300 hover:shadow-xl hover:border-blue-500/30 hover:scale-[1.01]">
             <Link 
-              href="/chats"
+              href={backPath}
               className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center transition-all duration-200 hover:translate-x-[-2px] font-medium"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
               </svg>
-              Back to My Requests
+              {backLabel}
             </Link>
+
+            {request && request.userId === firebaseUser?.uid && (
+              <button
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="text-sm flex items-center gap-1.5 text-rose-500 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L6.382 5H3a1 1 0 100 2h.293l.949 9.486A2 2 0 006.236 18h7.528a2 2 0 001.994-1.514L16.707 7H17a1 1 0 100-2h-3.382l-1.724-2.447A1 1 0 0011 2H9zm3 6a1 1 0 10-2 0v6a1 1 0 102 0V8zm-4 0a1 1 0 112 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clipRule="evenodd" />
+                </svg>
+                Delete
+              </button>
+            )}
           </div>
           
           {isLoadingRequest ? (
@@ -254,10 +343,10 @@ export default function RequestDetailPage() {
             <div className="bg-white/60 dark:bg-slate-800/40 backdrop-blur-sm rounded-xl p-8 text-center shadow-xl border border-white/80 dark:border-slate-700/50">
               <p className="text-red-500 dark:text-red-400">{error}</p>
               <Link
-                href="/chats"
+                href={backPath}
                 className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
               >
-                Return to Requests
+                {backLabel.replace('Back to', 'Return to')}
               </Link>
             </div>
           ) : request ? (
@@ -347,7 +436,7 @@ export default function RequestDetailPage() {
                 {/* Main Content Area */}
                 <div className="p-6 space-y-8 text-slate-700 dark:text-slate-200 bg-gradient-to-br from-white/95 to-blue-50/80 dark:from-slate-800/95 dark:to-slate-900/90">
                   {/* Process Overview Section */}
-                  {(request.request?.processSummary || request.request?.processDescription) && (
+                  {(request.request?.chatSummary || request.request?.processSummary || request.request?.processDescription) && (
                     <section className="transform transition-all duration-300 hover:translate-y-[-4px] hover:scale-[1.01]">
                       <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
                         <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -357,7 +446,21 @@ export default function RequestDetailPage() {
                       </h2>
                       <div className="bg-white dark:bg-slate-700/60 p-6 rounded-xl border border-blue-100 dark:border-blue-900/30 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.2)] transform transition-all duration-300 hover:translate-y-[-4px]">
                         <p className="text-slate-700 dark:text-slate-100 leading-relaxed whitespace-pre-wrap text-base">
-                          {request.request.processSummary || request.request.processDescription}
+                          {request.request.chatSummary && (
+                            <>
+                              <h3 className="font-semibold mb-2 text-slate-800 dark:text-slate-200">Chat Summary</h3>
+                              <p className="mb-4 whitespace-pre-wrap">{request.request.chatSummary}</p>
+                            </>
+                          )}
+                          {request.request.processSummary && (
+                            <>
+                              <h3 className="font-semibold mb-2 text-slate-800 dark:text-slate-200">AI Extracted Summary</h3>
+                              <p className="mb-0 whitespace-pre-wrap">{request.request.processSummary}</p>
+                            </>
+                          )}
+                          {!request.request.processSummary && !request.request.chatSummary && request.request.processDescription && (
+                            <p className="whitespace-pre-wrap">{request.request.processDescription}</p>
+                          )}
                         </p>
                       </div>
                     </section>
@@ -750,6 +853,13 @@ export default function RequestDetailPage() {
           setConfirmDialogOpen(false);
           performToggleShare();
         }}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteConfirmOpen}
+        onCancel={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
       />
     </div>
   );

@@ -53,6 +53,13 @@ export async function POST(req: NextRequest) {
     // Parse request body
     const requestBody = await req.json();
     const { conversationId, message, command, isCommand } = requestBody;
+    
+    // --- Detailed Logging ---
+    console.log('\n\n\x1b[1m\x1b[35m%s\x1b[0m', '--- INCOMING USER MESSAGE ---');
+    console.log('\x1b[35m%s\x1b[0m', message || `COMMAND: ${command}`);
+    console.log('\x1b[1m\x1b[35m%s\x1b[0m', '---------------------------\n');
+    // --- End Logging ---
+
     // Explicitly check if useThinkingModel is defined to distinguish between undefined and false
     const useThinkingModel = requestBody.useThinkingModel;
     
@@ -79,9 +86,15 @@ export async function POST(req: NextRequest) {
     if (origState.currentStep === 'summary_lite') {
       baseState = { ...baseState, currentStep: 'decision' };
     }
-    if (origState.currentStep === 'full_details') {
-      baseState = { ...baseState, currentStep: 'details' };
+    if (origState.currentStep === 'full_details' || origState.currentStep === 'details') {
+      baseState = { ...baseState, currentStep: 'description' };
     }
+
+    // --- Detailed Logging ---
+    console.log('\x1b[1m\x1b[33m%s\x1b[0m', '--- CURRENT CONVERSATION STATE ---');
+    console.log('\x1b[33m%s\x1b[0m', `Step: ${baseState.currentStep}`);
+    console.log('\x1b[1m\x1b[33m%s\x1b[0m', '--------------------------------\n');
+    // --- End Logging ---
 
     if (conversationData.userId !== userId) {
       console.log("\x1b[31m%s\x1b[0m", `[API] User not authorized to access this conversation`);
@@ -99,8 +112,6 @@ export async function POST(req: NextRequest) {
 
     if (message) {
       userMessage = { role: 'user', content: message, timestamp: Date.now() };
-    } else if (cmd === 'GO_DEEPER') {
-      userMessage = { role: 'user', content: '*GO DEEPER*', timestamp: Date.now() };
     } else if (cmd === 'SUBMIT') {
       userMessage = { role: 'user', content: '*SUBMIT*', timestamp: Date.now() };
     }
@@ -117,9 +128,7 @@ export async function POST(req: NextRequest) {
 
     // Determine transition using migrated baseState
     let transition: Transition | null = null;
-    if (cmd === 'GO_DEEPER') {
-      transition = { type: 'NEXT', step: 'details' };
-    } else if (cmd === 'SUBMIT') {
+    if (cmd === 'SUBMIT') {
       transition = { type: 'NEXT', step: 'submit' };
     } else if (isCommand && message === 'continue_to_summary' && baseState.currentStep === 'attachments') {
       // Handle special command to continue from attachments to summary
@@ -143,13 +152,21 @@ export async function POST(req: NextRequest) {
        );
     }
 
-    const newStatePreLLM = transition
+    let newStatePreLLM = transition
       ? conversationReducerNew(baseState, transition)
       : baseState;
 
     // Generate prompt for the *updated* state so LLM knows context and preferred language
     const language = conversationData.state.language || 'en';
     const systemPrompt = `Please respond in ${language}. ` + promptFor(newStatePreLLM, userProfile);
+   
+   // --- Debug Logging ---
+   console.log('\x1b[1m\x1b[31m%s\x1b[0m', '--- DEBUG: PROMPT GENERATION ---');
+   console.log('\x1b[31m%s\x1b[0m', `State: ${newStatePreLLM.currentStep}`);
+   console.log('\x1b[31m%s\x1b[0m', `Generated prompt: ${systemPrompt}`);
+   console.log('\x1b[1m\x1b[31m%s\x1b[0m', '--------------------------------\n');
+   // --- End Debug ---
+   
     console.log("\x1b[36m%s\x1b[0m", `[API] Prompting for state: ${newStatePreLLM.currentStep} (Previous: ${baseState.currentStep})`);
 
     try {
@@ -169,9 +186,10 @@ export async function POST(req: NextRequest) {
       // Convert our message format to Gemini format
       const chatHistory = [];
       
-      // Add past conversation messages in pairs
+      // Add past conversation messages but skip system-level context greetings
       for (let i = 0; i < conversationData.messages.length; i++) {
         const msg = conversationData.messages[i];
+        if (msg.role === 'system') continue; // ignore system context messages
         chatHistory.push({
           role: msg.role === 'user' ? 'user' : 'model',
           parts: [{ text: msg.content }]
@@ -185,6 +203,15 @@ export async function POST(req: NextRequest) {
         ...(userMessage ? [{ role: 'user', parts: [{ text: userMessage.content }] }] : [])
       ];
  
+       // --- Detailed Logging ---
+      console.log('\n\x1b[1m\x1b[34m%s\x1b[0m', '--- SENDING TO GEMINI ---');
+      console.log('\x1b[1m\x1b[36m%s\x1b[0m', 'System Prompt:');
+      console.log('\x1b[36m%s\x1b[0m', systemPrompt);
+      console.log('\x1b[1m\x1b[36m%s\x1b[0m', 'User Content History:');
+      console.log('\x1b[36m%s\x1b[0m', JSON.stringify(contents, null, 2));
+      console.log('\x1b[1m\x1b[34m%s\x1b[0m', '-------------------------\n');
+      // --- End Logging ---
+ 
       // Track state that may change during streaming (e.g., details -> attachments auto jump)
       let finalState = newStatePreLLM;
       
@@ -194,7 +221,6 @@ export async function POST(req: NextRequest) {
         buildRequest(
           MODEL,
           contents,
-          undefined,
           {
             systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] },
           }
@@ -237,23 +263,17 @@ export async function POST(req: NextRequest) {
               timestamp: Date.now()
             };
             
-            // Auto-transition if assistant signals details completion
-            let newState = newStatePreLLM;
-            if (
-              baseState.currentStep === 'details' &&
-              newStatePreLLM.currentStep === 'details' &&
-              /\[DETAILS COMPLETED\]/i.test(assistantMessage)
-            ) {
-              console.log(
-                "\x1b[32m%s\x1b[0m",
-                '[API] Detected [DETAILS COMPLETED], auto-transitioning: details -> attachments'
-              );
-              newState = conversationReducerNew(newStatePreLLM, {
-                type: 'NEXT',
-                step: 'attachments',
-              });
+            // If we are now in the summary step, persist that summary text so it can be reused later
+            if (newStatePreLLM.currentStep === 'summary') {
+              newStatePreLLM = {
+                ...newStatePreLLM,
+                collectedData: {
+                  ...newStatePreLLM.collectedData,
+                  chatSummary: assistantMessage,
+                },
+              };
             }
-            
+
             // Update messages in conversation data
             const updatedMessages = [
               ...conversationData.messages,
@@ -264,7 +284,7 @@ export async function POST(req: NextRequest) {
             if (transition) {
               console.log(
                 "\x1b[33m%s\x1b[0m",
-                `[API] State transition detected: ${conversationData.state.currentStep} -> ${newState.currentStep}`
+                `[API] State transition detected: ${conversationData.state.currentStep} -> ${newStatePreLLM.currentStep}`
               );
             }
             
@@ -294,7 +314,7 @@ export async function POST(req: NextRequest) {
             
             // Check if we need to complete the chat (but don't do it yet)
             // Case 1: Just moved to submit state
-            if (!isExplicitGoDeeper && conversationData.state.currentStep !== 'submit' && newState.currentStep === 'submit') {
+            if (!isExplicitGoDeeper && conversationData.state.currentStep !== 'submit' && newStatePreLLM.currentStep === 'submit') {
               shouldComplete = true;
             }
             
@@ -310,14 +330,14 @@ export async function POST(req: NextRequest) {
             if (!shouldComplete) {
               await updateDoc(doc(conversationsRef, conversationId), {
                 messages: updatedMessages,
-                state: newState,
+                state: newStatePreLLM,
                 updatedAt: Date.now()
               });
               console.log("\x1b[32m%s\x1b[0m", "[API] Conversation updated in Firestore");
             }
             
             // Persist to outer scope for header usage
-            finalState = newState;
+            finalState = newStatePreLLM;
             
             controller.close();
           } catch (streamError) {

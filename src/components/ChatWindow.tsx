@@ -684,12 +684,11 @@ export default function ChatWindow({
   }, [conversationId]);
 
   // Define steps and progress calculation
-  const steps = ['init', 'description', 'details', 'attachments', 'summary', 'submit'] as const;
+  const steps = ['init', 'description', 'attachments', 'summary', 'submit'] as const;
   type StepKey = typeof steps[number];
   const labels: Record<StepKey, string> = {
     init: 'Welcome',
     description: 'Description',
-    details: 'Details',
     attachments: 'Attachments',
     summary: 'Summary',
     submit: 'Submit',
@@ -1329,12 +1328,74 @@ export default function ChatWindow({
         );
       }
       
+      // After the summary has finished streaming, automatically send a SUBMIT command
+      try {
+        const submitRes = await fetch("/api/chat/message", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            conversationId: internalChatId,
+            command: "SUBMIT",
+            useThinkingModel: useThinkingModel,
+            isCommand: true,
+          }),
+        });
+
+        if (submitRes.ok) {
+          const newStateAfterSubmit = submitRes.headers.get("X-Conversation-State");
+          if (newStateAfterSubmit) {
+            onStepChange(newStateAfterSubmit);
+          }
+
+          // Trigger final chat completion if we've entered the submit step
+          if (newStateAfterSubmit === "submit") {
+            handleCompleteChat();
+          }
+
+          // Stream (and discard) the assistant confirmation response to keep Firestore in sync
+          if (submitRes.body) {
+            const reader2 = submitRes.body.getReader();
+            const decoder2 = new TextDecoder();
+            let assistantMsg2 = "";
+            const botMsg2Id = `assistant-submit-${Date.now()}`;
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: botMsg2Id,
+                role: "assistant",
+                content: "",
+                timestamp: Date.now(),
+              },
+            ]);
+
+            while (true) {
+              const { done: done2, value: value2 } = await reader2.read();
+              if (done2) break;
+              const chunk2 = decoder2.decode(value2, { stream: true });
+              assistantMsg2 += chunk2;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === botMsg2Id ? { ...m, content: assistantMsg2 } : m
+                )
+              );
+            }
+          }
+        } else {
+          console.error("Failed to auto-submit after summary");
+        }
+      } catch (submitErr) {
+        console.error("Error auto-submitting after summary:", submitErr);
+      }
+      
     } catch (error) {
       console.error("Error continuing to summary:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [firebaseUser, internalChatId, onStepChange, useThinkingModel]);
+  }, [firebaseUser, internalChatId, onStepChange, useThinkingModel, handleCompleteChat]);
 
   // Handle paste in the chat input area
   const handlePaste = useCallback((e: React.ClipboardEvent) => {

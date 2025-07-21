@@ -8,12 +8,25 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.5.1';
+const APP_VERSION = 'v1.5.2';
 // Release date
-const RELEASE_DATE = 'July 19, 2025';
+const RELEASE_DATE = 'July 20, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.5.2',
+    date: 'July 20, 2025',
+    changes: [
+      'Major feature: Complete Gallery implementation for browsing automation ideas',
+      'Enhanced UI with sophisticated card design, user profiles, and smart filtering',
+      'Added clickable titles and smart back navigation throughout the app',
+      'Implemented infinite scroll with quality filtering and search functionality',
+      'Redesigned main page with gallery as primary content and consolidated action buttons',
+      'Improved user experience with expandable content and mobile-responsive design',
+      'Fixed authorization issues, infinite scroll bugs, and missing user profile data'
+    ]
+  },
   {
     version: 'v1.5.1',
     date: 'July 19, 2025',
