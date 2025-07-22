@@ -142,9 +142,11 @@ export async function GET(req: NextRequest) {
     const lastDocId = searchParams.get('lastDocId'); // For cursor-based pagination
 
     const page = Math.max(0, parseInt(pageStr));
-    const pageLimit = Math.min(50, Math.max(1, parseInt(limitStr)));
+    const pageLimit = Math.min(1000, Math.max(1, parseInt(limitStr))); // Increased limit to 1000 to load all submissions
 
-    console.log(`[Gallery API] Fetching page ${page}, limit ${pageLimit}, sortBy ${sortBy}`);
+    console.log(`[Gallery API] Fetching ${pageLimit} items for user ${decodedToken.uid}`);
+
+
 
     // Build Firestore query
     let firestoreQuery = query(
@@ -179,8 +181,6 @@ export async function GET(req: NextRequest) {
       ...doc.data()
     })) as (FinalRequest & { id: string })[];
 
-    console.log(`[Gallery API] Found ${allRequests.length} raw requests`);
-
     // Filter out low-quality submissions that shouldn't appear in gallery
     const requests = allRequests.filter(req => {
       // Must have a meaningful title (not just "Automation Request")
@@ -196,16 +196,12 @@ export async function GET(req: NextRequest) {
       // Must have basic request data
       const hasBasicData = req.request && req.userId;
       
-      // Log filtered out items for debugging
-      if (!hasGoodTitle || !hasDescription || !hasBasicData) {
-        console.log(`[Gallery API] Filtering out low-quality request ${req.id}: title="${req.title}", hasDesc=${hasDescription}, hasData=${hasBasicData}`);
-        return false;
-      }
-      
-      return true;
+      return hasGoodTitle && hasDescription && hasBasicData;
     });
 
-    console.log(`[Gallery API] After quality filter: ${requests.length} requests`);
+    console.log(`[Gallery API] Returning ${requests.length} quality submissions`);
+    
+
 
     // Filter by search query if provided (client-side for now)
     let filteredRequests = requests;

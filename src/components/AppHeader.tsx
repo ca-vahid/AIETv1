@@ -8,12 +8,24 @@ import { useTheme } from "@/lib/contexts/ThemeContext";
 import { usePathname } from 'next/navigation';
 
 // Current version of the application
-const APP_VERSION = 'v1.5.2';
+const APP_VERSION = 'v1.5.3';
 // Release date
-const RELEASE_DATE = 'July 20, 2025';
+const RELEASE_DATE = 'July 21, 2025';
 
 // Changelog entries - newest first
 const CHANGELOG = [
+  {
+    version: 'v1.5.3',
+    date: 'July 21, 2025',
+    changes: [
+      'Gallery redesign: added Grid, List, and Bento views with compact cards',
+      'Optimized space usage—4+ cards visible above the fold',
+      'Added view-mode toggle, gradient accents, emoji complexity/frequency icons',
+      'Implemented debounced search & filter preserving cursor focus even when deleting',
+      'Improved CSS: hover-lift, 3D card effect, slide-in animations, gradient shift',
+      'Fixed search-bar focus loss and bar flicker during rapid input'
+    ]
+  },
   {
     version: 'v1.5.2',
     date: 'July 20, 2025',

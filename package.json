@@ -36,6 +36,7 @@
     "react-use-measure": "^2.1.7",
     "react-wavify": "^1.11.1",
     "replicate": "^0.32.0",
+    "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
     "web-speech-cognitive-services": "^8.1.1"
   },
